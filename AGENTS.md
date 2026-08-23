@@ -96,8 +96,45 @@ Documentos novos ou atualizados devem seguir o padrão do `delta-handbook`:
 
 Ao registrar comportamento técnico, diferencie claramente o que foi confirmado em arquivos ou por execução, o que está apenas documentado como requisito e o que ainda é planejamento. Não apresente funcionalidades futuras como implementadas.
 
-## 6. Manutenção da estrutura do repositório
+## 6. Limite de complexidade e nível técnico
 
-A seção **Contexto deste repositório** representa a estrutura confirmada no momento da criação deste arquivo. Ela será revisada e atualizada periodicamente nesta conversa após commits oficiais modificarem a organização, as tecnologias ou as responsabilidades do repositório.
+As soluções devem ser compatíveis com o conhecimento de estudantes do Ensino Médio Técnico em Análise e Desenvolvimento de Sistemas.
 
-Antes de confiar integralmente nesta descrição, compare-a com a árvore e o histórico atuais da `main`. Não antecipe nesta seção arquivos ou tecnologias que ainda não tenham sido incorporados oficialmente.
+- Priorize código simples, legível e dividido em pequenas responsabilidades.
+- Utilize primeiro os recursos já presentes no repositório e conhecidos pela equipe.
+- Não adicione frameworks, bibliotecas, padrões arquiteturais ou infraestrutura sem necessidade comprovada.
+- Evite abstrações prematuras, metaprogramação, arquiteturas distribuídas e padrões avançados quando uma solução direta atender ao requisito.
+- Não reestruture grandes partes do projeto para resolver uma tarefa localizada.
+- Explique decisões técnicas e trechos não óbvios com linguagem didática.
+- Quando a solução exigir conhecimento acima do limite registrado abaixo, apresente primeiro uma alternativa mais simples e solicite aprovação antes de prosseguir.
+- Não implemente automaticamente uma solução avançada sem justificativa e autorização explícita.
+
+### Stack e nível de aprofundamento da equipe
+
+| Tecnologia ou assunto | Nível atual | Limite esperado |
+| --- | --- | --- |
+| Lógica de programação | Intermediário | Avançado |
+| Git e GitHub | Intermediário | Avançado |
+| HTML e CSS | Básico | Intermediário |
+| JavaScript | Básico | Intermediário |
+| Java | Intermediário | Avançado |
+| Spring Boot | Básico | Avançado |
+| Python | Intermediário | Avançado |
+| FastAPI | Básico | Intermediário |
+| SQL e PostgreSQL | Avançado | Avançado |
+| MongoDB | Básico | Intermediário |
+| APIs REST | Intermediário | Intermediário |
+| Testes automatizados | Básico | Intermediário |
+| Docker e CI/CD | Básico | Intermediário |
+| Arquitetura e padrões de projeto | Básico | Intermediário |
+| IoT e comunicação com hardware | Básico | Básico |
+
+O **nível atual** representa o conhecimento que a equipe já possui e consegue aplicar com alguma autonomia. O **limite esperado** representa o nível máximo de complexidade que a IA pode utilizar.
+
+Quando o limite esperado for superior ao nível atual, a IA deve explicar os novos conceitos de forma simples e didática, relacionando-os ao código produzido. Qualquer solução que ultrapasse o limite esperado exige aprovação explícita antes da implementação.
+
+## 7. Aviso de manutenção
+
+A seção **Estrutura atual do repositório** deve ser revisada periodicamente nesta conversa e atualizada depois
+de commits oficiais que adicionem, removam ou reorganizem arquivos. Antes de cada atualização, compare esta
+descrição com a árvore real da `main`; o conteúdo deste arquivo não substitui a inspeção do estado atual.
