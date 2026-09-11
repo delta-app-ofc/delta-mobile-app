@@ -1,4 +1,30 @@
 .idea
 .vscode
-.env
 __pycache__/
+
+# Android Studio / IntelliJ
+*.iml
+.idea/
+.gradle/
+
+# Configuração local do SDK Android
+local.properties
+
+# Builds e arquivos gerados
+/build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Assinaturas e segredos locais
+*.jks
+*.keystore
+*.p12
+key.properties
+.env
+.env.*
