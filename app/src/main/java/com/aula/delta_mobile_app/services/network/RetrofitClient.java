@@ -1,6 +1,6 @@
-package com.aula.delta_mobile_app.service.network;
+package com.aula.delta_mobile_app.services.network;
 
-import com.aula.delta_mobile_app.service.api.ApiService;
+import com.aula.delta_mobile_app.services.api.ApiService;
 
 import java.util.concurrent.TimeUnit;
 

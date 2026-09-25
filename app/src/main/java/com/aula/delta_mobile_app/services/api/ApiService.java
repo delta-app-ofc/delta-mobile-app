@@ -1,4 +1,4 @@
-package com.aula.delta_mobile_app.service.api;
+package com.aula.delta_mobile_app.services.api;
 
 /**
  * Declara os endpoints HTTP disponibilizados pela API.

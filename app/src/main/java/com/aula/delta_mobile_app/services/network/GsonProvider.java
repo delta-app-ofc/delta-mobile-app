@@ -1,4 +1,4 @@
-package com.aula.delta_mobile_app.service.network;
+package com.aula.delta_mobile_app.services.network;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

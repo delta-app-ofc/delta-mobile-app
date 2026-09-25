@@ -1,4 +1,4 @@
-package com.aula.delta_mobile_app.service.network;
+package com.aula.delta_mobile_app.services.network;
 
 /** Valores compartilhados pela configuracao da camada de rede. */
 public final class NetworkConfig {
