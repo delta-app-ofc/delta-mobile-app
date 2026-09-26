@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/splash_background"
-    tools:context=".MainActivity">
+    tools:context=".view.activitys.splash.SplashActivity"
+    tools:ignore="VisualLintSystemUi">
 
     <TextView
         android:id="@+id/main_content"
@@ -14,9 +15,9 @@
         android:layout_gravity="center"
         android:text="Hello World!"
         android:visibility="invisible" />
-
-    <com.aula.delta_mobile_app.splash_screen.DeltaSplashView
+    <view
         android:id="@+id/delta_splash"
+        class="com.aula.delta_mobile_app.view.activitys.splash.SplashActivity$DeltaSplashView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/splash_background" />
