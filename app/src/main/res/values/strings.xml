@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Delta</string>
-    <!-- TODO: Remove or change this placeholder text -->
+
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title_activity_login">LoginActivity</string>
     <string name="prompt_email">Email</string>
@@ -11,4 +11,103 @@
     <string name="invalid_username">Not a valid username</string>
     <string name="invalid_password">Password must be >5 characters</string>
     <string name="login_failed">"Login failed"</string>
+    <string name="auth_back">Voltar</string>
+    <string name="auth_continue">Continuar</string>
+    <string name="auth_login_title">Bem-Vindo de volta!</string>
+    <string name="auth_login_subtitle">Insira seus dados e continue de onde parou.</string>
+    <string name="auth_user_email">Usuário/ E-mail</string>
+    <string name="auth_password">Senha</string>
+    <string name="auth_social">ou continuar com</string>
+    <string name="auth_register">Ainda não tem conta? cadastre-se</string>
+    <string name="auth_login_unavailable">A autenticação estará disponível em breve.</string>
+    <string name="auth_welcome_title">Seja Bem-Vindo!</string>
+    <string name="auth_welcome_message">Preciso que você me forneça mais uma informação para avançarmos com seu cadastro!</string>
+    <string name="auth_lets_go">Vamos lá</string>
+    <string name="auth_step0_title">Olá!</string>
+    <string name="auth_step0_subtitle">Como podemos te chamar?</string>
+    <string name="auth_step0_description">Insira as informações para personalizarmos sua experiência.</string>
+    <string name="auth_full_name">Nome completo</string>
+    <string name="auth_birth_date">dd/mm/aaaa</string>
+    <string name="auth_phone">Telefone</string>
+    <string name="auth_step1_title">Qual o seu e-mail?</string>
+    <string name="auth_step1_subtitle">Como podemos entrar em contato?</string>
+    <string name="auth_step_description">Insira as informações para prosseguirmos.</string>
+    <string name="auth_email">Insira seu e-mail</string>
+    <string name="auth_create_password">Crie uma senha (mínimo de 8 caracteres)</string>
+    <string name="auth_retry">Tentar novamente</string>
+    <string name="auth_confirm_password">Confirme a senha</string>
+    <string name="auth_step2_title">Fale sobre sua rotina!</string>
+    <string name="auth_step2_subtitle">Queremos saber seus hábitos</string>
+    <string name="auth_long_shower">Banho Longo</string>
+    <string name="auth_wash_yard">Lavar o quintal</string>
+    <string name="auth_wash_clothes">Lava roupa</string>
+    <string name="auth_water_plants">Rega plantas</string>
+    <string name="auth_wash_car">Lava carro</string>
+    <string name="auth_wash_dishes">Lavar a louça</string>
+    <string name="auth_step3_title">Sobre seu imóvel</string>
+    <string name="auth_step3_subtitle">Isso nos ajuda a calibrar as métricas</string>
+    <string name="auth_classification">Classificação residencial</string>
+    <string name="auth_property_type">Tipo de imóvel / ex: Casa</string>
+    <string name="auth_property_note">ⓘ A leitura do hidrômetro será configurada separadamente do cadastro.</string>
+    <string name="auth_step4_title">Quase lá!</string>
+    <string name="auth_step4_subtitle">Informe o CEP</string>
+    <string name="auth_step4_description">Usamos para cruzar os dados de consumo da sua região.</string>
+    <string name="auth_zip">00000-000</string>
+    <string name="auth_zip_hint">Digite o CEP para preencher automaticamente</string>
+    <string name="auth_state">Estado</string>
+    <string name="auth_city">Cidade</string>
+    <string name="auth_qr_title">Falta pouco!</string>
+    <string name="auth_qr_subtitle">Leia o QR Code do hidrômetro</string>
+    <string name="auth_qr_description">Como você mora em apartamento precisamos dessas informações para personalizar sua experiência.</string>
+    <string name="auth_qr_help">Não consegue escanear?</string>
+    <string name="auth_qr_manual">▥  Inserir o código manualmente</string>
+    <string name="auth_camera_preview">Câmera para leitura do QR Code</string>
+    <string name="auth_camera_permission">Permita o acesso à câmera para ler o QR Code. Toque aqui para tentar novamente ou insira o código manualmente.</string>
+    <string name="auth_camera_settings">Para usar a câmera, habilite a permissão nas configurações do aplicativo. Toque aqui para abrir.</string>
+    <string name="auth_camera_error">Não foi possível abrir a câmera. Toque aqui para tentar novamente ou insira o código manualmente.</string>
+    <string name="auth_qr_success">Leitura verificada\ncom sucesso!</string>
+    <string name="auth_manual_title">Insira o número do hidrômetro</string>
+    <string name="auth_manual_description">Caso não saiba consulte seu síndico\nou responsável do prédio</string>
+    <string name="auth_cancel">Cancelar</string>
+    <string name="auth_confirm">Confirmar</string>
+    <string name="auth_config_title">Última conta de água</string>
+    <string name="auth_config_subtitle">Opcional - mas ajuda a calibrar a previsão</string>
+    <string name="auth_config_info">ⓘ  Com esses dados a previsão da sua conta já começam desde o primeiro dia.</string>
+    <string name="auth_reference_month">Mês de referência</string>
+    <string name="auth_total_paid">Valor total pago</string>
+    <string name="auth_total_hint">Valor que consta no boleto ou fatura</string>
+    <string name="auth_consumption">Consumo registrado</string>
+    <string name="auth_required">Preencha este campo.</string>
+    <string name="auth_invalid_email">Digite um e-mail válido.</string>
+    <string name="auth_passwords_differ">As senhas não coincidem.</string>
+    <string name="auth_invalid_date">Digite uma data válida.</string>
+    <string name="auth_invalid_zip">Digite um CEP com 8 dígitos.</string>
+    <string name="auth_choose_option">Selecione uma opção.</string>
+    <string name="auth_code_required">Informe o número do hidrômetro.</string>
+    <string name="auth_flow_complete">Os dados desta conta de água ainda não foram enviados ao serviço.</string>
+    <string-array name="auth_classifications">
+        <item>Classificação residencial</item>
+        <item>Residencial normal</item>
+        <item>Comercial: assistência social</item>
+        <item>Comercial normal / industrial</item>
+        <item>Residencial especial</item>
+        <item>Comercial especial</item>
+        <item>Residencial favela</item>
+        <item>Pública com contrato</item>
+        <item>Residencial social</item>
+    </string-array>
+    <string-array name="auth_property_types">
+        <item>Tipo de imóvel / ex: Casa</item>
+        <item>Casa</item>
+        <item>Prédio</item>
+    </string-array>
+    <string name="auth_zip_loading">Aguarde a consulta do CEP.</string>
+    <string name="auth_zip_not_found">CEP não encontrado.</string>
+    <string name="auth_zip_lookup_failed">Não foi possível consultar o CEP. Confira sua conexão e digite o CEP novamente para tentar.</string>
+    <string name="auth_property_name">Nome do imóvel</string>
+    <string name="auth_built_area">Área construída em m² (opcional)</string>
+    <string name="auth_toggle_password">Mostrar ou ocultar senha</string>
+    <string name="auth_home_title">Bem-vindo ao Delta</string>
+    <string name="auth_home_meter">Configurar hidrômetro</string>
+    <string name="auth_logout">Sair da conta</string>
 </resources>

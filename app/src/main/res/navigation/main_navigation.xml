@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/auth_navigation"
+    app:startDestination="@id/homeFragment">
+    <fragment
+        android:id="@id/homeFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.HomeFragment"
+        android:label="Início" />
+    <fragment
+        android:id="@id/qrScanFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.QrScanFragment"
+        android:label="Vincular medidor" />
+    <fragment
+        android:id="@id/qrSuccessFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.QrSuccessFragment"
+        android:label="Medidor vinculado" />
+    <fragment
+        android:id="@id/accountConfigFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.AccountSettingsFragment"
+        android:label="Configuração" />
+    <fragment
+        android:id="@+id/consumptionFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:label="Consumo">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Consumo" />
+        <argument
+            android:name="screen"
+            app:argType="string"
+            android:defaultValue="consumption" />
+    </fragment>
+    <fragment
+        android:id="@+id/costsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.DashboardFragment"
+        android:label="Custos" />
+    <fragment
+        android:id="@+id/costsHistoryFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:label="Custos">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Custos" />
+        <argument
+            android:name="screen"
+            app:argType="string"
+            android:defaultValue="costs" />
+    </fragment>
+    <fragment
+        android:id="@+id/tipsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:label="Gluh Helper">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Gluh Helper" />
+        <argument
+            android:name="screen"
+            app:argType="string"
+            android:defaultValue="chat" />
+    </fragment>
+    <fragment
+        android:id="@+id/goalsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:label="Rotina">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Rotina" />
+        <argument
+            android:name="screen"
+            app:argType="string"
+            android:defaultValue="routine" />
+    </fragment>
+    <fragment
+        android:id="@+id/monthlyGoalsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:label="Metas">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Metas" />
+        <argument
+            android:name="screen"
+            app:argType="string"
+            android:defaultValue="goals" />
+    </fragment>
+    <fragment
+        android:id="@+id/rankingFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:label="Ranking">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Compare suas unidades" />
+        <argument
+            android:name="screen"
+            app:argType="string"
+            android:defaultValue="ranking" />
+    </fragment>
+    <fragment
+        android:id="@+id/leakDetectionFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.LeakDetectionFragment"
+        android:label="@string/leak_title">
+        <argument
+            android:name="propertyId"
+            app:argType="integer"
+            android:defaultValue="0" />
+        <argument android:name="eventId" app:argType="string" android:defaultValue="" />
+</fragment>
+        <fragment
+            android:id="@+id/leakHourlyFragment"
+            android:name="com.aula.delta_mobile_app.view.fragments.HourlyAnalysisFragment"
+            android:label="@string/leak_hourly_title">
+            <argument
+                android:name="propertyId"
+                app:argType="integer"
+                android:defaultValue="0" />
+            <argument
+                android:name="eventId"
+                app:argType="string"
+                android:defaultValue="" />
+            <argument android:name="analysis" app:argType="string" android:defaultValue="hourly" />
+</fragment>
+            <fragment
+                android:id="@+id/leakAbnormalFragment"
+                android:name="com.aula.delta_mobile_app.view.fragments.AbnormalConsumptionFragment"
+                android:label="@string/leak_abnormal_title">
+                <argument
+                    android:name="propertyId"
+                    app:argType="integer"
+                    android:defaultValue="0" />
+                <argument
+                    android:name="eventId"
+                    app:argType="string"
+                    android:defaultValue="" />
+                <argument android:name="analysis" app:argType="string" android:defaultValue="abnormal" />
+</fragment>
+            </navigation>

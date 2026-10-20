@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:clipToPadding="false"
+    android:scrollbars="none"
+    android:background="#222222">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="25dp"
+        android:paddingTop="32dp"
+        android:paddingBottom="128dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:gravity="center_vertical">
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:padding="8dp"
+                android:background="@drawable/home_circle"
+                android:src="@drawable/main_icon_home"
+                android:importantForAccessibility="no" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:orientation="vertical">
+                <TextView
+                    style="@style/Dash.Muted"
+                    android:text="@string/dash_residence" />
+                <TextView android:id="@+id/home_greeting" style="@style/Home.Body" android:textStyle="bold" android:text="@string/dash_property"/>
+</LinearLayout>
+                <ImageButton
+                    android:id="@+id/home_notifications"
+                    style="@style/Home.HeaderAction"
+                    android:src="@drawable/home_icon_bell"
+                    android:contentDescription="@string/home_notifications" />
+                <ImageButton android:id="@+id/home_settings" style="@style/Home.HeaderAction" android:src="@drawable/home_icon_settings" android:contentDescription="@string/home_settings"/>
+</LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="175dp"
+                    android:layout_marginTop="32dp"
+                    android:padding="17dp"
+                    android:orientation="vertical"
+                    android:background="@drawable/dash_hero">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical">
+                        <TextView
+                            style="@style/Home.Caption"
+                            android:layout_width="wrap_content"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"
+                            android:text="@string/dash_source"
+                            android:background="@drawable/dash_pill" />
+                        <TextView android:id="@+id/dash_updated" style="@style/Home.Caption" android:layout_width="0dp" android:layout_weight="1" android:layout_marginStart="8dp" android:gravity="end" android:textSize="9sp" android:text="@string/dash_refresh"/>
+</LinearLayout>
+                        <LinearLayout
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:padding="3dp"
+                            android:background="@drawable/dash_pill">
+                            <TextView
+                                android:id="@+id/dash_daily"
+                                style="@style/Dash.Tab"
+                                android:text="@string/dash_daily" />
+                            <TextView
+                                android:id="@+id/dash_weekly"
+                                style="@style/Dash.Tab"
+                                android:text="@string/dash_weekly" />
+                            <TextView android:id="@+id/dash_monthly" style="@style/Dash.Tab" android:text="@string/dash_monthly"/>
+</LinearLayout>
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="19dp"
+                                android:gravity="bottom">
+                                <TextView
+                                    android:id="@+id/home_today"
+                                    style="@style/Home.Body"
+                                    android:layout_width="wrap_content"
+                                    android:textSize="34sp"
+                                    android:textStyle="bold"
+                                    android:text="@string/home_pending_metric" />
+                                <TextView android:id="@+id/dash_period" style="@style/Home.Caption" android:layout_width="wrap_content" android:layout_marginStart="5dp" android:paddingBottom="4dp" android:text="@string/dash_today"/>
+</LinearLayout>
+                                <TextView android:id="@+id/dash_comparison" style="@style/Home.Caption" android:layout_marginTop="5dp" android:text="@string/dash_comparison_unknown"/>
+</LinearLayout>
+                                <com.aula.delta_mobile_app.view.StatusNoticeView
+                                    android:id="@+id/home_api_status"
+                                    style="@style/Home.Caption"
+                                    android:layout_marginTop="12dp"
+                                    android:visibility="gone"
+                                    android:accessibilityLiveRegion="polite" />
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="25dp"
+                                    android:baselineAligned="false">
+                                    <LinearLayout
+                                        android:id="@+id/dash_cost_card"
+                                        android:layout_width="0dp"
+                                        android:layout_weight="1"
+                                        android:layout_height="wrap_content"
+                                        android:minHeight="108dp"
+                                        android:padding="12dp"
+                                        android:orientation="vertical"
+                                        android:background="@drawable/dash_card"
+                                        android:clickable="true"
+                                        android:focusable="true"
+                                        android:foreground="?attr/selectableItemBackground">
+                                        <LinearLayout
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:gravity="center_vertical">
+                                            <ImageView
+                                                android:layout_width="15dp"
+                                                android:layout_height="15dp"
+                                                android:layout_marginEnd="5dp"
+                                                android:src="@drawable/home_icon_money"
+                                                android:importantForAccessibility="no" />
+                                            <TextView
+                                                style="@style/Dash.Muted"
+                                                android:text="@string/dash_cost" />
+                                        </LinearLayout>
+                                        <TextView
+                                            android:id="@+id/home_cost"
+                                            style="@style/Home.Body"
+                                            android:textSize="22sp"
+                                            android:textStyle="bold"
+                                            android:layout_marginTop="10dp"
+                                            android:text="@string/home_pending_metric" />
+                                        <TextView
+                                            style="@style/Dash.Muted"
+                                            android:layout_marginTop="12dp"
+                                            android:textSize="9sp"
+                                            android:text="@string/dash_billing_unknown" />
+                                        <ProgressBar android:id="@+id/dash_cost_card_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="5dp" android:layout_marginTop="5dp" android:progress="0" android:progressDrawable="@drawable/home_goal_progress" android:contentDescription="@string/dash_billing_unknown"/>
+</LinearLayout>
+                                        <Space
+                                            android:layout_width="13dp"
+                                            android:layout_height="1dp" />
+                                        <LinearLayout
+                                            android:id="@+id/home_goal"
+                                            android:layout_width="0dp"
+                                            android:layout_weight="1"
+                                            android:layout_height="wrap_content"
+                                            android:minHeight="108dp"
+                                            android:padding="12dp"
+                                            android:orientation="vertical"
+                                            android:background="@drawable/dash_card"
+                                            android:clickable="true"
+                                            android:focusable="true"
+                                            android:foreground="?attr/selectableItemBackground">
+                                            <LinearLayout
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content"
+                                                android:gravity="center_vertical">
+                                                <ImageView
+                                                    android:layout_width="15dp"
+                                                    android:layout_height="15dp"
+                                                    android:layout_marginEnd="5dp"
+                                                    android:src="@drawable/dash_icon_bars"
+                                                    android:importantForAccessibility="no" />
+                                                <TextView
+                                                    style="@style/Dash.Muted"
+                                                    android:text="@string/dash_goal" />
+                                            </LinearLayout>
+                                            <TextView
+                                                android:id="@+id/home_goal_percent"
+                                                style="@style/Home.Body"
+                                                android:textSize="22sp"
+                                                android:textStyle="bold"
+                                                android:layout_marginTop="10dp"
+                                                android:text="@string/home_pending_metric" />
+                                            <TextView
+                                                style="@style/Dash.Muted"
+                                                android:layout_marginTop="12dp"
+                                                android:textSize="9sp"
+                                                android:text="@string/dash_goal_unknown" />
+                                            <ProgressBar android:id="@+id/home_goal_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="5dp" android:layout_marginTop="5dp" android:progress="0" android:progressDrawable="@drawable/home_goal_progress" android:contentDescription="@string/dash_goal_unknown"/>
+</LinearLayout>
+                                        </LinearLayout>
+                                        <LinearLayout
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="25dp"
+                                            android:padding="14dp"
+                                            android:orientation="vertical"
+                                            android:background="@drawable/dash_card">
+                                            <TextView
+                                                style="@style/Home.Body"
+                                                android:textStyle="bold"
+                                                android:text="@string/dash_history" />
+                                            <TextView
+                                                style="@style/Dash.Muted"
+                                                android:text="@string/dash_history_subtitle"
+                                                android:layout_marginTop="3dp" />
+                                            <com.aula.delta_mobile_app.view.DashboardHistoryChart android:id="@+id/home_chart" android:layout_width="match_parent" android:layout_height="100dp" android:layout_marginTop="12dp"/>
+</LinearLayout>
+                                            <TextView
+                                                style="@style/Home.Body"
+                                                android:text="@string/dash_alerts"
+                                                android:textSize="24sp"
+                                                android:layout_marginTop="28dp"
+                                                android:layout_marginBottom="10dp" />
+                                            <LinearLayout
+                                                android:id="@+id/dash_leak_alert"
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content"
+                                                android:minHeight="60dp"
+                                                android:layout_marginBottom="12dp"
+                                                android:padding="10dp"
+                                                android:gravity="center_vertical"
+                                                android:background="@drawable/dash_card"
+                                                android:clickable="true"
+                                                android:focusable="true"
+                                                android:foreground="?attr/selectableItemBackground">
+                                                <ImageView
+                                                    android:layout_width="36dp"
+                                                    android:layout_height="36dp"
+                                                    android:padding="8dp"
+                                                    android:background="@drawable/home_circle"
+                                                    android:src="@drawable/dash_icon_warning"
+                                                    android:tint="#FF4C50"
+                                                    android:importantForAccessibility="no" />
+                                                <LinearLayout
+                                                    android:layout_width="0dp"
+                                                    android:layout_weight="1"
+                                                    android:layout_height="wrap_content"
+                                                    android:layout_marginStart="12dp"
+                                                    android:orientation="vertical">
+                                                    <TextView
+                                                        style="@style/Home.Body"
+                                                        android:text="@string/dash_leak"
+                                                        android:textSize="13sp" />
+                                                    <TextView
+                                                        android:id="@+id/dash_leak_alert_description"
+                                                        style="@style/Dash.Muted"
+                                                        android:text="@string/dash_telemetry_unknown"
+                                                        android:layout_marginTop="4dp" />
+                                                </LinearLayout>
+                                            </LinearLayout>
+                                            <LinearLayout
+                                                android:id="@+id/dash_abnormal_alert"
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content"
+                                                android:minHeight="60dp"
+                                                android:layout_marginBottom="12dp"
+                                                android:padding="10dp"
+                                                android:gravity="center_vertical"
+                                                android:background="@drawable/dash_card"
+                                                android:clickable="true"
+                                                android:focusable="true"
+                                                android:foreground="?attr/selectableItemBackground">
+                                                <ImageView
+                                                    android:layout_width="36dp"
+                                                    android:layout_height="36dp"
+                                                    android:padding="8dp"
+                                                    android:background="@drawable/home_circle"
+                                                    android:src="@drawable/home_icon_drop"
+                                                    android:tint="#E7CD47"
+                                                    android:importantForAccessibility="no" />
+                                                <LinearLayout
+                                                    android:layout_width="0dp"
+                                                    android:layout_weight="1"
+                                                    android:layout_height="wrap_content"
+                                                    android:layout_marginStart="12dp"
+                                                    android:orientation="vertical">
+                                                    <TextView
+                                                        style="@style/Home.Body"
+                                                        android:text="@string/dash_abnormal"
+                                                        android:textSize="13sp" />
+                                                    <TextView
+                                                        android:id="@+id/dash_abnormal_alert_description"
+                                                        style="@style/Dash.Muted"
+                                                        android:text="@string/dash_telemetry_unknown"
+                                                        android:layout_marginTop="4dp" />
+                                                </LinearLayout>
+                                            </LinearLayout>
+                                            <LinearLayout
+                                                android:id="@+id/dash_pressure_alert"
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content"
+                                                android:minHeight="60dp"
+                                                android:layout_marginBottom="12dp"
+                                                android:padding="10dp"
+                                                android:gravity="center_vertical"
+                                                android:background="@drawable/dash_card"
+                                                android:clickable="true"
+                                                android:focusable="true"
+                                                android:foreground="?attr/selectableItemBackground">
+                                                <ImageView
+                                                    android:layout_width="36dp"
+                                                    android:layout_height="36dp"
+                                                    android:padding="8dp"
+                                                    android:background="@drawable/home_circle"
+                                                    android:src="@drawable/dash_icon_pressure"
+                                                    android:tint="#4CE8EE"
+                                                    android:importantForAccessibility="no" />
+                                                <LinearLayout
+                                                    android:layout_width="0dp"
+                                                    android:layout_weight="1"
+                                                    android:layout_height="wrap_content"
+                                                    android:layout_marginStart="12dp"
+                                                    android:orientation="vertical">
+                                                    <TextView
+                                                        style="@style/Home.Body"
+                                                        android:text="@string/dash_pressure"
+                                                        android:textSize="13sp" />
+                                                    <TextView
+                                                        android:id="@+id/dash_pressure_alert_description"
+                                                        style="@style/Dash.Muted"
+                                                        android:text="@string/dash_pressure_unknown"
+                                                        android:layout_marginTop="4dp" />
+                                                </LinearLayout>
+                                            </LinearLayout>
+                                            <LinearLayout
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content"
+                                                android:layout_marginTop="3dp"
+                                                android:padding="12dp"
+                                                android:orientation="vertical"
+                                                android:background="@drawable/dash_diagnostic">
+                                                <LinearLayout
+                                                    android:layout_width="match_parent"
+                                                    android:layout_height="wrap_content"
+                                                    android:gravity="center_vertical">
+                                                    <ImageView
+                                                        android:layout_width="34dp"
+                                                        android:layout_height="34dp"
+                                                        android:padding="8dp"
+                                                        android:src="@drawable/home_icon_drop"
+                                                        android:tint="#FF4C50"
+                                                        android:importantForAccessibility="no" />
+                                                    <LinearLayout
+                                                        android:layout_width="0dp"
+                                                        android:layout_weight="1"
+                                                        android:layout_height="wrap_content"
+                                                        android:layout_marginStart="12dp"
+                                                        android:orientation="vertical">
+                                                        <TextView
+                                                            style="@style/Home.Body"
+                                                            android:text="@string/dash_leaks" />
+                                                        <TextView
+                                                            android:id="@+id/dash_leak_summary"
+                                                            style="@style/Dash.Muted"
+                                                            android:layout_marginTop="4dp"
+                                                            android:text="@string/dash_leaks_unknown" />
+                                                    </LinearLayout>
+                                                </LinearLayout>
+                                                <LinearLayout
+                                                    android:layout_width="match_parent"
+                                                    android:layout_height="wrap_content"
+                                                    android:layout_marginTop="16dp"
+                                                    android:baselineAligned="false">
+                                                    <LinearLayout
+                                                        android:layout_width="0dp"
+                                                        android:layout_weight="1"
+                                                        android:layout_height="wrap_content"
+                                                        android:minHeight="46dp"
+                                                        android:padding="7dp"
+                                                        android:gravity="center"
+                                                        android:orientation="vertical"
+                                                        android:background="@drawable/dash_stat">
+                                                        <TextView
+                                                            android:id="@+id/dash_leak_volume"
+                                                            style="@style/Home.Body"
+                                                            android:gravity="center"
+                                                            android:text="@string/home_pending_metric"
+                                                            android:textSize="16sp" />
+                                                        <TextView
+                                                            style="@style/Dash.Muted"
+                                                            android:gravity="center"
+                                                            android:text="@string/dash_liters_day"
+                                                            android:textSize="9sp" />
+                                                    </LinearLayout>
+                                                    <Space
+                                                        android:layout_width="12dp"
+                                                        android:layout_height="1dp" />
+                                                    <LinearLayout
+                                                        android:layout_width="0dp"
+                                                        android:layout_weight="1"
+                                                        android:layout_height="wrap_content"
+                                                        android:minHeight="46dp"
+                                                        android:padding="7dp"
+                                                        android:gravity="center"
+                                                        android:orientation="vertical"
+                                                        android:background="@drawable/dash_stat">
+                                                        <TextView
+                                                            android:id="@+id/dash_leak_cost"
+                                                            style="@style/Home.Body"
+                                                            android:gravity="center"
+                                                            android:text="@string/home_pending_metric"
+                                                            android:textSize="16sp" />
+                                                        <TextView
+                                                            style="@style/Dash.Muted"
+                                                            android:gravity="center"
+                                                            android:text="@string/dash_cost_month"
+                                                            android:textSize="9sp" />
+                                                    </LinearLayout>
+                                                    <Space
+                                                        android:layout_width="12dp"
+                                                        android:layout_height="1dp" />
+                                                    <LinearLayout
+                                                        android:layout_width="0dp"
+                                                        android:layout_weight="1"
+                                                        android:layout_height="wrap_content"
+                                                        android:minHeight="46dp"
+                                                        android:padding="7dp"
+                                                        android:gravity="center"
+                                                        android:orientation="vertical"
+                                                        android:background="@drawable/dash_stat">
+                                                        <TextView
+                                                            android:id="@+id/dash_leak_count"
+                                                            style="@style/Home.Body"
+                                                            android:gravity="center"
+                                                            android:text="@string/home_pending_metric"
+                                                            android:textSize="16sp" />
+                                                        <TextView
+                                                            style="@style/Dash.Muted"
+                                                            android:gravity="center"
+                                                            android:text="@string/dash_points"
+                                                            android:textSize="9sp" />
+                                                    </LinearLayout>
+                                                </LinearLayout>
+                                                <TextView
+                                                    android:id="@+id/dash_diagnosis"
+                                                    style="@style/Home.Body"
+                                                    android:layout_marginTop="14dp"
+                                                    android:minHeight="48dp"
+                                                    android:gravity="center"
+                                                    android:background="@drawable/dash_button"
+                                                    android:text="@string/dash_diagnosis"
+                                                    android:clickable="true"
+                                                    android:focusable="true"
+                                                    android:foreground="?attr/selectableItemBackground" />
+                                            </LinearLayout>
+                                        </LinearLayout>
+                                    </ScrollView>

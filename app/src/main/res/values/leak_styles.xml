@@ -1,0 +1,39 @@
+<resources>
+    <style
+        name="Leak.Title"
+        parent="Home.Body">
+        <item name="android:textSize">24sp</item>
+    </style>
+    <style
+        name="Leak.Subtitle"
+        parent="Home.Body">
+        <item name="android:textColor">#BBBBBB</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+    <style
+        name="Leak.Section"
+        parent="Home.Body">
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style
+        name="Leak.Pill"
+        parent="Home.Body">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">22dp</item>
+        <item name="android:paddingHorizontal">16dp</item>
+        <item name="android:paddingVertical">3dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/leak_pill_background</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+    <style
+        name="Leak.ActionLabel"
+        parent="Home.Body">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginEnd">8dp</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+</resources>

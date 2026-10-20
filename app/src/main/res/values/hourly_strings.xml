@@ -1,0 +1,28 @@
+<resources>
+    <string name="hourly_title">Análise por horário</string>
+    <string name="hourly_subtitle">Distribuição de consumo ao longo do dia</string>
+    <string name="hourly_heatmap">Heatmap diário</string>
+    <string name="hourly_interval">4h em 4h</string>
+    <string name="hourly_today">Hoje</string>
+    <string name="hourly_yesterday">Ontem</string>
+    <string name="hourly_legend">Mais escuro = maior consumo</string>
+    <string name="hourly_peaks">Picos identificados</string>
+    <string name="hourly_simultaneous">Uso simultâneo</string>
+    <string name="hourly_recorded_peak">Vazão registrada(pico)</string>
+    <string name="hourly_comparison">Média anormal: %1$s L/min · %2$s</string>
+    <string name="hourly_estimates">Estimativa por equipamento</string>
+    <string name="hourly_shower">Chuveiro</string>
+    <string name="hourly_kitchen">Torneira cozinha</string>
+    <string name="hourly_washer">Máquina de lavar</string>
+    <string name="hourly_total">Total estimado:</string>
+    <string name="hourly_missing">Indisponível</string>
+    <string name="hourly_no_peak_data">Dados de picos indisponíveis</string>
+    <string name="hourly_no_peaks">Nenhum pico identificado neste período</string>
+    <string name="hourly_missing_explanation">As medições por horário ainda não estão disponíveis. Os campos serão preenchidos quando houver dados do seu imóvel.</string>
+    <string name="hourly_cell">%1$s, faixa %2$d: %3$s</string>
+    <string name="hourly_future">Período futuro</string>
+    <string name="hourly_peak_high">Pico alto</string>
+    <string name="hourly_peak_highest">Pico mais alto</string>
+    <string name="hourly_flow">%1$s L/min</string>
+    <string name="hourly_liters">%1$s L</string>
+</resources>

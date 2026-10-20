@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@drawable/leak_surface">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="26dp"
+        android:paddingTop="36dp"
+        android:paddingBottom="136dp">
+        <TextView
+            android:id="@+id/leak_analysis_title"
+            style="@style/Leak.Title" />
+        <TextView
+            android:id="@+id/leak_analysis_subtitle"
+            style="@style/Leak.Subtitle"
+            android:layout_marginTop="6dp" />
+        <com.aula.delta_mobile_app.view.StatusNoticeView
+            android:id="@+id/leak_analysis_notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:visibility="gone" />
+        <Button
+            android:id="@+id/leak_analysis_retry"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="@string/leak_retry"
+            android:visibility="gone" />
+        <LinearLayout
+            android:id="@+id/leak_analysis_cards"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="24dp" />
+        <com.aula.delta_mobile_app.view.LeakFlowChart
+            android:id="@+id/leak_analysis_chart"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="24dp" />
+        <Button android:id="@+id/leak_analysis_back" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="24dp" android:text="@string/leak_back" android:textColor="#FFFFFF" android:background="@drawable/leak_detail_background" />
+</LinearLayout>
+    </ScrollView>

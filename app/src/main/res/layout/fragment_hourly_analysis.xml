@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="none"
+    android:background="@drawable/leak_surface">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="22dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="136dp">
+        <ImageButton
+            android:id="@+id/hourly_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/hourly_icon_back"
+            android:contentDescription="@string/leak_back" />
+        <TextView
+            style="@style/Leak.Title"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="6dp"
+            android:text="@string/hourly_title" />
+        <TextView
+            style="@style/Leak.Subtitle"
+            android:layout_marginTop="6dp"
+            android:layout_marginStart="6dp"
+            android:text="@string/hourly_subtitle" />
+        <com.aula.delta_mobile_app.view.StatusNoticeView
+            android:id="@+id/hourly_notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+        <Button
+            android:id="@+id/hourly_retry"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="@string/leak_retry"
+            android:visibility="gone" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:paddingHorizontal="11dp"
+            android:paddingVertical="14dp"
+            android:background="@drawable/leak_blue_card"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical">
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/hourly_icon_clock"
+                    android:layout_marginEnd="8dp"
+                    android:importantForAccessibility="no" />
+                <TextView
+                    style="@style/Leak.Section"
+                    android:layout_width="wrap_content"
+                    android:text="@string/hourly_heatmap"
+                    android:textSize="18sp" />
+                <TextView style="@style/Home.Caption" android:layout_width="wrap_content" android:layout_marginStart="10dp" android:paddingHorizontal="9dp" android:paddingVertical="3dp" android:background="@drawable/hourly_dark_pill" android:text="@string/hourly_interval" android:textSize="12sp"/>
+</LinearLayout>
+                <TextView
+                    style="@style/Home.Body"
+                    android:text="@string/hourly_today"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="4dp" />
+                <LinearLayout
+                    android:id="@+id/hourly_today_cells"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+                <LinearLayout
+                    android:id="@+id/hourly_labels"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="6dp" />
+                <LinearLayout
+                    android:id="@+id/hourly_yesterday_cells"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+                <TextView style="@style/Home.Body" android:text="@string/hourly_yesterday" android:layout_marginTop="6dp"/>
+</LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center_vertical">
+                    <ImageView
+                        android:layout_width="13dp"
+                        android:layout_height="13dp"
+                        android:layout_marginEnd="5dp"
+                        android:src="@drawable/status_notice_icon"
+                        android:importantForAccessibility="no" />
+                    <TextView style="@style/Leak.Subtitle" android:layout_width="wrap_content" android:text="@string/hourly_legend"/>
+</LinearLayout>
+                    <TextView
+                        style="@style/Leak.Title"
+                        android:text="@string/hourly_peaks"
+                        android:layout_marginTop="18dp" />
+                    <LinearLayout
+                        android:id="@+id/hourly_peak_cards"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="16dp" />
+                    <TextView
+                        style="@style/Leak.Title"
+                        android:text="@string/hourly_simultaneous"
+                        android:layout_marginTop="28dp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="72dp"
+                        android:background="@drawable/hourly_simultaneous_card"
+                        android:layout_marginTop="14dp"
+                        android:padding="10dp"
+                        android:gravity="center_vertical">
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+                            <TextView
+                                style="@style/Home.Body"
+                                android:text="@string/hourly_recorded_peak"
+                                android:textSize="18sp"
+                                android:fontFamily="sans-serif-medium" />
+                            <TextView android:id="@+id/hourly_comparison" style="@style/Leak.Subtitle" android:layout_marginTop="5dp" android:textSize="15sp"/>
+</LinearLayout>
+                            <TextView android:id="@+id/hourly_measured_peak" style="@style/Home.Metric" android:layout_marginStart="8dp" android:text="— L/min" android:textSize="22sp"/>
+</LinearLayout>
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/leak_blue_card"
+                                android:layout_marginTop="34dp"
+                                android:paddingHorizontal="12dp"
+                                android:paddingTop="12dp"
+                                android:paddingBottom="10dp"
+                                android:orientation="vertical">
+                                <TextView
+                                    style="@style/Leak.Section"
+                                    android:text="@string/hourly_estimates"
+                                    android:layout_marginBottom="8dp" />
+                                <LinearLayout
+                                    android:id="@+id/hourly_equipment_rows"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical" />
+                                <View
+                                    android:layout_width="match_parent"
+                                    android:layout_height="1dp"
+                                    android:background="#80FFFFFF" />
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:minHeight="40dp"
+                                    android:gravity="center_vertical">
+                                    <TextView
+                                        style="@style/Leak.Subtitle"
+                                        android:layout_width="0dp"
+                                        android:layout_weight="1"
+                                        android:text="@string/hourly_total"
+                                        android:textSize="16sp"
+                                        android:textColor="#BFD1F3" />
+                                    <TextView android:id="@+id/hourly_total" style="@style/Home.Body" android:layout_width="wrap_content" android:text="— L/min" android:textSize="16sp" android:textStyle="bold"/>
+</LinearLayout>
+                                </LinearLayout>
+                            </LinearLayout>
+                        </ScrollView>
