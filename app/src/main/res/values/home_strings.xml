@@ -1,0 +1,46 @@
+<resources>
+    <string name="home_greeting_default">Olá!</string>
+    <string name="home_greeting">Olá, %1$s!</string>
+    <string name="home_welcome">seja bem-vindo(a).</string>
+    <string name="home_headline">
+        Controle cada
+        <font color="#3978ED">gota</font>
+         da sua casa!
+    </string>
+    <string name="home_notifications">Notificações</string>
+    <string name="home_settings">Configurações da conta</string>
+    <string name="home_property">Imóvel selecionado</string>
+    <string name="home_general">Informações gerais</string>
+    <string name="home_pending_metric">—</string>
+    <string name="home_today_label">Consumo hoje</string>
+    <string name="home_month_label">Consumo este mês</string>
+    <string name="home_cost_label">Custo previsto</string>
+    <string name="home_efficiency">Indicador EH e metas</string>
+    <string name="home_efficiency_pending">Indicador de eficiência ainda indisponível</string>
+    <string name="home_no_data">Sem dados</string>
+    <string name="home_monthly_goal">Meta mensal</string>
+    <string name="home_view_more">Ver mais</string>
+    <string name="home_goal_action">Ver meta mensal</string>
+    <string name="home_suggestion">Sugestão de meta</string>
+    <string name="home_stay_on_target">Para ficar dentro da meta</string>
+    <string name="home_daily_limit">Limite diário recomendado</string>
+    <string name="home_reduction">Redução necessária</string>
+    <string name="home_savings">Equivale a economizar</string>
+    <string name="home_goal_pending">As recomendações aparecerão quando houver uma meta definida.</string>
+    <string name="home_history">Consumo nos últimos registros</string>
+    <string name="home_chart_empty">Sem leituras disponíveis</string>
+    <string name="home_temperature_pending">A relação entre temperatura e litros ainda não está disponível.</string>
+    <string name="home_no_properties">Nenhum imóvel associado à conta.</string>
+    <string name="home_readings_empty">Ainda não há leituras para este imóvel.</string>
+    <string name="home_refresh">Toque para tentar novamente.</string>
+    <string name="home_notifications_empty">As notificações ainda não estão disponíveis.</string>
+    <string name="home_account_title">Sua conta</string>
+    <string name="home_liters">%1$s L</string>
+    <string name="home_temperature_title">Relação temperatura x litros</string>
+    <string name="home_eh_scale">/100</string>
+    <string name="home_eh_accessibility">Indicador EH indisponível: é necessário receber a pontuação de 0 a 100 e a classificação.</string>
+    <string name="home_temperature_empty">Sem dados de temperatura associados ao consumo.</string>
+    <string name="home_goal_unavailable">Os dados da meta mensal ainda não foram disponibilizados.</string>
+    <string name="home_suggestion_unavailable">A sugestão de meta ainda não foi disponibilizada.</string>
+    <string name="home_select_property">Selecionar imóvel</string>
+</resources>

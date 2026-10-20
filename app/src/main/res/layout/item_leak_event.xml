@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="188dp"
+    android:layout_height="wrap_content"
+    android:minHeight="116dp"
+    android:background="@drawable/leak_blue_card"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+    <TextView
+        style="@style/Leak.Subtitle"
+        android:text="@string/leak_current_flow"
+        android:textColor="#DDE7FF" />
+    <TextView
+        android:id="@+id/leak_flow"
+        style="@style/Home.Body"
+        android:layout_marginTop="3dp"
+        android:textSize="24sp"
+        android:fontFamily="sans-serif-medium"
+        android:textStyle="bold"
+        android:text="— L / min"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="16sp"
+        android:autoSizeMaxTextSize="24sp"
+        android:maxLines="1" />
+    <TextView
+        android:id="@+id/leak_normal"
+        style="@style/Leak.Subtitle"
+        android:layout_marginTop="2dp"
+        android:textColor="#DDE7FF" />
+    <TextView android:id="@+id/leak_event_status" style="@style/Leak.Pill" android:layout_marginTop="8dp" android:text="@string/leak_unavailable" android:textColor="#4A617D" />
+</LinearLayout>

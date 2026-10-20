@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style
+        name="Animation.Delta.Loading"
+        parent="">
+        <item name="android:windowEnterAnimation">@anim/fragment_enter_left</item>
+        <item name="android:windowExitAnimation">@anim/fragment_exit_left</item>
+    </style>
+</resources>

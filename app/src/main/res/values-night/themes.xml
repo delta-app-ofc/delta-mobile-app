@@ -1,6 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Deltamobileapp" parent="Theme.Material3.DayNight.NoActionBar">
+
+    <style
+        name="Base.Theme.Deltamobileapp"
+        parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/splash_background</item>
         <item name="android:statusBarColor">@color/splash_background</item>
         <item name="android:navigationBarColor">@color/splash_background</item>
@@ -9,10 +11,12 @@
         <item name="android:enforceStatusBarContrast">false</item>
         <item name="android:enforceNavigationBarContrast">false</item>
     </style>
-
-    <style name="Theme.Deltamobileapp" parent="Base.Theme.Deltamobileapp" />
-
-    <style name="Theme.Deltamobileapp.Starting" parent="Theme.SplashScreen">
+    <style
+        name="Theme.Deltamobileapp"
+        parent="Base.Theme.Deltamobileapp" />
+    <style
+        name="Theme.Deltamobileapp.Starting"
+        parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_system_icon</item>
         <item name="windowSplashScreenAnimationDuration">0</item>
