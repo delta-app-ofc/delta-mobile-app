@@ -1,0 +1,20 @@
+<resources>
+    <style
+        name="Dash.Muted"
+        parent="Home.Caption">
+        <item name="android:textColor">#B5B5BD</item>
+    </style>
+    <style
+        name="Dash.Tab"
+        parent="Home.Body">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:background">@drawable/dash_tab</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+</resources>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/auth_navigation"
+    app:startDestination="@id/loginFragment">
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.HomeFragment"
+        android:label="Delta"
+        tools:layout="@layout/fragment_home" />
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.login.LoginFragment"
+        android:label="fragment_login"
+        tools:layout="@layout/fragment_login" />
+    <fragment
+        android:id="@+id/welcomeFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.WelcomeFragment"
+        android:label="welcome"
+        tools:layout="@layout/fragment_welcome" />
+    <fragment
+        android:id="@+id/signupProfileFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.SignupProfileFragment"
+        android:label="signupProfile"
+        tools:layout="@layout/fragment_signup_profile" />
+    <fragment
+        android:id="@+id/signupAccountFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.SignupAccountFragment"
+        android:label="signupAccount"
+        tools:layout="@layout/fragment_signup_account" />
+    <fragment
+        android:id="@+id/signupHabitsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.SignupHabitsFragment"
+        android:label="signupHabits"
+        tools:layout="@layout/fragment_signup_habits" />
+    <fragment
+        android:id="@+id/signupPropertyFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.SignupPropertyFragment"
+        android:label="signupProperty"
+        tools:layout="@layout/fragment_signup_property" />
+    <fragment
+        android:id="@+id/signupAddressFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.SignupAddressFragment"
+        android:label="signupAddress"
+        tools:layout="@layout/fragment_signup_address" />
+    <fragment
+        android:id="@+id/qrScanFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.QrScanFragment"
+        android:label="qr_scan"
+        tools:layout="@layout/fragment_qr_scan" />
+    <fragment
+        android:id="@+id/qrSuccessFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.QrSuccessFragment"
+        android:label="qr_success"
+        tools:layout="@layout/fragment_qr_success" />
+    <fragment android:id="@+id/accountConfigFragment" android:name="com.aula.delta_mobile_app.view.fragments.AccountSettingsFragment" android:label="account_config" tools:layout="@layout/fragment_account_settings" />
+</navigation>

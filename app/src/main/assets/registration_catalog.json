@@ -1,0 +1,27 @@
+{
+  "habits": [
+    {"id":1,"key":"shower","label":"Banho longo"},
+    {"id":2,"key":"yard","label":"Lavar quintal"},
+    {"id":3,"key":"clothes","label":"Lavar roupa"},
+    {"id":4,"key":"plants","label":"Regar plantas"},
+    {"id":5,"key":"car","label":"Lavar carro"},
+    {"id":6,"key":"dishes","label":"Lavar louça"}
+  ],
+  "days": [
+    {"id":1,"key":"SEGUNDA","label":"Segunda-feira"},
+    {"id":2,"key":"TERÇA","label":"Terça-feira"},
+    {"id":3,"key":"QUARTA","label":"Quarta-feira"},
+    {"id":4,"key":"QUINTA","label":"Quinta-feira"},
+    {"id":5,"key":"SEXTA","label":"Sexta-feira"},
+    {"id":6,"key":"SÁBADO","label":"Sábado"},
+    {"id":7,"key":"DOMINGO","label":"Domingo"}
+  ],
+  "regions": [
+    {"regionId":1,"state":"SP","city":"São Paulo"},
+    {"regionId":2,"state":"SP","city":"Lins"},
+    {"regionId":3,"state":"SP","city":"Presidente Prudente"},
+    {"regionId":4,"state":"SP","city":"Adamantina"},
+    {"regionId":4,"state":"SP","city":"Pirapozinho"},
+    {"regionId":5,"state":"SP","city":"Bragança Paulista"}
+  ]
+}

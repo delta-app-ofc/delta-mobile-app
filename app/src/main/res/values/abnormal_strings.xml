@@ -1,0 +1,32 @@
+<resources>
+    <string name="abnormal_title">Consumo anormal</string>
+    <string name="abnormal_subtitle">Análise do comportamento de consumo</string>
+    <string name="abnormal_unavailable">Diagnóstico indisponível</string>
+    <string name="abnormal_pending">Aguardando dados de análise</string>
+    <string name="abnormal_average">Média histórica</string>
+    <string name="abnormal_detected">Consumo detectado</string>
+    <string name="abnormal_variation">Variação</string>
+    <string name="abnormal_cause">Causa identificada</string>
+    <string name="abnormal_history">Linha dos últimos 7 dias</string>
+    <string name="abnormal_comparison">Comparação de Períodos</string>
+    <string name="abnormal_comparison_subtitle">Análise de variações no consumo</string>
+    <string name="abnormal_week">Semanal</string>
+    <string name="abnormal_month">Mensal</string>
+    <string name="abnormal_year">Anual</string>
+    <string name="abnormal_week_title">Consumo semanal</string>
+    <string name="abnormal_month_title">Consumo mensal</string>
+    <string name="abnormal_year_title">Consumo anual</string>
+    <string name="abnormal_week_badge">Por semana</string>
+    <string name="abnormal_month_badge">Por mês</string>
+    <string name="abnormal_year_badge">Por ano</string>
+    <string name="abnormal_previous">Anterior: %1$s L</string>
+    <string name="abnormal_current">Atual: %1$s L (%2$s)</string>
+    <string name="abnormal_aligned">Volumes registrados em janelas de mesma duração, até %1$s.</string>
+    <string name="abnormal_days">Dias com maior consumo</string>
+    <string name="abnormal_weekday">Dia da semana</string>
+    <string name="abnormal_temperature">Dias &gt;30°C</string>
+    <string name="abnormal_missing_message">O diagnóstico de anomalia e as análises de causa e temperatura ainda não estão disponíveis. Os históricos abaixo usam os registros de consumo do seu imóvel.</string>
+    <string name="abnormal_graph_unavailable">Histórico indisponível</string>
+    <string name="abnormal_day_value">%1$s: %2$s L</string>
+    <string name="abnormal_period_value">%1$s a %2$s: %3$s L</string>
+</resources>

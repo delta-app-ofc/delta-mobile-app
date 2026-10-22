@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/auth_blue"
+    android:paddingStart="@dimen/auth_margin"
+    android:paddingEnd="@dimen/auth_margin"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp"
+    android:fillViewport="true"
+    android:clipToPadding="true"
+    android:scrollbars="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <include layout="@layout/auth_step_header" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/routine_shower"
+                android:layout_width="0dp"
+                android:layout_height="86dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/auth_card_background"
+                android:gravity="center"
+                android:padding="16dp"
+                android:drawableTop="@drawable/auth_icon_shower"
+                android:drawablePadding="8dp"
+                android:text="@string/auth_long_shower"
+                android:textColor="@color/auth_white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+            <TextView android:id="@+id/routine_yard" android:layout_width="0dp" android:layout_height="86dp" android:layout_weight="1" android:layout_marginStart="6dp" android:background="@drawable/auth_card_background" android:gravity="center" android:padding="16dp" android:drawableTop="@drawable/auth_icon_yard" android:drawablePadding="8dp" android:text="@string/auth_wash_yard" android:textColor="@color/auth_white" android:textSize="16sp" android:textStyle="bold" />
+    </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/routine_clothes"
+                    android:layout_width="0dp"
+                    android:layout_height="86dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/auth_card_background"
+                    android:gravity="center"
+                    android:padding="16dp"
+                    android:drawableTop="@drawable/auth_icon_clothes"
+                    android:drawablePadding="8dp"
+                    android:text="@string/auth_wash_clothes"
+                    android:textColor="@color/auth_white"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+                <TextView android:id="@+id/routine_plants" android:layout_width="0dp" android:layout_height="86dp" android:layout_weight="1" android:layout_marginStart="6dp" android:background="@drawable/auth_card_background" android:gravity="center" android:padding="16dp" android:drawableTop="@drawable/auth_icon_plants" android:drawablePadding="8dp" android:text="@string/auth_water_plants" android:textColor="@color/auth_white" android:textSize="16sp" android:textStyle="bold" />
+    </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:id="@+id/routine_car"
+                        android:layout_width="0dp"
+                        android:layout_height="86dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/auth_card_background"
+                        android:gravity="center"
+                        android:padding="16dp"
+                        android:drawableTop="@drawable/auth_icon_car"
+                        android:drawablePadding="8dp"
+                        android:text="@string/auth_wash_car"
+                        android:textColor="@color/auth_white"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                    <TextView android:id="@+id/routine_dishes" android:layout_width="0dp" android:layout_height="86dp" android:layout_weight="1" android:layout_marginStart="6dp" android:background="@drawable/auth_card_background" android:gravity="center" android:padding="16dp" android:drawableTop="@drawable/auth_icon_dishes" android:drawablePadding="8dp" android:text="@string/auth_wash_dishes" android:textColor="@color/auth_white" android:textSize="16sp" android:textStyle="bold" />
+    </LinearLayout>
+                    <Space
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+                    <TextView android:id="@+id/step_continue" android:layout_width="match_parent" android:layout_height="@dimen/auth_button_height" android:layout_marginHorizontal="12dp" android:background="@drawable/auth_button_white" android:gravity="center" android:text="@string/auth_continue" android:textColor="@color/auth_blue" android:textSize="20sp" android:textStyle="bold" android:layout_marginTop="24dp" />
+  </LinearLayout>
+                </ScrollView>

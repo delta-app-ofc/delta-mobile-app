@@ -24,4 +24,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "delta-mobile-app"
 include(":app")
- 

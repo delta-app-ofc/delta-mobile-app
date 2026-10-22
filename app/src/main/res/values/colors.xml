@@ -2,4 +2,16 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="splash_background">#212121</color>
+    <color name="delta_water">#306BE5</color>
+    <color name="auth_blue">#3069E7</color>
+    <color name="auth_dark">#242424</color>
+    <color name="auth_navy">#1A2358</color>
+    <color name="auth_field">#668FE7</color>
+    <color name="auth_card">#467BEA</color>
+    <color name="auth_white">#FFFFFF</color>
+    <color name="auth_muted">#B5CAF6</color>
+    <color name="auth_button_disabled">#7899DB</color>
+    <color name="auth_error">#FFE0E0</color>
+    <color name="auth_success">#6FB978</color>
 </resources>

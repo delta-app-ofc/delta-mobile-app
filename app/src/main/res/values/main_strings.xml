@@ -1,0 +1,8 @@
+<resources>
+    <string name="main_consumption">Consumo</string>
+    <string name="main_costs">Custos</string>
+    <string name="main_home">Início</string>
+    <string name="main_tips">Gluh Helper</string>
+    <string name="main_goals">Rotina</string>
+    <string name="main_section_pending">Esta seção será implementada em breve.</string>
+</resources>
