@@ -1,6 +1,6 @@
 # TO-DO — Consumo anormal registrado
 
-Referência: [consumo-anormal.png](docs/references/consumo-anormal.png).
+Referência: [consumo-anormal.png](../../docs/references/consumo-anormal.png).
 
 Escopo: criar a interface da imagem no botão “Ver consumo anormal registrado”, da tela Detecção de vazamentos. A interface dedicada e os históricos disponíveis foram implementados; os itens sem marcação dependem de contrato, regras de negócio ou validação no aparelho. Os números e conclusões da imagem não são dados reais da conta.
 
