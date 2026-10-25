@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="chat_background">#1B1D1E</color>
+    <color name="chat_placeholder_text">#C1C4CC</color>
+
+    <style name="Chat.Heading" parent="Home.Body">
+        <item name="android:textSize">@dimen/chat_heading_size</item>
+        <item name="android:lineSpacingExtra">@dimen/chat_heading_line_spacing</item>
+        <item name="android:accessibilityHeading">true</item>
+    </style>
+
+    <style name="Chat.ComposerPlaceholder" parent="Home.Body">
+        <item name="android:minHeight">@dimen/chat_composer_min_height</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">@dimen/chat_composer_horizontal_padding</item>
+        <item name="android:paddingEnd">@dimen/chat_composer_horizontal_padding</item>
+        <item name="android:paddingTop">@dimen/chat_composer_vertical_padding</item>
+        <item name="android:paddingBottom">@dimen/chat_composer_vertical_padding</item>
+        <item name="android:background">@drawable/home_outline_background</item>
+        <item name="android:textColor">@color/chat_placeholder_text</item>
+        <item name="android:enabled">false</item>
+    </style>
+</resources>

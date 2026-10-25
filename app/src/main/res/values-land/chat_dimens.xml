@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="chat_top_spacing">24dp</dimen>
+    <dimen name="chat_section_spacing">12dp</dimen>
+    <dimen name="chat_surface_glow_radius">240dp</dimen>
+</resources>

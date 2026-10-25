@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/chat_heading"
+        style="@style/Chat.Heading"
+        android:text="@string/chat_landing_heading" />
+
+    <FrameLayout
+        android:id="@+id/chat_composer_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/chat_section_spacing">
+
+        <TextView
+            android:id="@+id/chat_composer_placeholder"
+            style="@style/Chat.ComposerPlaceholder"
+            android:text="@string/chat_composer_hint" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/chat_suggestions_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/chat_history_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+</LinearLayout>
