@@ -5,6 +5,7 @@ import com.aula.delta_mobile_app.model.ChatModels.*;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.services.api.ChatbotApiService;
 import com.aula.delta_mobile_app.services.network.GsonProvider;
+import com.google.gson.JsonSyntaxException;
 
 import org.junit.Test;
 
@@ -296,5 +297,138 @@ public class ChatRepositoryTest {
         assertEquals(2, api.histories.size());
         assertEquals(1, api.histories.get(1).enqueues);
         assertFalse(api.histories.get(0).isCanceled());
+    }
+
+    @Test
+    public void firstSendUsesBoundAccountAndPreservesReturnedSessionAndResponse() {
+        Result<ChatResponse> result = new Result<>();
+        String message = "  Como economizar água?\n💧  ";
+        repository.send(message, null, result);
+
+        assertEquals(42, api.payloads.get(0).userId);
+        assertEquals(message, api.payloads.get(0).message);
+        assertNull(api.payloads.get(0).sessionId);
+        assertTrue(result.values.isEmpty());
+        api.sends.get(0).respond(json("{\"response\":\"Confira suas torneiras.\",\"agent_used\":\"habits, rag\",\"session_id\":\"new-session\",\"chart_data\":null}", ChatResponse.class));
+
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertEquals("new-session", result.only().data.sessionId);
+        assertEquals("habits, rag", result.only().data.agentUsed);
+        assertEquals("Confira suas torneiras.", result.only().data.response);
+    }
+
+    @Test
+    public void continuingSendKeepsRequestedSessionAndAcceptsChartObject() {
+        Result<ChatResponse> result = new Result<>();
+        repository.send("Continue", "opaque-session", result);
+        api.sends.get(0).respond(json("{\"response\":\"Resposta\",\"agent_used\":\"future_agent\",\"session_id\":\"opaque-session\",\"chart_data\":{\"data\":[]}}", ChatResponse.class));
+
+        assertEquals("opaque-session", api.payloads.get(0).sessionId);
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertTrue(result.only().data.chartData.isJsonObject());
+    }
+
+    @Test
+    public void incompleteSendResponseOrWrongSessionNeverBecomesSuccess() {
+        for (String body : new String[] {"null", "{}", "{\"response\":\"Resposta\",\"session_id\":\"opaque-session\"}",
+                "{\"response\":\" \",\"agent_used\":\"rag\",\"session_id\":\"opaque-session\"}",
+                "{\"response\":\"Resposta\",\"agent_used\":\"rag\",\"session_id\":\"\"}",
+                "{\"response\":\"Resposta\",\"agent_used\":\"rag\",\"session_id\":\"different-session\"}",
+                "{\"response\":\"Resposta\",\"agent_used\":\"rag\",\"session_id\":\"opaque-session\",\"chart_data\":[]}"}) {
+            Result<ChatResponse> result = new Result<>();
+            repository.send("Continue", "opaque-session", result);
+            api.sends.get(api.sends.size() - 1).respond(json(body, ChatResponse.class));
+            assertInvalid(result.only());
+        }
+    }
+
+    @Test
+    public void unavailableTextInSuccessfulResponseIsPreservedAsServerContent() {
+        Result<ChatResponse> result = new Result<>();
+        String message = "Não foi possível obter uma resposta neste momento. Tente novamente.";
+        repository.send("Água", null, result);
+        ChatResponse body = new ChatResponse();
+        body.response = message;
+        body.agentUsed = "forecast";
+        body.sessionId = "new-session";
+        api.sends.get(0).respond(body);
+
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertEquals(message, result.only().data.response);
+    }
+
+    @Test
+    public void closeUsesBoundAccountAndOnlyConfirmsMatchingSession() {
+        Result<CloseResponse> result = new Result<>();
+        repository.close("opaque-session", result);
+
+        assertEquals(Integer.valueOf(42), api.closeUsers.get(0));
+        assertEquals("opaque-session", api.closeIds.get(0));
+        assertTrue(result.values.isEmpty());
+        api.closes.get(0).respond(json("{\"status\":\"ok\",\"session_id\":\"opaque-session\"}", CloseResponse.class));
+
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertEquals("opaque-session", result.only().data.sessionId);
+        assertEquals("ok", result.only().data.status);
+        assertTrue(api.sends.isEmpty());
+    }
+
+    @Test
+    public void missingCloseFieldsUnknownStatusAndWrongSessionAreInvalid() {
+        for (String body : new String[] {"null", "{}", "{\"status\":\"ok\"}", "{\"session_id\":\"opaque-session\"}",
+                "{\"status\":\"failed\",\"session_id\":\"opaque-session\"}", "{\"status\":\"ok\",\"session_id\":\"different-session\"}"}) {
+            Result<CloseResponse> result = new Result<>();
+            repository.close("opaque-session", result);
+            api.closes.get(api.closes.size() - 1).respond(json(body, CloseResponse.class));
+            assertInvalid(result.only());
+        }
+    }
+
+    @Test
+    public void sendAndCloseHttpFailuresReuseSafeErrorMapping() {
+        Result<ChatResponse> send = new Result<>();
+        Result<CloseResponse> close = new Result<>();
+        repository.send(" ", null, send);
+        repository.close("opaque-session", close);
+        api.sends.get(0).reject(422, "{\"detail\":\"Mensagem vazia.\"}", null);
+        api.closes.get(0).reject(500, "{\"detail\":\"private exception\"}", null);
+
+        assertEquals(422, send.only().code);
+        assertEquals(strings.apply(R.string.chat_error_empty_message), send.only().message);
+        assertEquals(500, close.only().code);
+        assertEquals(strings.apply(R.string.chat_error_unavailable), close.only().message);
+    }
+
+    @Test
+    public void sendConversionFailureAndCloseTimeoutDoNotRepeatOrCancelRequests() {
+        Result<ChatResponse> send = new Result<>();
+        Result<CloseResponse> close = new Result<>();
+        repository.send("Água", null, send);
+        repository.close("opaque-session", close);
+        api.sends.get(0).fail(new JsonSyntaxException("private invalid payload"));
+        api.closes.get(0).fail(new SocketTimeoutException("private url"));
+
+        assertInvalid(send.only());
+        assertEquals(strings.apply(R.string.chat_error_timeout), close.only().message);
+        assertEquals(1, api.sends.size());
+        assertEquals(1, api.closes.size());
+        assertFalse(api.sends.get(0).isCanceled());
+        assertFalse(api.closes.get(0).isCanceled());
+    }
+
+    @Test
+    public void lateSendFromOldAccountCannotReachNewAccountCallback() {
+        ChatActions newAccount = new ChatRepository(api, 77, strings);
+        Result<ChatResponse> oldResult = new Result<>(), newResult = new Result<>();
+        repository.send("Old account", null, oldResult);
+        newAccount.send("New account", null, newResult);
+        api.sends.get(1).respond(json("{\"response\":\"New reply\",\"agent_used\":\"rag\",\"session_id\":\"new-account\"}", ChatResponse.class));
+        assertTrue(oldResult.values.isEmpty());
+        api.sends.get(0).respond(json("{\"response\":\"Old reply\",\"agent_used\":\"rag\",\"session_id\":\"old-account\"}", ChatResponse.class));
+
+        assertEquals(42, api.payloads.get(0).userId);
+        assertEquals(77, api.payloads.get(1).userId);
+        assertEquals("old-account", oldResult.only().data.sessionId);
+        assertEquals("new-account", newResult.only().data.sessionId);
     }
 }

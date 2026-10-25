@@ -47,6 +47,21 @@ public final class ChatRepository implements ChatActions {
         }, callback);
     }
 
+    @Override
+    public void send(String message, String sessionId, Consumer<ScreenState<ChatResponse>> callback) {
+        request(api.chat(new ChatRequest(userId, Objects.requireNonNull(message), sessionId)), body -> {
+            if (!text(body.response) || !text(body.agentUsed) || !present(body.sessionId)) return null;
+            if (present(sessionId) && !sessionId.equals(body.sessionId)) return null;
+            if (body.chartData != null && !body.chartData.isJsonNull() && !body.chartData.isJsonObject()) return null;
+            return body;
+        }, callback);
+    }
+
+    @Override
+    public void close(String sessionId, Consumer<ScreenState<CloseResponse>> callback) {
+        request(api.close(Objects.requireNonNull(sessionId), userId), body -> "ok".equals(body.status) && sessionId.equals(body.sessionId) ? body : null, callback);
+    }
+
     private <S, T> void request(Call<S> call, Function<S, T> read, Consumer<ScreenState<T>> callback) {
         Objects.requireNonNull(callback);
         call.enqueue(new Callback<S>() {
