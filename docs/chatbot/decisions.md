@@ -9,6 +9,7 @@ Registrar as decisões de produto e integração antes de escrever código. Uma 
 - **Referências de produto:** [briefing](briefing.md) e [imagens do design](design/).
 - As propostas ainda não aceitas são identificadas como **PENDENTE**. Deduções técnicas são marcadas como **INCERTO**.
 - Nesta etapa, a autorização é documentar decisões. A implementação ainda não foi autorizada.
+- **Atualização na execução da etapa 0, em 25/10/2026:** a pessoa usuária revisou D08 e D09 nas respostas registradas abaixo. As versões anteriores foram preservadas como histórico, sem continuar valendo como requisito. A etapa 0 documental foi inicialmente preparada sem commits para revisão; depois, a pessoa usuária autorizou os dois commits propostos. A autorização não abrange código Android/backend nem etapas posteriores.
 
 ## Decisões registradas — 25/10/2026
 
@@ -16,7 +17,9 @@ Registrar as decisões de produto e integração antes de escrever código. Uma 
 
 **Decidido:** usar `https://delta-artificial-intelligence.onrender.com` como endereço do serviço de IA. O `user_id` corresponde ao ID retornado por `/delta/auth/me` da API principal.
 
-**Pendente de verificação:** a pessoa usuária não sabe qual revisão está publicada nem se existe gateway/autenticação externa. Essas respostas não equivalem a confirmar ausência de autenticação no ambiente publicado.
+**Verificado na etapa 0:** `GET /health` e `GET /openapi.json` responderam HTTP 200 sem credenciais. O OpenAPI publicado é estruturalmente igual ao arquivo local e declara `Delta AI`, versão `0.1.0`. Fontes e horários: [registro da verificação](api-contract.md#verificação-do-serviço-publicado--etapa-0).
+
+**Ainda pendente:** revisão Git publicada e autenticação/gateway das operações de chat/sessões. A pessoa usuária havia respondido “não sei” sobre esses pontos; os dois GETs não identificam o commit nem comprovam ausência de proteção nas outras operações.
 
 Fonte: resposta E.1. A ausência de autenticação HTTP no código analisado está descrita no [contrato](api-contract.md#ambiente-transporte-e-autenticação); não comprova a configuração externa do Render.
 
@@ -70,27 +73,31 @@ Fonte: resposta E.7.
 
 ### D08 — Orientação sem salvar hábitos
 
-**Decidido:** o chatbot apenas orienta; não deve salvar hábitos.
+**Decisão anterior — substituída em 25/10/2026:** o chatbot apenas orientaria, sem salvar hábitos. O título desta seção foi mantido para preservar as referências existentes; o requisito vigente está no próximo parágrafo.
 
-**Bloqueio técnico a resolver:** na versão analisada, `/chat` disponibiliza ao agente a ferramenta `create_habit`, que executa escrita no banco. Não existe no request um parâmetro de modo somente leitura. A interface mobile, sozinha, não remove essa ferramenta do servidor. Ver [contrato](api-contract.md#consumo-metas-clima-e-hábitos) e [schemas da API][schemas].
+**Decidido agora:** o chat pode registrar dados pelas ferramentas que o backend disponibiliza. Não exigir modo somente leitura nem bloquear a integração pelo simples fato de existir ferramenta de escrita. A pessoa usuária autorizou essa mudança de requisito ao responder à pendência P01 na execução da etapa 0.
 
-**INCERTO:** a revisão publicada pode diferir da analisada; a capacidade de escrita no ambiente de integração ainda precisa ser verificada.
+Fonte da revisão: resposta nesta conversa em 25/10/2026 — “pode deixar o chat registrar, se o backend permite nao tme problema, pode deixar escrever mesmo”.
 
-**PENDENTE — proposta ainda não aceita:** exigir que o serviço bloqueie a escrita antes de habilitar o envio real pelo app, preservando o requisito de somente orientação. Enquanto o backend permanecer sem ajuste, o fluxo visual e a preparação do mobile podem ser planejados, mas o envio real ficaria pendente desse requisito. Esta proposta não autoriza editar o backend nem implementar o mobile agora.
+**P01 resolvida quanto ao requisito de escrita:** a proposta anterior de bloquear ferramentas no backend antes de habilitar o envio real foi descartada. D07 continua valendo: não ajustar o backend por enquanto. Permitir gravações no uso futuro do chat não autoriza executar POSTs nesta etapa documental nem acrescentar telas/operações além do plano.
+
+**Limite técnico conhecido:** a revisão analisada disponibiliza `create_habit`, mas não há parâmetro de modo somente leitura no request. **INCERTO:** as ferramentas efetivamente presentes no deploy continuam sem confirmação, pois o OpenAPI público não as descreve. Ver [contrato](api-contract.md#consumo-metas-clima-e-hábitos) e [schemas da API][schemas].
 
 **Pendente adicional:** a resposta não define se o acompanhamento de metas inclui criação/edição ou somente consulta da meta existente.
 
-Fonte: resposta E.8, em conjunto com E.7.
+Fonte histórica: resposta E.8, em conjunto com E.7; a revisão acima prevalece sobre a restrição original.
 
 ### D09 — Dados climáticos
 
-**Decidido:** o chatbot deve considerar condições climáticas atuais e previsões futuras, além do histórico.
+**Decisão anterior — adiada para entrega posterior:** considerar condições climáticas atuais e previsões futuras, além do histórico.
 
-**Bloqueio técnico a resolver:** as ferramentas analisadas consultam histórico meteorológico e explicitam que ele não representa previsão futura. O atendimento ao requisito exige confirmar se o serviço publicado já oferece essas fontes ou definir como serão disponibilizadas. Ver [contrato](api-contract.md#consumo-metas-clima-e-hábitos).
+**Decidido agora:** aceitar histórico climático na primeira entrega; deixar condições atuais e previsão futura para depois. Fonte: resposta à P02 nesta conversa em 25/10/2026 — “Aceitar histórico climático na primeira entrega; deixar clima atual/futuro para depois”.
 
-**Pendente:** fonte, localização, atualização e comportamento quando esses dados estiverem indisponíveis. Não foi autorizado inventar clima, tratar histórico como previsão ou acrescentar integração climática ao mobile.
+**P02 resolvida quanto ao escopo da primeira entrega:** ela não depende da inclusão de clima atual/futuro no backend. Isso não comprova funcionamento ou disponibilidade dos dados históricos: o aceite ainda exige verificar a resposta com uma fonte histórica real. A versão analisada consulta histórico meteorológico e informa que não é previsão. Ver [contrato](api-contract.md#consumo-metas-clima-e-hábitos).
 
-Fonte: resposta E.9.
+**Ainda pendente:** evidência de origem, localização, período e disponibilidade do histórico usado pelo serviço, além da apresentação da ausência de dados. Não tratar histórico como condição atual nem previsão. Não foi autorizada uma integração climática nova no mobile.
+
+Fonte histórica: resposta E.9; a revisão acima substitui a obrigatoriedade de clima atual/futuro na primeira entrega.
 
 ### D10 — Requisição em andamento, erros e teclado
 
@@ -106,14 +113,21 @@ Fonte: resposta E.10. “Não tem que fechar a chamada” foi registrado como ma
 
 Esta ordem organiza a conversa; não representa decisões já aceitas sobre as soluções.
 
-1. **Garantir que o chatbot não salve hábitos:** compatibilizar D08 com a manutenção do backend em D07; verificar a capacidade do ambiente publicado.
-2. **Viabilidade de clima atual e futuro:** compatibilizar D09 com as fontes disponíveis e com D07.
-3. **Ambiente publicado:** conferir contrato/revisão acessível e requisitos de autenticação, sem inferi-los das respostas “não sei”.
-4. **Ciclo da conversa:** comportamento do botão de novo chat, encerramento com falha e requisições em andamento.
-5. **Envio e falhas:** concorrência, mensagem de erro, nova tentativa e entrega de respostas fora da tela.
-6. **Continuidade e metas:** critérios de aceite diante do contexto limitado e operações permitidas para metas.
-7. **Apresentação:** sugestões iniciais, histórico alternativo, botão de novo chat e formatação do texto.
+1. **Ambiente publicado — P03:** o contrato HTTP foi comparado, mas faltam revisão em execução e confirmação da autenticação/gateway nas operações de chat/sessões. Encaminhar a verificação ao responsável pelo ambiente; não repetir à pessoa usuária perguntas às quais ela já respondeu “não sei”.
+2. **Ciclo da conversa — P05:** botão de novo chat, retomada, falha de encerramento e requisições em andamento.
+3. **Envio e falhas — P06:** concorrência, mensagem de erro, nova tentativa e entrega de respostas fora da tela.
+4. **Continuidade e metas — P07/P08:** critérios de aceite diante do contexto limitado e operações permitidas para metas.
+5. **Apresentação — P04/P08:** sugestões iniciais, histórico alternativo e formatação do texto.
+6. **Aceite climático:** verificar o uso de histórico real na integração futura; clima atual/futuro fica para depois, conforme a revisão de D09.
 
 Vamos resolver uma pendência por vez e atualizar este arquivo a cada decisão.
+
+## Registro de execução da etapa 0 — 25/10/2026
+
+- **Grupo previsto 0.1:** verificação pública realizada e registrada em `api-contract.md`; sem alteração do snapshot `openapi.json`.
+- **Grupo previsto 0.2:** P01 e P02 respondidas pela pessoa usuária; D08/D09 revisadas acima, com o histórico preservado. Somente as dependências afetadas foram ajustadas em `plan.md`.
+- **Situação:** parte verificável da etapa 0 executada; a etapa não está integralmente encerrada enquanto P03 depender da confirmação externa descrita acima. P04–P08 continuam abertas para as etapas correspondentes.
+- Nenhuma chamada a `/chat`, sessões ou `close` e nenhum código Android/backend alterado. Os grupos 0.1/0.2 foram apresentados sem commits para revisão; em seguida, a pessoa usuária autorizou registrá-los nos dois commits previstos. Isso não encerra P03 nem autoriza iniciar a etapa 1.
+- Os resumos anteriores de D08/D09 em outras referências, inclusive no AGENTS.md da feature, descrevem o requisito antigo. Estas respostas explícitas e as decisões atualizadas prevalecem; esses outros arquivos não foram alterados por estarem fora do escopo da etapa 0.
 
 [schemas]: https://github.com/delta-app-ofc/delta-artificial-intelligence/blob/af5d6c1dafb10abd6897180e3e270402693c2a2b/app/schemas.py
