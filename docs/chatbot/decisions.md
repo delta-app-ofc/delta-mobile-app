@@ -103,7 +103,9 @@ Fonte histórica: resposta E.9; a revisão acima substitui a obrigatoriedade de 
 
 **Decidido:** sair da tela não deve cancelar a chamada em andamento. Incluir uma apresentação de erro que ainda não existe nas referências. Manter o menu oculto enquanto o teclado estiver aberto.
 
-**Pendente:** permitir ou bloquear envios simultâneos; apresentação e texto do erro; ação de nova tentativa; tratamento da resposta recebida enquanto a tela estiver fora de exibição. O comportamento da chamada ao trocar de chat também depende de D05.
+**Decidido na etapa 4:** permitir somente um envio por vez na conversa. Enquanto a chamada estiver em andamento, bloquear outro envio nessa conversa. Após falha, manter o texto no rascunho e permitir nova tentativa somente por ação explícita da pessoa usuária, sem reenvio automático. Fontes: respostas às duas perguntas P06 nesta conversa, durante a implementação da etapa 4 — “Um envio por vez (recomendado)” e “Manter texto e permitir reenvio manual”.
+
+**Pendente:** apresentação e texto final do erro; apresentação da incerteza após timeout e da nova tentativa; tratamento visual da resposta recebida enquanto a tela estiver fora de exibição. O comportamento da chamada ao trocar de chat também depende de D05. As decisões acima não resolvem essas pendências nem autorizam ativar chamadas reais na interface nesta etapa.
 
 **Limite técnico conhecido:** a API não tem deduplicação de envios. **INCERTO — risco inferido:** repetir uma chamada após timeout pode duplicar operações. Ver [contrato](api-contract.md#post-chat--enviar-mensagem).
 
