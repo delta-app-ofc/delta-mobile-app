@@ -250,6 +250,23 @@ public class ChatFlowTest {
     }
 
     @Test
+    public void oldDuplicateCallbackCannotFinishANewerAttempt() {
+        send("Água");
+        gateway.replies.get(0).accept(ScreenState.error("resource:error"));
+        drain();
+        flow.send();
+        gateway.replies.get(0).accept(reply("Resposta atrasada", "old-session"));
+        drain();
+
+        assertTrue(flow.state().sending.busy());
+        assertNull(flow.state().sessionId);
+        gateway.replies.get(1).accept(reply("Resposta atual", "new-session"));
+        drain();
+        assertEquals("new-session", flow.state().sessionId);
+        assertEquals("Resposta atual", flow.state().messages.get(1).content);
+    }
+
+    @Test
     public void invalidSuccessfulResponseAndWrongSessionBecomeErrors() {
         send("Água");
         gateway.replies.get(0).accept(ScreenState.success(null));
@@ -277,5 +294,75 @@ public class ChatFlowTest {
         } catch (UnsupportedOperationException expected) {
             assertEquals(1, flow.state().messages.size());
         }
+    }
+
+    @Test
+    public void replyStillUpdatesFlowAfterConceptualViewObserverIsDetached() {
+        List<ChatState> visibleStates = new ArrayList<>();
+        boolean[] attached = {true};
+        ChatFlow activityFlow = new ChatFlow(gateway, 42, dispatched::add, value -> {
+            if (attached[0]) visibleStates.add(value);
+        }, strings, now::get);
+        activityFlow.setDraft("Água");
+        activityFlow.send();
+        int visibleCount = visibleStates.size();
+        attached[0] = false;
+        gateway.replies.get(0).accept(reply("Resposta fora da tela", "session-a"));
+        drain();
+
+        assertEquals(visibleCount, visibleStates.size());
+        assertEquals(ScreenState.Status.SUCCESS, activityFlow.state().sending.status);
+        assertEquals("Resposta fora da tela", activityFlow.state().messages.get(1).content);
+        assertEquals(1, gateway.messages.size());
+    }
+
+    @Test
+    public void logoutErasesAccountDraftAndMessagesAndDiscardsLateReply() {
+        send("Texto privado");
+        flow.invalidate();
+        int publications = states.size();
+        gateway.replies.get(0).accept(reply("Resposta privada", "session-a"));
+        drain();
+        flow.setDraft("Outra mensagem");
+        flow.send();
+
+        assertEquals(publications, states.size());
+        assertEquals(ScreenState.Status.IDLE, flow.state().account.status);
+        assertEquals("", flow.state().draft);
+        assertTrue(flow.state().messages.isEmpty());
+        assertNull(flow.state().sessionId);
+        assertEquals(1, gateway.messages.size());
+    }
+
+    @Test
+    public void identityInvalidationDiscardsReplyAlreadyQueuedForMainThread() {
+        send("Conta anterior");
+        gateway.replies.get(0).accept(reply("Resposta anterior", "old-session"));
+        assertEquals(1, dispatched.size());
+        flow.invalidate();
+        drain();
+
+        assertTrue(flow.state().messages.isEmpty());
+        assertNull(flow.state().sessionId);
+        assertEquals(ScreenState.Status.IDLE, flow.state().account.status);
+    }
+
+    @Test
+    public void oldAccountReplyCannotReplaceNewAccountConversation() {
+        send("Conta anterior");
+        flow.invalidate();
+        ChatFlow nextAccount = new ChatFlow(gateway, 77, dispatched::add, states::add, strings, now::get);
+        nextAccount.setDraft("Conta atual");
+        nextAccount.send();
+        gateway.replies.get(1).accept(reply("Resposta atual", "new-session"));
+        drain();
+        int publications = states.size();
+        gateway.replies.get(0).accept(reply("Resposta antiga", "old-session"));
+        drain();
+
+        assertEquals(publications, states.size());
+        assertEquals(Integer.valueOf(77), nextAccount.state().account.data);
+        assertEquals("new-session", nextAccount.state().sessionId);
+        assertEquals("Resposta atual", nextAccount.state().messages.get(1).content);
     }
 }
