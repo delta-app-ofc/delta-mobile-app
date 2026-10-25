@@ -7,19 +7,40 @@ Registrar o contrato HTTP e o comportamento implementado para orientar a integra
 - Análise realizada em **25/10/2026**, com base na `main` remota do `delta-artificial-intelligence`, commit **`af5d6c1dafb10abd6897180e3e270402693c2a2b`**. Os links de fonte deste documento estão fixados nessa revisão.
 - O checkout local da API estava no commit `b6e8aee1e30a0d36f861981db59001c05ca015fd`, 59 commits atrás da revisão analisada. A comparação foi feita sem atualizar o checkout. [Comparação das versões][versions]
 - Referência complementar: [OpenAPI local](openapi.json). Seus campos de request/response de chat coincidem com os [schemas analisados][schemas], mas as respostas de sessões não têm estrutura definida no OpenAPI e `chart_data` é um objeto livre.
-- Este documento resulta de leitura de código. **Não houve chamada aos endpoints, validação de produção ou execução de testes.**
+- A análise inicial foi estática, sem chamadas ao serviço. Na execução da etapa 0 em 25/10/2026, foram consultados somente `GET /health` e `GET /openapi.json`, conforme o registro abaixo. Não foram executados testes Android, chamadas de chat, consultas a sessões ou gravações no serviço.
 
-Os exemplos JSON abaixo são **ilustrativos**, com IDs, datas, mensagens e números fictícios. Não são capturas de respostas reais nem valores para fixar no app. As estruturas vêm dos arquivos citados. Deduções e pontos ainda sem confirmação são marcados como **INCERTO**.
+Os exemplos JSON de chat e sessões abaixo são **ilustrativos**, com IDs, datas, mensagens e números fictícios. Não são capturas de respostas reais nem valores para fixar no app. As estruturas vêm dos arquivos citados. O payload real observado em `/health` está identificado no registro da etapa 0. Deduções e pontos ainda sem confirmação são marcados como **INCERTO**.
+
+## Verificação do serviço publicado — etapa 0
+
+Consultas realizadas em **25/10/2026**, sem header `Authorization`, sem credenciais e sem body. Horários abaixo correspondem ao início de cada requisição, no fuso **America/Sao_Paulo (UTC−03:00)**.
+
+| Consulta | Início | Resultado observado |
+| --- | --- | --- |
+| [GET /health][published-health] | 16:57:13 | HTTP 200, `Content-Type: application/json`, body `{"status":"ok"}`. |
+| [GET /openapi.json][published-openapi] | 16:57:47 | HTTP 200, `Content-Type: application/json`, documento OpenAPI 3.1.0; `info.title="Delta AI"`, `info.version="0.1.0"`. |
+
+O documento publicado foi comparado integralmente com [openapi.json](openapi.json), por igualdade estrutural dos objetos JSON, desconsiderando somente a ordem das propriedades. **Não foram encontradas diferenças de estrutura ou valores.** Permanecem os cinco pares método/caminho: `GET /health`, `POST /chat`, `GET /sessions/{user_id}`, `GET /sessions/{session_id}/history` e `POST /sessions/{session_id}/close`. Fonte: [OpenAPI publicado][published-openapi], consultado na data e no horário acima, e arquivo local comparado.
+
+O documento publicado não declara `servers`, `components.securitySchemes`, `security` global ou `security` nas operações. Ele mantém os campos de `ChatRequest`/`ChatResponse`, os schemas de validação e as respostas sem schema específico de sessões. Isso confirma o contrato público observado, não o funcionamento das operações de chat/sessões ou dos serviços de dados. Fonte: [OpenAPI publicado][published-openapi].
+
+**INCERTO — revisão publicada:** `info.version="0.1.0"` é a versão declarada da API, não um SHA Git. Os dois payloads consultados não identificam o commit em execução. A igualdade do OpenAPI não comprova que o deploy use `af5d6c1...`, nem confirma quais ferramentas internas os agentes têm à disposição.
+
+**INCERTO — autenticação das operações:** `/health` e `/openapi.json` foram acessíveis sem credenciais. Não foram chamadas as operações de chat/sessões; a ausência de segurança no OpenAPI não comprova ausência de gateway ou proteção não documentada nelas. Continua pendente a confirmação do responsável pelo ambiente.
+
+As primeiras tentativas pelo navegador de pesquisa falharam sem uma resposta HTTP utilizável; o terminal restrito falhou na resolução do host. As duas respostas HTTP acima foram obtidas com acesso de rede autorizado fora dessa restrição. Essas falhas locais não foram tratadas como indisponibilidade comprovada do serviço.
+
+Os corpos JSON recebidos foram lidos em memória; o arquivo `openapi.json` local não foi substituído. Não foram consultados dados de usuários, LLM, PostgreSQL, MongoDB ou Qdrant. O resultado de `/health` não comprova conectividade com esses componentes; a implementação analisada retorna um valor fixo. [health.py][health]
 
 ## Ambiente, transporte e autenticação
 
-A URL base de integração ainda precisa ser informada. O OpenAPI local não declara `servers`; o registro de rotas da aplicação usa `/chat`, `/sessions/...` e `/health`, sem prefixo `/delta`. Não presumir que o endereço da API principal do mobile seja também o endereço da IA. [OpenAPI local](openapi.json), [main.py][main]
+A URL do serviço foi definida em D01 como `https://delta-artificial-intelligence.onrender.com`; a base a fornecer ao Retrofit deve terminar em `/`. As consultas da etapa 0 usaram essa origem. O OpenAPI não declara `servers`; o registro de rotas usa `/chat`, `/sessions/...` e `/health`, sem prefixo `/delta`. [D01](decisions.md#d01--url-e-identidade-da-conta), [OpenAPI publicado][published-openapi], [main.py][main], [orientação de URL do app](../../devdocs/fluxodavi/AUTH_MOBILE.md)
 
 `POST /chat` recebe JSON e responde com um único JSON ao término do processamento. Não há streaming, SSE ou WebSocket nesse fluxo. [chat.py][chat], [main.py][main]
 
-**Não há autenticação HTTP implementada nesse FastAPI:** as rotas não validam JWT/Bearer nem vinculam `user_id` a uma identidade autenticada. O ID é recebido do cliente. A validação de propriedade de uma sessão compara seu dono com o `user_id` informado na requisição; essa comparação não comprova a identidade de quem chama. [main.py][main], [chat.py][chat], [sessions.py][sessions], [session.py][session-memory]
+**Na revisão de código analisada, não há autenticação HTTP implementada nesse FastAPI:** as rotas não validam JWT/Bearer nem vinculam `user_id` a uma identidade autenticada. O ID é recebido do cliente. A validação de propriedade de uma sessão compara seu dono com o `user_id` informado na requisição; essa comparação não comprova a identidade de quem chama. Essa descrição do código não identifica a configuração do deploy. [main.py][main], [chat.py][chat], [sessions.py][sessions], [session.py][session-memory]
 
-**INCERTO:** pode existir autenticação em um gateway externo ou no ambiente publicado. Também precisa ser confirmado se `user_id` corresponde exatamente ao ID retornado por `/delta/auth/me` da API principal.
+**INCERTO:** pode existir autenticação em um gateway externo ou no ambiente publicado, como detalhado no registro da etapa 0. A correspondência entre `user_id` e o ID retornado por `/delta/auth/me` já foi confirmada pela pessoa usuária em [D01](decisions.md#d01--url-e-identidade-da-conta); essa decisão não foi revalidada com dados de uma conta nesta etapa.
 
 ## Endpoints de chat e sessões
 
@@ -402,16 +423,17 @@ Com vários resultados bem-sucedidos, o workflow concatena as respostas usando `
 
 ## Pontos ainda a confirmar para a integração
 
-1. URL base, revisão efetivamente publicada, autenticação externa e correspondência entre o ID da conta mobile e `user_id`.
-2. Escopo por conta ou por imóvel selecionado, já que o request não possui `property_id`.
-3. Fonte de títulos, prévias e ícones do histórico, ausentes na listagem atual.
-4. Momento de chamar `/close`, política de reenvio e tratamento de mensagens simultâneas.
-5. Exibição dos gráficos, persistência ao reabrir conversas e suporte visual a Markdown/fontes.
-6. Ajuste do contexto enviado aos especialistas para perguntas dependentes de respostas anteriores.
-7. Se criar hábitos pelo chat exige confirmação na interface, e se o escopo de metas inclui edição.
-8. Se o histórico climático atende ao requisito ou se também será necessária previsão meteorológica.
+1. Revisão efetivamente publicada e autenticação das operações de chat/sessões. Acesso público a `/health` e ao OpenAPI não encerra essa verificação.
+2. Rótulos, ordem e associação dos ícones do histórico, além do conteúdo/interação das sugestões iniciais.
+3. Falha de `/close`, novo chat durante envio, retomada da conversa corrente e distinção entre entrada na seção e recriação da tela.
+4. Política de reenvio, envios simultâneos e apresentação do erro.
+5. Renderização de Markdown, links e fontes; gráficos permanecem fora desta entrega.
+6. Aceite de perguntas dependentes do contexto anterior enquanto o backend não for ajustado.
+7. Se acompanhar metas significa consulta da meta existente ou também criação/edição.
 
-Essas decisões permanecem abertas; este documento não presume suas respostas. As lacunas técnicas correspondentes estão descritas e referenciadas nas seções anteriores.
+Decisões consolidadas em [decisions.md](decisions.md): URL e identidade em D01, escopo da conta toda em D02, novo chat em D05 e ausência de gráficos em D06. Na etapa 0, **D08 passou a permitir gravações pelas ferramentas disponíveis no backend**, e **D09 passou a aceitar histórico climático na primeira entrega, deixando clima atual/futuro para depois**. Essas são decisões de produto, não comprovações das ferramentas em execução no deploy. Não foram realizadas gravações ou consultas climáticas nesta etapa.
+
+As pendências restantes não são presumidas resolvidas. A implementação futura deve seguir as decisões mais recentes, mesmo quando uma referência anterior ainda descrever o escopo antigo.
 
 [versions]: https://github.com/delta-app-ofc/delta-artificial-intelligence/compare/b6e8aee1e30a0d36f861981db59001c05ca015fd...af5d6c1dafb10abd6897180e3e270402693c2a2b
 [main]: https://github.com/delta-app-ofc/delta-artificial-intelligence/blob/af5d6c1dafb10abd6897180e3e270402693c2a2b/app/main.py
@@ -433,3 +455,5 @@ Essas decisões permanecem abertas; este documento não presume suas respostas. 
 [consumption]: https://github.com/delta-app-ofc/delta-artificial-intelligence/blob/af5d6c1dafb10abd6897180e3e270402693c2a2b/app/agents/consumption.py
 [runtime]: https://github.com/delta-app-ofc/delta-artificial-intelligence/blob/af5d6c1dafb10abd6897180e3e270402693c2a2b/app/agents/_runtime.py
 [rag]: https://github.com/delta-app-ofc/delta-artificial-intelligence/blob/af5d6c1dafb10abd6897180e3e270402693c2a2b/app/agents/rag.py
+[published-health]: https://delta-artificial-intelligence.onrender.com/health
+[published-openapi]: https://delta-artificial-intelligence.onrender.com/openapi.json
