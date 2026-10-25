@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_error_request">Não foi possível concluir a solicitação ao assistente.</string>
+    <string name="chat_error_validation">O assistente não pôde aceitar os dados enviados. Confira sua mensagem.</string>
+    <string name="chat_error_empty_message">Escreva uma mensagem antes de enviar.</string>
+    <string name="chat_error_message_length">Sua mensagem deve ter no máximo 2.000 caracteres.</string>
+    <string name="chat_error_access">Não foi possível autorizar o acesso ao assistente.</string>
+    <string name="chat_error_unavailable">O assistente está indisponível no momento. Tente novamente mais tarde.</string>
+    <string name="chat_error_rate_limit">Muitas solicitações ao assistente. Aguarde antes de tentar novamente.</string>
+    <string name="chat_error_timeout">O tempo de espera pela resposta terminou. Não foi possível confirmar a conclusão da solicitação.</string>
+    <string name="chat_error_network">Não foi possível conectar ao assistente. Confira sua conexão.</string>
+    <string name="chat_error_invalid_response">Não foi possível interpretar a resposta do assistente.</string>
+</resources>
