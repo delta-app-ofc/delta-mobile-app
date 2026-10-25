@@ -78,4 +78,83 @@ public class ChatModelsTest {
         assertNull(response.sessionId);
         assertNull(response.chartData);
     }
+
+    @Test
+    public void sessionsResponsePreservesIdentifiersAndTransportDates() {
+        String json = "{\"sessions\":[{\"session_id\":\"opaque-session-id\",\"created_at\":\"2026-10-25T19:57:00.123456+00:00\"},"
+                + "{\"session_id\":\"session-b\",\"created_at\":\"2026-10-24T16:57:00-03:00\"}]}";
+
+        ChatModels.SessionsResponse response = gson.fromJson(json, ChatModels.SessionsResponse.class);
+
+        assertEquals(2, response.sessions.size());
+        assertEquals("opaque-session-id", response.sessions.get(0).sessionId);
+        assertEquals("2026-10-25T19:57:00.123456+00:00", response.sessions.get(0).createdAt);
+        assertEquals("session-b", response.sessions.get(1).sessionId);
+        assertEquals("2026-10-24T16:57:00-03:00", response.sessions.get(1).createdAt);
+    }
+
+    @Test
+    public void emptySessionsAreDistinctFromNullOrMissingSessions() {
+        ChatModels.SessionsResponse empty = gson.fromJson("{\"sessions\":[]}", ChatModels.SessionsResponse.class);
+        ChatModels.SessionsResponse explicitNull = gson.fromJson("{\"sessions\":null}", ChatModels.SessionsResponse.class);
+        ChatModels.SessionsResponse absent = gson.fromJson("{}", ChatModels.SessionsResponse.class);
+
+        assertNotNull(empty.sessions);
+        assertTrue(empty.sessions.isEmpty());
+        assertNull(explicitNull.sessions);
+        assertNull(absent.sessions);
+    }
+
+    @Test
+    public void historyPreservesMessageOrderRolesContentAndDates() {
+        String json = "{\"messages\":[{\"role\":\"human\",\"content\":\"Como economizar água? 💧\","
+                + "\"timestamp\":\"2026-10-25T19:57:00+00:00\"},"
+                + "{\"role\":\"assistant\",\"content\":\"Confira:\\n- Torneiras\\n- Chuveiro\","
+                + "\"timestamp\":\"2026-10-25T19:57:01.123456+00:00\"}]}";
+
+        ChatModels.HistoryResponse response = gson.fromJson(json, ChatModels.HistoryResponse.class);
+
+        assertEquals(2, response.messages.size());
+        assertEquals("human", response.messages.get(0).role);
+        assertEquals("Como economizar água? 💧", response.messages.get(0).content);
+        assertEquals("2026-10-25T19:57:00+00:00", response.messages.get(0).timestamp);
+        assertEquals("assistant", response.messages.get(1).role);
+        assertEquals("Confira:\n- Torneiras\n- Chuveiro", response.messages.get(1).content);
+        assertEquals("2026-10-25T19:57:01.123456+00:00", response.messages.get(1).timestamp);
+    }
+
+    @Test
+    public void emptyHistoryIsDistinctFromNullOrMissingHistory() {
+        ChatModels.HistoryResponse empty = gson.fromJson("{\"messages\":[]}", ChatModels.HistoryResponse.class);
+        ChatModels.HistoryResponse explicitNull = gson.fromJson("{\"messages\":null}", ChatModels.HistoryResponse.class);
+        ChatModels.HistoryResponse absent = gson.fromJson("{}", ChatModels.HistoryResponse.class);
+
+        assertNotNull(empty.messages);
+        assertTrue(empty.messages.isEmpty());
+        assertNull(explicitNull.messages);
+        assertNull(absent.messages);
+    }
+
+    @Test
+    public void missingSessionAndHistoryFieldsRemainNull() {
+        ChatModels.Session session = gson.fromJson("{}", ChatModels.Session.class);
+        ChatModels.HistoryMessage message = gson.fromJson("{}", ChatModels.HistoryMessage.class);
+
+        assertNull(session.sessionId);
+        assertNull(session.createdAt);
+        assertNull(message.role);
+        assertNull(message.content);
+        assertNull(message.timestamp);
+    }
+
+    @Test
+    public void closeResponsePreservesStatusAndSessionWithoutDefaultSuccess() {
+        ChatModels.CloseResponse response = gson.fromJson("{\"status\":\"ok\",\"session_id\":\"opaque-session-id\"}", ChatModels.CloseResponse.class);
+        ChatModels.CloseResponse missing = gson.fromJson("{}", ChatModels.CloseResponse.class);
+
+        assertEquals("ok", response.status);
+        assertEquals("opaque-session-id", response.sessionId);
+        assertNull(missing.status);
+        assertNull(missing.sessionId);
+    }
 }
