@@ -221,6 +221,10 @@ public final class ChatFlow {
             ChatMessage reply = new ChatMessage(++nextId, ChatMessage.Author.ASSISTANT, response.response, ScreenState.Status.SUCCESS, response.agentUsed);
             messages.add(reply);
             publish(new ChatState(state.account, false, state.draft.equals(content) ? "" : state.draft, response.sessionId, messages, ScreenState.success(reply)));
+            if (session == null && (sessions.busy() || sessions.status == ScreenState.Status.SUCCESS)) {
+                sessions = ScreenState.idle();
+                loadSessions();
+            }
         } else {
             publish(new ChatState(state.account, false, state.draft, session, messages, ScreenState.error(result.message, result.code, result.retryAt)));
         }

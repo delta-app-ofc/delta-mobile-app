@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="chat_title">Gluh Helper</string>
+    <string name="chat_sending_pending">O envio de mensagens ainda não está disponível. Você pode consultar o histórico.</string>
     <string name="chat_history_title">Histórico</string>
     <string name="chat_sessions_loading">Carregando conversas…</string>
     <string name="chat_sessions_empty">Nenhuma conversa disponível.</string>

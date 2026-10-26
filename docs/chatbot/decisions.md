@@ -21,6 +21,8 @@ Registrar as decisões de produto e integração antes de escrever código. Uma 
 
 **Ainda pendente:** revisão Git publicada e autenticação/gateway das operações de chat/sessões. A pessoa usuária havia respondido “não sei” sobre esses pontos; os dois GETs não identificam o commit nem comprovam ausência de proteção nas outras operações.
 
+**Decidido na etapa 8:** preparar a integração e manter o envio ao serviço publicado bloqueado até a confirmação externa de P03. Não executar perguntas reais na API durante os testes. Fonte: resposta nesta conversa — “Manter bloqueado até confirmação (recomendado)”. O construtor padrão do ViewModel mantém o envio desabilitado; testes usam composição manual com serviço substituído e envio habilitado explicitamente, sem opção de desbloqueio na interface.
+
 Fonte: resposta E.1. A ausência de autenticação HTTP no código analisado está descrita no [contrato](api-contract.md#ambiente-transporte-e-autenticação); não comprova a configuração externa do Render.
 
 ### D02 — Escopo dos dados

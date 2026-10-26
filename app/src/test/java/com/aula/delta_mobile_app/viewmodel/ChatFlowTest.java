@@ -95,6 +95,87 @@ public class ChatFlowTest {
     }
 
     @Test
+    public void doubleSendAndEditedDraftStillProduceOneRequestUntilReply() {
+        send("Primeira pergunta");
+        flow.setDraft("Próxima pergunta");
+        flow.send();
+        assertEquals(List.of("Primeira pergunta"), gateway.messages);
+        gateway.replies.get(0).accept(reply("Primeira resposta", "created-session"));
+        drain();
+        assertEquals("Próxima pergunta", flow.state().draft);
+        flow.send();
+        assertEquals("created-session", gateway.sessions.get(1));
+    }
+
+    @Test
+    public void firstSend422DoesNotInventASessionOrRetryAutomatically() {
+        send("Pergunta");
+        gateway.replies.get(0).accept(ScreenState.error(strings.apply(R.string.chat_error_validation), 422, 0));
+        drain();
+        assertNull(flow.state().sessionId);
+        assertEquals("Pergunta", flow.state().draft);
+        assertEquals(422, flow.state().sending.code);
+        assertEquals(1, gateway.replies.size());
+        assertEquals(ScreenState.Status.ERROR, flow.state().messages.get(0).status);
+    }
+
+    @Test
+    public void firstSendTimeoutCannotConfirmWhetherServerCreatedASession() {
+        send("Pergunta");
+        gateway.replies.get(0).accept(ScreenState.error(strings.apply(R.string.chat_error_timeout)));
+        drain();
+        assertNull(flow.state().sessionId);
+        assertEquals(strings.apply(R.string.chat_error_timeout), flow.state().sending.message);
+        assertEquals(1, gateway.replies.size());
+        flow.send();
+        assertNull(gateway.sessions.get(1));
+        assertEquals(1, flow.state().messages.size());
+    }
+
+    @Test
+    public void establishedSessionSurvives500AndManualRetryUsesItsId() {
+        send("Primeira");
+        gateway.replies.get(0).accept(reply("Resposta", "existing"));
+        drain();
+        send("Segunda");
+        gateway.replies.get(1).accept(ScreenState.error(strings.apply(R.string.chat_error_unavailable), 500, 0));
+        drain();
+        assertEquals("existing", flow.state().sessionId);
+        assertEquals("Segunda", flow.state().draft);
+        assertEquals(3, flow.state().messages.size());
+        flow.send();
+        assertEquals("existing", gateway.sessions.get(2));
+        assertEquals(3, flow.state().messages.size());
+    }
+
+    @Test
+    public void firstReplyRefreshesOnlyPreviouslyRequestedSessionListing() {
+        listSessions();
+        send("Água");
+        gateway.replies.get(0).accept(reply("Resposta", "created"));
+        drain();
+        assertEquals(2, gateway.listings.size());
+        assertEquals(1, gateway.replies.size());
+        assertTrue(flow.historyState().sessions.busy());
+        gateway.listings.get(1).accept(ScreenState.success(List.of(session("created", "2026-10-25T12:00:00Z"))));
+        drain();
+        assertEquals("created", flow.historyState().sessions.data.get(0).id);
+    }
+
+    @Test
+    public void listingStartedBeforeSessionCreationCannotHideTheCreatedSession() {
+        flow.loadSessions();
+        send("Água");
+        gateway.replies.get(0).accept(reply("Resposta", "created"));
+        drain();
+        gateway.listings.get(1).accept(ScreenState.success(List.of(session("created", "2026-10-25T12:00:00Z"))));
+        drain();
+        gateway.listings.get(0).accept(ScreenState.success(List.of()));
+        drain();
+        assertEquals("created", flow.historyState().sessions.data.get(0).id);
+    }
+
+    @Test
     public void listingIsDeduplicatedAndDoesNotFetchPreviews() {
         flow.loadSessions();
         flow.loadSessions();

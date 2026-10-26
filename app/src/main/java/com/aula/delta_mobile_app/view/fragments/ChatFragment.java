@@ -6,6 +6,7 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -50,6 +51,7 @@ public final class ChatFragment extends Fragment {
     private Runnable reloadSessions;
     private Consumer<String> selectSession;
     private boolean productionHistory;
+    private boolean sendingEnabled = true;
     private EditText input;
     private TextView counter;
     private View sendButton;
@@ -84,6 +86,9 @@ public final class ChatFragment extends Fragment {
         if (conversation == null) {
             ChatViewModel model = ChatViewModel.forActivity(requireActivity());
             conversation = model.state();
+            updateDraft = model::setDraft;
+            sendAction = model::send;
+            sendingEnabled = model.sendingEnabled();
             historySource = model.history();
             reloadSessions = model::loadSessions;
             selectSession = model::openSession;
@@ -115,6 +120,11 @@ public final class ChatFragment extends Fragment {
             public void afterTextChanged(Editable value) {}
         };
         input.addTextChangedListener(watcher);
+        input.setOnEditorActionListener((field, action, event) -> {
+            if (action != EditorInfo.IME_ACTION_SEND) return false;
+            attemptSend();
+            return true;
+        });
         sendButton.setOnClickListener(button -> attemptSend());
         ViewCompat.setOnApplyWindowInsetsListener(view, (root, insets) -> {
             boolean keyboard = insets.isVisible(WindowInsetsCompat.Type.ime());
@@ -177,7 +187,7 @@ public final class ChatFragment extends Fragment {
     }
 
     private boolean ready() {
-        return updateDraft != null && sendAction != null && current.account.status == ScreenState.Status.SUCCESS
+        return sendingEnabled && updateDraft != null && sendAction != null && current.account.status == ScreenState.Status.SUCCESS
             && (history == null || (!history.history.busy() && history.history.status != ScreenState.Status.ERROR));
     }
 
@@ -232,7 +242,10 @@ public final class ChatFragment extends Fragment {
             root.removeCallbacks(retryReady);
             ViewCompat.setOnApplyWindowInsetsListener(root, null);
         }
-        if (input != null) input.removeTextChangedListener(watcher);
+        if (input != null) {
+            input.removeTextChangedListener(watcher);
+            input.setOnEditorActionListener(null);
+        }
         if (messages != null) messages.setAdapter(null);
         watcher = null;
         input = null;
@@ -292,7 +305,8 @@ public final class ChatFragment extends Fragment {
 
         private boolean visible() {
             return state.account.busy() || state.sending.busy() || state.account.status == ScreenState.Status.ERROR || state.sending.status == ScreenState.Status.ERROR
-                || history != null && (history.history.status != ScreenState.Status.IDLE || !history.notice.isEmpty());
+                || history != null && (history.history.status != ScreenState.Status.IDLE || !history.notice.isEmpty())
+                || !sendingEnabled && state.account.status == ScreenState.Status.SUCCESS;
         }
 
         void update(ChatState value) {
@@ -324,6 +338,7 @@ public final class ChatFragment extends Fragment {
             text.setText(loadingHistory ? R.string.chat_history_loading : empty ? R.string.chat_history_empty : state.account.busy() ? R.string.chat_preparing : R.string.chat_waiting);
             ScreenState<?> failure = state.account.status == ScreenState.Status.ERROR ? state.account : state.sending;
             String message = failure.status == ScreenState.Status.ERROR ? failure.message : "";
+            if (message.isEmpty() && !sendingEnabled && state.account.status == ScreenState.Status.SUCCESS) message = getString(R.string.chat_sending_pending);
             boolean historyError = history != null && history.history.status == ScreenState.Status.ERROR;
             if (historyError) message = history.history.message;
             if (history != null && !history.notice.isEmpty()) message = history.notice;
