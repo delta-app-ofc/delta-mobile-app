@@ -12,12 +12,15 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
+import androidx.navigation.NavController;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.ConcatAdapter;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,6 +34,7 @@ import com.aula.delta_mobile_app.view.ChatSessionAdapter;
 import com.aula.delta_mobile_app.view.StatusNoticeView;
 import com.aula.delta_mobile_app.viewmodel.ChatFlow.HistoryState;
 import com.aula.delta_mobile_app.viewmodel.ChatViewModel;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -52,6 +56,12 @@ public final class ChatFragment extends Fragment {
     private Consumer<String> selectSession;
     private boolean productionHistory;
     private boolean sendingEnabled = true;
+    private Consumer<Boolean> newChatAction;
+    private Runnable resumeAction, introductionAction;
+    private NavController navigation;
+    private int sectionDestination;
+    private View newButton;
+    private AlertDialog newChatDialog;
     private EditText input;
     private TextView counter;
     private View sendButton;
@@ -89,16 +99,29 @@ public final class ChatFragment extends Fragment {
             updateDraft = model::setDraft;
             sendAction = model::send;
             sendingEnabled = model.sendingEnabled();
+            newChatAction = model::newChat;
+            resumeAction = model::resumeConversation;
+            introductionAction = model::showIntroduction;
             historySource = model.history();
             reloadSessions = model::loadSessions;
             selectSession = model::openSession;
             productionHistory = true;
+        }
+        if (productionHistory) {
+            try {
+                navigation = NavHostFragment.findNavController(this);
+                sectionDestination = navigation.getCurrentDestination() == null ? 0 : navigation.getCurrentDestination().getId();
+            } catch (IllegalStateException unavailable) {
+                navigation = null;
+            }
         }
         view.setAccessibilityPaneTitle(getText(R.string.chat_title));
         messages = view.findViewById(R.id.chat_messages);
         input = view.findViewById(R.id.chat_input);
         counter = view.findViewById(R.id.chat_character_count);
         sendButton = view.findViewById(R.id.chat_send);
+        newButton = view.findViewById(R.id.chat_new);
+        newButton.setOnClickListener(button -> requestNewChat());
         adapter = new ChatMessageAdapter();
         feedback = new FeedbackAdapter();
         landing = new LandingAdapter();
@@ -128,6 +151,7 @@ public final class ChatFragment extends Fragment {
         sendButton.setOnClickListener(button -> attemptSend());
         ViewCompat.setOnApplyWindowInsetsListener(view, (root, insets) -> {
             boolean keyboard = insets.isVisible(WindowInsetsCompat.Type.ime());
+            root.findViewById(R.id.chat_actions).setVisibility(keyboard ? View.GONE : View.VISIBLE);
             View column = root.findViewById(R.id.chat_content);
             ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) column.getLayoutParams();
             int bottom = keyboard ? 0 : getResources().getDimensionPixelSize(R.dimen.chat_menu_clearance);
@@ -151,6 +175,7 @@ public final class ChatFragment extends Fragment {
     }
 
     private void render(ChatState state) {
+        if (state != null && !Objects.equals(current.account.data, state.account.data)) dismissNewChatDialog();
         current = state == null ? ChatState.empty() : state;
         if (input == null || adapter == null) return;
         rendering = true;
@@ -159,6 +184,8 @@ public final class ChatFragment extends Fragment {
             input.setSelection(input.length());
         }
         rendering = false;
+        if (history != null && sessions != null) sessions.submitList(current.showIntroduction && history.sessions.data != null ? history.sessions.data : Collections.emptyList());
+        landing.notifyItemChanged(0);
         boolean follow = !messages.canScrollVertically(1);
         if (current.messages.size() > adapter.getCurrentList().size() && !current.messages.isEmpty()) {
             ChatMessage last = current.messages.get(current.messages.size() - 1);
@@ -168,16 +195,18 @@ public final class ChatFragment extends Fragment {
         feedback.update(current);
         ChatMessageAdapter submitted = adapter;
         boolean scroll = follow;
-        adapter.submitList(current.messages, () -> {
-            if (adapter == submitted && messages != null && scroll && messages.getAdapter() != null)
-                messages.scrollToPosition(messages.getAdapter().getItemCount() - 1);
+        adapter.submitList(current.showIntroduction ? Collections.emptyList() : current.messages, () -> {
+            if (adapter == submitted && messages != null && scroll && messages.getAdapter() != null) {
+                if (current.showIntroduction) ((LinearLayoutManager) messages.getLayoutManager()).scrollToPositionWithOffset(0, hasConversation() ? -messages.getPaddingTop() : 0);
+                else messages.scrollToPosition(messages.getAdapter().getItemCount() - 1);
+            }
         });
         View root = getView();
         if (root != null) {
             root.removeCallbacks(retryReady);
             long delay = current.sending.retryAt - System.currentTimeMillis();
             if (history != null) {
-                for (long deadline : new long[]{history.sessions.retryAt, history.history.retryAt}) {
+                for (long deadline : new long[]{history.sessions.retryAt, history.history.retryAt, history.closing.retryAt}) {
                     long waiting = deadline - System.currentTimeMillis();
                     if (waiting > 0 && (delay <= 0 || waiting < delay)) delay = waiting;
                 }
@@ -188,13 +217,14 @@ public final class ChatFragment extends Fragment {
 
     private boolean ready() {
         return sendingEnabled && updateDraft != null && sendAction != null && current.account.status == ScreenState.Status.SUCCESS
-            && (history == null || (!history.history.busy() && history.history.status != ScreenState.Status.ERROR));
+            && !(current.showIntroduction && (current.sessionId != null || !current.messages.isEmpty()))
+            && (history == null || (!history.closing.busy() && !history.history.busy() && history.history.status != ScreenState.Status.ERROR));
     }
 
     private void renderHistory(HistoryState state) {
         history = state;
         if (sessions == null) return;
-        sessions.submitList(state == null || state.sessions.data == null ? Collections.emptyList() : state.sessions.data);
+        sessions.submitList(state == null || state.sessions.data == null || !current.showIntroduction ? Collections.emptyList() : state.sessions.data);
         landing.notifyItemChanged(0);
         render(current);
     }
@@ -216,6 +246,39 @@ public final class ChatFragment extends Fragment {
         input.setError(length > 2000 ? getString(R.string.chat_error_message_length) : null);
         sendButton.setEnabled(canSend());
         sendButton.setAlpha(sendButton.isEnabled() ? 1f : .45f);
+        newButton.setEnabled(canStartNewChat());
+        newButton.setAlpha(newButton.isEnabled() ? 1f : .45f);
+    }
+
+    private boolean hasConversation() {
+        return current.sessionId != null || !current.messages.isEmpty() || !current.draft.isEmpty() || current.sending.busy();
+    }
+
+    private boolean canStartNewChat() {
+        return newChatAction != null && current.account.status == ScreenState.Status.SUCCESS && !current.sending.busy()
+            && (sendingEnabled || current.sessionId == null)
+            && (history == null || (!history.history.busy() && !history.closing.busy() && System.currentTimeMillis() >= history.closing.retryAt));
+    }
+
+    private void requestNewChat() {
+        if (!canStartNewChat()) return;
+        if (current.draft.isEmpty()) {
+            newChatAction.accept(false);
+            return;
+        }
+        if (newChatDialog != null && newChatDialog.isShowing()) return;
+        ChatState confirmed = current;
+        newChatDialog = new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.chat_new_confirm_title).setMessage(R.string.chat_new_confirm_message)
+            .setNegativeButton(R.string.chat_new_cancel, null).setPositiveButton(R.string.chat_new, (dialog, choice) -> {
+                if (canStartNewChat() && Objects.equals(confirmed.account.data, current.account.data) && Objects.equals(confirmed.sessionId, current.sessionId)
+                    && confirmed.draft.equals(current.draft)) newChatAction.accept(true);
+            }).create();
+        newChatDialog.show();
+    }
+
+    private void dismissNewChatDialog() {
+        if (newChatDialog != null) newChatDialog.dismiss();
+        newChatDialog = null;
     }
 
     private void attemptSend() {
@@ -236,7 +299,15 @@ public final class ChatFragment extends Fragment {
     }
 
     @Override
+    public void onStop() {
+        super.onStop();
+        if (productionHistory && navigation != null && sectionDestination != 0 && getActivity() != null && !getActivity().isChangingConfigurations()
+            && navigation.getCurrentDestination() != null && navigation.getCurrentDestination().getId() != sectionDestination && introductionAction != null) introductionAction.run();
+    }
+
+    @Override
     public void onDestroyView() {
+        dismissNewChatDialog();
         View root = getView();
         if (root != null) {
             root.removeCallbacks(retryReady);
@@ -256,6 +327,8 @@ public final class ChatFragment extends Fragment {
         feedback = null;
         landing = null;
         sessions = null;
+        newButton = null;
+        navigation = null;
         super.onDestroyView();
     }
 
@@ -278,8 +351,12 @@ public final class ChatFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull StaticHolder holder, int position) {
+            View resume = holder.itemView.findViewById(R.id.chat_resume);
+            resume.setVisibility(current.showIntroduction && hasConversation() && resumeAction != null ? View.VISIBLE : View.GONE);
+            resume.setOnClickListener(view -> { if (resumeAction != null) resumeAction.run(); });
+            holder.itemView.findViewById(R.id.chat_heading).setVisibility(current.showIntroduction ? View.VISIBLE : View.GONE);
             View container = holder.itemView.findViewById(R.id.chat_history_container);
-            container.setVisibility(historySource == null ? View.GONE : View.VISIBLE);
+            container.setVisibility(historySource == null || !current.showIntroduction ? View.GONE : View.VISIBLE);
             TextView status = holder.itemView.findViewById(R.id.chat_sessions_status);
             boolean busy = history != null && history.sessions.busy();
             boolean empty = history != null && history.sessions.status == ScreenState.Status.SUCCESS && history.sessions.data.isEmpty();
@@ -304,8 +381,11 @@ public final class ChatFragment extends Fragment {
         private ChatState state = ChatState.empty();
 
         private boolean visible() {
-            return state.account.busy() || state.sending.busy() || state.account.status == ScreenState.Status.ERROR || state.sending.status == ScreenState.Status.ERROR
-                || history != null && (history.history.status != ScreenState.Status.IDLE || !history.notice.isEmpty())
+            return state.account.busy() || state.account.status == ScreenState.Status.ERROR
+                || !state.showIntroduction && (state.sending.busy() || state.sending.status == ScreenState.Status.ERROR)
+                || history != null && (!history.notice.isEmpty() || history.closing.busy() || history.closing.status == ScreenState.Status.ERROR
+                    || !state.showIntroduction && (history.history.busy() || history.history.status == ScreenState.Status.ERROR
+                        || history.history.status == ScreenState.Status.SUCCESS && history.history.data.isEmpty() && state.messages.isEmpty()))
                 || !sendingEnabled && state.account.status == ScreenState.Status.SUCCESS;
         }
 
@@ -328,29 +408,34 @@ public final class ChatFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull StaticHolder holder, int position) {
-            boolean loadingHistory = history != null && history.history.busy();
-            boolean busy = state.account.busy() || state.sending.busy() || loadingHistory;
+            boolean loadingHistory = !state.showIntroduction && history != null && history.history.busy();
+            boolean closing = history != null && history.closing.busy();
+            boolean busy = state.account.busy() || !state.showIntroduction && state.sending.busy() || loadingHistory || closing;
             holder.itemView.findViewById(R.id.chat_waiting).setVisibility(busy ? View.VISIBLE : View.GONE);
             TextView text = holder.itemView.findViewById(R.id.chat_waiting_text);
-            boolean empty = history != null && history.history.status == ScreenState.Status.SUCCESS && history.history.data.isEmpty() && state.messages.isEmpty();
+            boolean empty = !state.showIntroduction && history != null && history.history.status == ScreenState.Status.SUCCESS && history.history.data.isEmpty() && state.messages.isEmpty();
             holder.itemView.findViewById(R.id.chat_waiting).setVisibility(busy || empty ? View.VISIBLE : View.GONE);
             ((ViewGroup) text.getParent()).getChildAt(0).setVisibility(busy ? View.VISIBLE : View.GONE);
-            text.setText(loadingHistory ? R.string.chat_history_loading : empty ? R.string.chat_history_empty : state.account.busy() ? R.string.chat_preparing : R.string.chat_waiting);
-            ScreenState<?> failure = state.account.status == ScreenState.Status.ERROR ? state.account : state.sending;
+            text.setText(closing ? R.string.chat_closing : loadingHistory ? R.string.chat_history_loading : empty ? R.string.chat_history_empty : state.account.busy() ? R.string.chat_preparing : R.string.chat_waiting);
+            ScreenState<?> failure = state.account.status == ScreenState.Status.ERROR ? state.account : state.showIntroduction ? ScreenState.idle() : state.sending;
             String message = failure.status == ScreenState.Status.ERROR ? failure.message : "";
             if (message.isEmpty() && !sendingEnabled && state.account.status == ScreenState.Status.SUCCESS) message = getString(R.string.chat_sending_pending);
-            boolean historyError = history != null && history.history.status == ScreenState.Status.ERROR;
+            boolean historyError = !state.showIntroduction && history != null && history.history.status == ScreenState.Status.ERROR;
             if (historyError) message = history.history.message;
             if (history != null && !history.notice.isEmpty()) message = history.notice;
+            boolean closeError = history != null && history.closing.status == ScreenState.Status.ERROR;
+            if (closeError) message = getString(R.string.chat_close_failed, getString(R.string.chat_error_timeout).equals(history.closing.message)
+                ? getString(R.string.chat_close_timeout) : history.closing.message);
             if (getString(R.string.chat_error_timeout).equals(message)) message += "\n" + getString(R.string.chat_retry_uncertain);
             ((StatusNoticeView) holder.itemView.findViewById(R.id.chat_notice)).setText(message);
             TextView retry = holder.itemView.findViewById(R.id.chat_retry);
-            retry.setVisibility(state.sending.status == ScreenState.Status.ERROR || historyError ? View.VISIBLE : View.GONE);
-            retry.setEnabled(historyError ? System.currentTimeMillis() >= history.history.retryAt : canSend());
+            retry.setVisibility(!state.showIntroduction && state.sending.status == ScreenState.Status.ERROR || historyError || closeError ? View.VISIBLE : View.GONE);
+            retry.setEnabled(closeError ? canStartNewChat() : historyError ? System.currentTimeMillis() >= history.history.retryAt : canSend());
             retry.setAlpha(retry.isEnabled() ? 1f : .45f);
-            retry.setText(System.currentTimeMillis() < (historyError ? history.history.retryAt : state.sending.retryAt) ? R.string.chat_retry_wait : R.string.chat_retry);
+            retry.setText(System.currentTimeMillis() < (closeError ? history.closing.retryAt : historyError ? history.history.retryAt : state.sending.retryAt) ? R.string.chat_retry_wait : R.string.chat_retry);
             retry.setOnClickListener(button -> {
-                if (historyError && selectSession != null) selectSession.accept(history.selectedId);
+                if (closeError) requestNewChat();
+                else if (historyError && selectSession != null) selectSession.accept(history.selectedId);
                 else attemptSend();
             });
         }

@@ -53,7 +53,13 @@ Fonte: resposta E.4. A listagem atual retorna somente `session_id` e `created_at
 
 **Decidido na etapa 7:** bloquear a abertura de uma conversa do histórico enquanto houver envio em andamento ou rascunho não vazio, mostrando um aviso para aguardar ou limpar o campo. Não descartar nem transferir texto/resposta entre sessões. Fonte: resposta nesta conversa — “Bloquear a troca nesses casos (recomendado)”. Essa regra não resolve o comportamento do botão de novo chat na etapa 9.
 
-**Pendente:** posição e rótulo final do botão; comportamento se o encerramento falhar; comportamento ao iniciar outro chat enquanto uma resposta está sendo processada; definição de como acessar a conversa corrente a partir da apresentação inicial.
+**Decidido na etapa 9:** posicionar “Novo chat” no topo da seção, acima do conteúdo rolável. Na apresentação inicial, mostrar “Retomar conversa” quando houver sessão, mensagens, rascunho ou envio guardado. Entrar pela aba apresenta o início sem apagar nem encerrar a conversa; rotação preserva a tela atual. Fonte: resposta nesta conversa — “Aprovar posição e retomada (recomendado)”. A resposta anterior da etapa 8 continua valendo para guardar o resultado fora da tela; o acesso ao resultado agora passa por “Retomar conversa”.
+
+**Decidido na etapa 9:** bloquear novo chat durante envio/carregamento de mensagens e confirmar descarte de rascunho não vazio. Sem rascunho, seguir diretamente. Nunca cancelar a chamada existente para trocar de conversa. Fonte: resposta nesta conversa — “Bloquear operação em andamento e confirmar descarte (recomendado)”.
+
+**Decidido na etapa 9:** se `close` falhar, preservar sessão, mensagens e rascunho anteriores; oferecer somente nova tentativa manual. Em timeout, esclarecer que a confirmação não chegou e que repetir pode gerar memória novamente. Fonte: resposta nesta conversa — “Manter a conversa anterior e oferecer nova tentativa manual (recomendado)”. Uma conversa nova sem sessão anterior é apenas estado local; nenhum POST cria sessão vazia.
+
+**Limite mantido de P03:** a composição padrão continua sem habilitar operações de escrita no serviço de IA; com sessão anterior identificada, “Novo chat” não executa `close` enquanto esse bloqueio vigorar. O reset sem sessão é local. Os testes de fechamento usam exclusivamente serviço substituído.
 
 **Limite técnico:** o endpoint `close` gera memória da conversa, mas não marca a sessão como fechada nem impede novos envios. A decisão de encerrar a conversa no fluxo do app não altera essa semântica do servidor. Ver [contrato](api-contract.md#post-sessionssession_idclose--gerar-memória-da-conversa).
 
@@ -117,7 +123,7 @@ Fonte histórica: resposta E.9; a revisão acima substitui a obrigatoriedade de 
 
 **Decidido na etapa 8:** guardar no ViewModel a resposta recebida enquanto outra aba estiver aberta e apresentá-la na conversa ao voltar, sem popup, notificação nem mudança automática de aba. Na recriação por rotação, preservar a conversa e o envio em andamento. Fonte: resposta nesta conversa — “Guardar e mostrar ao voltar (recomendado)”. Isso vale durante a vida do ViewModel, sem garantia após morte do processo Android.
 
-**Pendente:** o comportamento do botão de novo chat continua dependendo de D05 e da etapa 9. A ativação do envio ao serviço publicado permanece bloqueada por P03 conforme a decisão da etapa 8 acima.
+**Atualização da etapa 9:** o comportamento do botão de novo chat e a retomada foram definidos em D05. A ativação de operações de escrita no serviço publicado permanece bloqueada por P03 conforme a decisão da etapa 8 acima.
 
 **Limite técnico conhecido:** a API não tem deduplicação de envios. **INCERTO — risco inferido:** repetir uma chamada após timeout pode duplicar operações. Ver [contrato](api-contract.md#post-chat--enviar-mensagem).
 
@@ -128,7 +134,7 @@ Fonte: resposta E.10. “Não tem que fechar a chamada” foi registrado como ma
 Esta ordem organiza a conversa; não representa decisões já aceitas sobre as soluções.
 
 1. **Ambiente publicado — P03:** o contrato HTTP foi comparado, mas faltam revisão em execução e confirmação da autenticação/gateway nas operações de chat/sessões. Encaminhar a verificação ao responsável pelo ambiente; não repetir à pessoa usuária perguntas às quais ela já respondeu “não sei”.
-2. **Ciclo da conversa — P05:** botão de novo chat, retomada, falha de encerramento e requisições em andamento.
+2. **Ciclo da conversa — P05, resolvido na etapa 9:** botão de novo chat, retomada, falha de encerramento e requisições em andamento definidos em D05. A execução remota ainda depende de P03.
 3. **Envio e falhas — P06:** concorrência, mensagem de erro, nova tentativa e entrega de respostas fora da tela.
 4. **Continuidade e metas — P07/P08:** critérios de aceite diante do contexto limitado e operações permitidas para metas.
 5. **Apresentação — P04/P08:** sugestões iniciais, histórico alternativo e formatação do texto.

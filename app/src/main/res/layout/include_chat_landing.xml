@@ -5,6 +5,15 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/chat_resume"
+        style="@style/Chat.Action"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/chat_section_spacing"
+        android:text="@string/chat_resume"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/chat_heading"
         style="@style/Chat.Heading"

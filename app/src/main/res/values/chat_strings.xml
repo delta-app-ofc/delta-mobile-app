@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="chat_title">Gluh Helper</string>
+    <string name="chat_new">Novo chat</string>
+    <string name="chat_resume">Retomar conversa</string>
+    <string name="chat_new_confirm_title">Iniciar novo chat?</string>
     <string name="chat_new_confirm_message">O rascunho será descartado ao iniciar o novo chat.</string>
+    <string name="chat_new_cancel">Cancelar</string>
+    <string name="chat_closing">Encerrando conversa anterior…</string>
+    <string name="chat_close_failed">Não foi possível confirmar o encerramento. A conversa anterior foi mantida. %1$s</string>
+    <string name="chat_close_timeout">O tempo de espera terminou. Uma nova tentativa pode repetir a geração de memória da conversa.</string>
     <string name="chat_sending_pending">O envio de mensagens ainda não está disponível. Você pode consultar o histórico.</string>
     <string name="chat_history_title">Histórico</string>
     <string name="chat_sessions_loading">Carregando conversas…</string>
