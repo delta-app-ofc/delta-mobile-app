@@ -80,6 +80,20 @@ public class ChatFlowTest {
         return session;
     }
 
+    private HistoryMessage history(String role, String content) {
+        HistoryMessage message = new HistoryMessage();
+        message.role = role;
+        message.content = content;
+        message.timestamp = "2026-10-25T12:00:00Z";
+        return message;
+    }
+
+    private void listSessions() {
+        flow.loadSessions();
+        gateway.listings.get(0).accept(ScreenState.success(List.of(session("a", "2026-10-25T12:00:00Z"), session("b", "2026-10-24T12:00:00Z"))));
+        drain();
+    }
+
     @Test
     public void listingIsDeduplicatedAndDoesNotFetchPreviews() {
         flow.loadSessions();
@@ -139,6 +153,131 @@ public class ChatFlowTest {
         gateway.listings.get(1).accept(ScreenState.success(List.of()));
         drain();
         assertEquals(ScreenState.Status.SUCCESS, flow.historyState().sessions.status);
+    }
+
+    @Test
+    public void reopeningMapsRolesInServerOrderWithoutInventingAgentOrCharts() {
+        listSessions();
+        flow.openSession("a");
+        flow.openSession("a");
+        assertTrue(flow.historyState().history.busy());
+        assertTrue(flow.state().messages.isEmpty());
+        gateway.histories.get(0).accept(ScreenState.success(List.of(history("human", "Pergunta\nÁgua 💧"), history("assistant", "Fonte: https://example.org"))));
+        drain();
+        flow.openSession("a");
+        assertEquals(List.of("a"), gateway.opened);
+        assertEquals("a", flow.state().sessionId);
+        assertEquals(ChatMessage.Author.USER, flow.state().messages.get(0).author);
+        assertEquals(ChatMessage.Author.ASSISTANT, flow.state().messages.get(1).author);
+        assertEquals("Pergunta\nÁgua 💧", flow.state().messages.get(0).content);
+        assertNull(flow.state().messages.get(1).agentUsed);
+        assertEquals(ScreenState.Status.SUCCESS, flow.state().messages.get(0).status);
+    }
+
+    @Test
+    public void openingAnotherSessionDiscardsLateHistoryAndDoesNotKeepPreviousRows() {
+        listSessions();
+        flow.openSession("a");
+        flow.openSession("b");
+        gateway.histories.get(1).accept(ScreenState.success(List.of(history("assistant", "Resposta B"))));
+        drain();
+        gateway.histories.get(0).accept(ScreenState.success(List.of(history("assistant", "Resposta A atrasada"))));
+        drain();
+        assertEquals("b", flow.state().sessionId);
+        assertEquals("Resposta B", flow.state().messages.get(0).content);
+        flow.openSession("a");
+        assertTrue(flow.state().messages.isEmpty());
+    }
+
+    @Test
+    public void emptyHistoryIsSuccessfulWithoutInventingItsCause() {
+        listSessions();
+        flow.openSession("a");
+        gateway.histories.get(0).accept(ScreenState.success(List.of()));
+        drain();
+        assertEquals(ScreenState.Status.SUCCESS, flow.historyState().history.status);
+        assertTrue(flow.state().messages.isEmpty());
+        assertEquals("a", flow.state().sessionId);
+    }
+
+    @Test
+    public void historyFailureKeepsSelectionAndHasExplicitRetry() {
+        listSessions();
+        flow.openSession("a");
+        gateway.histories.get(0).accept(ScreenState.error("Indisponível", 503, 0));
+        drain();
+        assertEquals("a", flow.historyState().selectedId);
+        assertEquals("Indisponível", flow.historyState().history.message);
+        assertTrue(flow.state().messages.isEmpty());
+        assertEquals(1, gateway.histories.size());
+        flow.openSession("a");
+        assertEquals(2, gateway.histories.size());
+    }
+
+    @Test
+    public void unknownHistoryRoleIsNotMisattributedToAssistant() {
+        listSessions();
+        flow.openSession("a");
+        gateway.histories.get(0).accept(ScreenState.success(List.of(history("system", "Conteúdo desconhecido"))));
+        drain();
+        assertEquals(ScreenState.Status.ERROR, flow.historyState().history.status);
+        assertTrue(flow.state().messages.isEmpty());
+    }
+
+    @Test
+    public void unknownSessionCannotBeQueried() {
+        listSessions();
+        flow.openSession("not-from-account-list");
+        assertTrue(gateway.histories.isEmpty());
+        assertNull(flow.historyState().selectedId);
+    }
+
+    @Test
+    public void draftBlocksSelectionWithoutDiscardingText() {
+        listSessions();
+        flow.setDraft("Rascunho");
+        flow.openSession("a");
+        assertEquals("Rascunho", flow.state().draft);
+        assertEquals(strings.apply(R.string.chat_history_draft), flow.historyState().notice);
+        assertTrue(gateway.histories.isEmpty());
+    }
+
+    @Test
+    public void sendingBlocksSelectionWithoutCancelingTheOriginalRequest() {
+        listSessions();
+        send("Água");
+        flow.openSession("a");
+        assertEquals(strings.apply(R.string.chat_history_busy), flow.historyState().notice);
+        assertTrue(gateway.histories.isEmpty());
+        gateway.replies.get(0).accept(reply("Resposta", "original"));
+        drain();
+        assertEquals("original", flow.state().sessionId);
+    }
+
+    @Test
+    public void historyLoadingAndFailureCannotAcceptSend() {
+        listSessions();
+        flow.openSession("a");
+        flow.setDraft("Água");
+        flow.send();
+        assertTrue(gateway.replies.isEmpty());
+        gateway.histories.get(0).accept(ScreenState.error("Falha"));
+        drain();
+        flow.send();
+        assertTrue(gateway.replies.isEmpty());
+    }
+
+    @Test
+    public void logoutClearsListsAndDiscardsQueuedHistory() {
+        listSessions();
+        flow.openSession("a");
+        gateway.histories.get(0).accept(ScreenState.success(List.of(history("assistant", "Privado"))));
+        flow.invalidate();
+        drain();
+        assertEquals(ScreenState.Status.IDLE, flow.historyState().sessions.status);
+        assertEquals(ScreenState.Status.IDLE, flow.historyState().history.status);
+        assertNull(flow.historyState().selectedId);
+        assertTrue(flow.state().messages.isEmpty());
     }
 
     @Test

@@ -129,7 +129,7 @@ public class ChatRenderingInstrumentedTest {
             flow.observeHistory(historyState::setValue);
             fragment = new ChatFragment();
             fragment.bindConversation(state, flow::setDraft, flow::send);
-            fragment.bindHistory(historyState, flow::loadSessions);
+            fragment.bindHistory(historyState, flow::loadSessions, flow::openSession);
             activity.getSupportFragmentManager().beginTransaction().replace(R.id.auth_nav_host, fragment).commitNow();
             flow.loadSessions();
         });
@@ -146,6 +146,14 @@ public class ChatRenderingInstrumentedTest {
         enableHistory();
         scenario.onActivity(activity -> gateway.listings.get(0).accept(ScreenState.success(List.of(session("session-a", "2026-10-25T12:00:00Z"), session("session-b", "invalid")))));
         await(() -> sessions().getItemCount() == 2);
+    }
+
+    private HistoryMessage historical(String role, String content) {
+        HistoryMessage message = new HistoryMessage();
+        message.role = role;
+        message.content = content;
+        message.timestamp = "2026-10-25T12:00:00Z";
+        return message;
     }
 
     private void await(BooleanSupplier condition) {
@@ -405,4 +413,54 @@ public class ChatRenderingInstrumentedTest {
         scenario.onActivity(activity -> assertEquals(2, gateway.listings.size()));
     }
 
+    @Test
+    public void selectingHistoryLoadsMessagesWithoutSendingOrClosing() throws IOException {
+        seedSessions();
+        scenario.onActivity(activity -> list().scrollToPosition(1));
+        await(() -> list().getLayoutManager().findViewByPosition(1) != null);
+        onView(withText("ID: session-a")).perform(click());
+        scrollToEnd();
+        onView(withId(R.id.chat_waiting_text)).check(matches(withText(R.string.chat_history_loading)));
+        scenario.onActivity(activity -> gateway.histories.get(0).accept(ScreenState.success(List.of(historical("human", "Pergunta histórica"), historical("assistant", "Resposta histórica\nFonte: https://example.org")))));
+        await(() -> messages().getItemCount() == 2);
+        scrollToEnd();
+        onView(withText("Resposta histórica\nFonte: https://example.org")).check(matches(isDisplayed()));
+        scenario.onActivity(activity -> assertTrue(gateway.replies.isEmpty()));
+        capture("stage7-history");
+    }
+
+    @Test
+    public void selectedHistoryFailureAndEmptyRetryDoNotInventMissingSessionCause() throws IOException {
+        seedSessions();
+        scenario.onActivity(activity -> {
+            flow.openSession("session-a");
+            gateway.histories.get(0).accept(ScreenState.error(activity.getString(R.string.chat_error_network)));
+        });
+        scrollToEnd();
+        onView(withId(R.id.chat_notice)).check(matches(withText(R.string.chat_error_network)));
+        onView(withId(R.id.chat_retry)).perform(click());
+        scenario.onActivity(activity -> gateway.histories.get(1).accept(ScreenState.success(List.of())));
+        scrollToEnd();
+        onView(withId(R.id.chat_waiting_text)).check(matches(withText(R.string.chat_history_empty)));
+        scenario.onActivity(activity -> assertEquals("session-a", flow.state().sessionId));
+        capture("stage7-empty-history");
+    }
+
+    @Test
+    public void historySelectionBlocksDraftAndLogoutClearsList() {
+        seedSessions();
+        scenario.onActivity(activity -> {
+            flow.setDraft("Rascunho preservado");
+            flow.openSession("session-a");
+        });
+        scrollToEnd();
+        onView(withId(R.id.chat_notice)).check(matches(withText(R.string.chat_history_draft)));
+        onView(withId(R.id.chat_input)).check(matches(withText("Rascunho preservado")));
+        scenario.onActivity(activity -> {
+            assertTrue(gateway.histories.isEmpty());
+            flow.invalidate();
+        });
+        await(() -> sessions().getItemCount() == 0);
+        onView(withId(R.id.chat_input)).check(matches(withText("")));
+    }
 }

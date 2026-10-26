@@ -49,6 +49,8 @@ Fonte: resposta E.4. A listagem atual retorna somente `session_id` e `created_at
 
 **Decidido:** ao entrar no chatbot, apresentar sempre a tela inicial. Acrescentar um botão de iniciar novo chat, mesmo sem essa ação nas referências do Figma. Ao acioná-lo, iniciar uma nova conversa e encerrar a anterior.
 
+**Decidido na etapa 7:** bloquear a abertura de uma conversa do histórico enquanto houver envio em andamento ou rascunho não vazio, mostrando um aviso para aguardar ou limpar o campo. Não descartar nem transferir texto/resposta entre sessões. Fonte: resposta nesta conversa — “Bloquear a troca nesses casos (recomendado)”. Essa regra não resolve o comportamento do botão de novo chat na etapa 9.
+
 **Pendente:** posição e rótulo final do botão; comportamento se o encerramento falhar; comportamento ao iniciar outro chat enquanto uma resposta está sendo processada; definição de como acessar a conversa corrente a partir da apresentação inicial.
 
 **Limite técnico:** o endpoint `close` gera memória da conversa, mas não marca a sessão como fechada nem impede novos envios. A decisão de encerrar a conversa no fluxo do app não altera essa semântica do servidor. Ver [contrato](api-contract.md#post-sessionssession_idclose--gerar-memória-da-conversa).

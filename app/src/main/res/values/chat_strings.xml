@@ -8,6 +8,10 @@
     <string name="chat_session_no_date">Conversa sem data</string>
     <string name="chat_session_identity">ID: %1$s</string>
     <string name="chat_session_open">Abrir %1$s. ID: %2$s</string>
+    <string name="chat_history_loading">Carregando mensagens…</string>
+    <string name="chat_history_empty">Nenhuma mensagem disponível nesta conversa.</string>
+    <string name="chat_history_busy">Aguarde o envio terminar antes de abrir outra conversa.</string>
+    <string name="chat_history_draft">Limpe o campo de mensagem antes de abrir outra conversa.</string>
     <string name="chat_landing_heading">Monitore cada <b>gota</b>\ncom mais precisão.</string>
     <string name="chat_composer_hint">Pergunte algo ao gluh…</string>
     <string name="chat_send">Enviar</string>

@@ -63,6 +63,11 @@ public final class ChatViewModel extends AndroidViewModel {
         }
     }
 
+    public void openSession(String sessionId) {
+        if (accountReady && !cleared && flow != null && auth.hasSession()) flow.openSession(sessionId);
+        else if (!cleared && !auth.hasSession()) clearAccount();
+    }
+
     public void prepare() {
         if (cleared || loadingAccount || accountReady) return;
         loadAccount();

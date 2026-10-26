@@ -3,6 +3,7 @@ package com.aula.delta_mobile_app.viewmodel;
 import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.ChatMessage;
 import com.aula.delta_mobile_app.model.ChatModels.ChatResponse;
+import com.aula.delta_mobile_app.model.ChatModels.HistoryMessage;
 import com.aula.delta_mobile_app.model.ChatModels.Session;
 import com.aula.delta_mobile_app.model.ChatState;
 import com.aula.delta_mobile_app.model.ScreenState;
@@ -113,6 +114,40 @@ public final class ChatFlow {
         }));
     }
 
+    public void openSession(String sessionId) {
+        if (!active || sessions.data == null || sessions.data.stream().noneMatch(entry -> entry.id.equals(sessionId))) return;
+        if (state.sending.busy() || !state.draft.isEmpty()) {
+            historyNotice = strings.apply(state.sending.busy() ? R.string.chat_history_busy : R.string.chat_history_draft);
+            publishHistory();
+            return;
+        }
+        if (Objects.equals(selectedId, sessionId) && (history.busy() || history.status == ScreenState.Status.SUCCESS || now.getAsLong() < history.retryAt)) return;
+        selectedId = sessionId;
+        historyNotice = "";
+        history = ScreenState.loading();
+        long identity = generation, request = ++historyAttempt;
+        publishHistory();
+        publish(new ChatState(state.account, false, "", sessionId, Collections.emptyList(), ScreenState.idle()));
+        actions.history(sessionId, result -> dispatch.accept(() -> {
+            if (!active || identity != generation || request != historyAttempt || !Objects.equals(selectedId, sessionId) || !history.busy()) return;
+            if (result != null && result.status == ScreenState.Status.SUCCESS && result.data != null) {
+                List<ChatMessage> messages = new ArrayList<>();
+                for (HistoryMessage message : result.data) {
+                    if (message == null || message.content == null || !("human".equals(message.role) || "assistant".equals(message.role))) {
+                        history = ChatbotErrors.invalidBody(strings);
+                        publishHistory();
+                        return;
+                    }
+                    messages.add(new ChatMessage(++nextId, "human".equals(message.role) ? ChatMessage.Author.USER : ChatMessage.Author.ASSISTANT,
+                        message.content, ScreenState.Status.SUCCESS, null));
+                }
+                history = ScreenState.success(Collections.unmodifiableList(messages));
+                publish(new ChatState(state.account, false, "", sessionId, messages, ScreenState.idle()));
+            } else history = failure(result);
+            publishHistory();
+        }));
+    }
+
     private <T> ScreenState<T> failure(ScreenState<?> result) {
         return result != null && result.status == ScreenState.Status.ERROR ? ScreenState.error(result.message, result.code, result.retryAt) : ChatbotErrors.invalidBody(strings);
     }
@@ -127,7 +162,7 @@ public final class ChatFlow {
     }
 
     public void send() {
-        if (!active || state.sending.busy() || now.getAsLong() < state.sending.retryAt) return;
+        if (!active || state.sending.busy() || history.busy() || history.status == ScreenState.Status.ERROR || now.getAsLong() < state.sending.retryAt) return;
         String content = state.draft;
         if (content.codePoints().allMatch(value -> Character.isWhitespace(value) || Character.isSpaceChar(value))) {
             invalidInput(R.string.chat_error_empty_message);
@@ -194,5 +229,9 @@ public final class ChatFlow {
     private void publish(ChatState next) {
         state = next;
         observer.accept(next);
+        if (!state.sending.busy() && state.draft.isEmpty() && !historyNotice.isEmpty()) {
+            historyNotice = "";
+            publishHistory();
+        }
     }
 }
