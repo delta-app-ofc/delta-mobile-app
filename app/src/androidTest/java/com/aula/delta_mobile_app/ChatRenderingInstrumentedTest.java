@@ -25,6 +25,7 @@ import com.aula.delta_mobile_app.model.ChatState;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.repository.ChatActions;
 import com.aula.delta_mobile_app.view.ChatMessageAdapter;
+import com.aula.delta_mobile_app.view.ChatSessionAdapter;
 import com.aula.delta_mobile_app.view.activities.login.LoginActivity;
 import com.aula.delta_mobile_app.view.fragments.ChatFragment;
 import com.aula.delta_mobile_app.viewmodel.ChatFlow;
@@ -60,15 +61,17 @@ import static org.junit.Assert.*;
 public class ChatRenderingInstrumentedTest {
     private static class Gateway implements ChatActions {
         final List<Consumer<ScreenState<ChatResponse>>> replies = new ArrayList<>();
+        final List<Consumer<ScreenState<List<Session>>>> listings = new ArrayList<>();
+        final List<Consumer<ScreenState<List<HistoryMessage>>>> histories = new ArrayList<>();
 
         @Override
         public void sessions(Consumer<ScreenState<List<Session>>> callback) {
-            throw new AssertionError("No session requests during rendering tests");
+            listings.add(callback);
         }
 
         @Override
         public void history(String sessionId, Consumer<ScreenState<List<HistoryMessage>>> callback) {
-            throw new AssertionError("No history requests during rendering tests");
+            histories.add(callback);
         }
 
         @Override
@@ -87,6 +90,7 @@ public class ChatRenderingInstrumentedTest {
     private final MutableLiveData<ChatState> state = new MutableLiveData<>();
     private ChatFlow flow;
     private ChatFragment fragment;
+    private final MutableLiveData<ChatFlow.HistoryState> historyState = new MutableLiveData<>();
 
     @Before
     public void openControlledConversation() {
@@ -113,7 +117,35 @@ public class ChatRenderingInstrumentedTest {
     }
 
     private ChatMessageAdapter messages() {
-        return (ChatMessageAdapter) ((ConcatAdapter) list().getAdapter()).getAdapters().get(1);
+        return (ChatMessageAdapter) ((ConcatAdapter) list().getAdapter()).getAdapters().stream().filter(adapter -> adapter instanceof ChatMessageAdapter).findFirst().get();
+    }
+
+    private ChatSessionAdapter sessions() {
+        return (ChatSessionAdapter) ((ConcatAdapter) list().getAdapter()).getAdapters().stream().filter(adapter -> adapter instanceof ChatSessionAdapter).findFirst().get();
+    }
+
+    private void enableHistory() {
+        scenario.onActivity(activity -> {
+            flow.observeHistory(historyState::setValue);
+            fragment = new ChatFragment();
+            fragment.bindConversation(state, flow::setDraft, flow::send);
+            fragment.bindHistory(historyState, flow::loadSessions);
+            activity.getSupportFragmentManager().beginTransaction().replace(R.id.auth_nav_host, fragment).commitNow();
+            flow.loadSessions();
+        });
+    }
+
+    private Session session(String id, String date) {
+        Session session = new Session();
+        session.sessionId = id;
+        session.createdAt = date;
+        return session;
+    }
+
+    private void seedSessions() {
+        enableHistory();
+        scenario.onActivity(activity -> gateway.listings.get(0).accept(ScreenState.success(List.of(session("session-a", "2026-10-25T12:00:00Z"), session("session-b", "invalid")))));
+        await(() -> sessions().getItemCount() == 2);
     }
 
     private void await(BooleanSupplier condition) {
@@ -336,4 +368,41 @@ public class ChatRenderingInstrumentedTest {
         onView(withId(R.id.chat_input)).check(matches(withText(""))).check(matches(not(isEnabled())));
         scenario.onActivity(activity -> assertEquals(1, list().getAdapter().getItemCount()));
     }
+
+    @Test
+    public void historyListsOnlyDateAndIdentityWithApprovedIcon() throws IOException {
+        seedSessions();
+        scenario.onActivity(activity -> list().scrollToPosition(1));
+        await(() -> list().getLayoutManager().findViewByPosition(1) != null);
+        onView(withText("ID: session-a")).check(matches(isDisplayed()));
+        scenario.onActivity(activity -> {
+            View row = list().getLayoutManager().findViewByPosition(1);
+            assertTrue(((TextView) row.findViewById(R.id.chat_session_title)).getText().toString().startsWith(activity.getString(R.string.chat_session_date, "")));
+            assertTrue(row.getContentDescription().toString().contains("session-a"));
+            assertTrue(gateway.histories.isEmpty());
+        });
+        scrollToEnd();
+        onView(withText(R.string.chat_session_no_date)).check(matches(isDisplayed()));
+        capture("stage7-sessions");
+    }
+
+    @Test
+    public void emptySessionListUsesNeutralEmptyState() throws IOException {
+        enableHistory();
+        scenario.onActivity(activity -> gateway.listings.get(0).accept(ScreenState.success(List.of())));
+        scrollToEnd();
+        onView(withId(R.id.chat_sessions_status)).check(matches(withText(R.string.chat_sessions_empty)));
+        capture("stage7-empty-list");
+    }
+
+    @Test
+    public void sessionListingFailureHasExplicitRetry() {
+        enableHistory();
+        scenario.onActivity(activity -> gateway.listings.get(0).accept(ScreenState.error(activity.getString(R.string.chat_error_network))));
+        scrollToEnd();
+        onView(withId(R.id.chat_sessions_notice)).check(matches(withText(R.string.chat_error_network)));
+        onView(withId(R.id.chat_sessions_retry)).perform(click());
+        scenario.onActivity(activity -> assertEquals(2, gateway.listings.size()));
+    }
+
 }

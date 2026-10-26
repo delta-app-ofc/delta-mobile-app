@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="chat_title">Gluh Helper</string>
+    <string name="chat_history_title">Histórico</string>
+    <string name="chat_sessions_loading">Carregando conversas…</string>
+    <string name="chat_sessions_empty">Nenhuma conversa disponível.</string>
+    <string name="chat_session_date">Conversa de %1$s</string>
+    <string name="chat_session_no_date">Conversa sem data</string>
+    <string name="chat_session_identity">ID: %1$s</string>
+    <string name="chat_session_open">Abrir %1$s. ID: %2$s</string>
     <string name="chat_landing_heading">Monitore cada <b>gota</b>\ncom mais precisão.</string>
     <string name="chat_composer_hint">Pergunte algo ao gluh…</string>
     <string name="chat_send">Enviar</string>

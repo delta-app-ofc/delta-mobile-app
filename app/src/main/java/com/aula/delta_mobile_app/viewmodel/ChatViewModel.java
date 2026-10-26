@@ -19,12 +19,14 @@ import com.aula.delta_mobile_app.services.network.RetrofitClient;
 
 public final class ChatViewModel extends AndroidViewModel {
     private final MutableLiveData<ChatState> state = new MutableLiveData<>(ChatState.empty());
+    private final MutableLiveData<ChatFlow.HistoryState> history = new MutableLiveData<>();
     private final Handler main = new Handler(Looper.getMainLooper());
     private final AuthRepository auth;
     private final Observer<Boolean> sessionObserver;
     private ChatFlow flow;
     private int generation;
     private boolean cleared, loadingAccount, accountReady;
+    private boolean pendingSessions;
 
     public ChatViewModel(Application application) {
         super(application);
@@ -42,6 +44,23 @@ public final class ChatViewModel extends AndroidViewModel {
 
     public LiveData<ChatState> state() {
         return state;
+    }
+
+    public LiveData<ChatFlow.HistoryState> history() {
+        return history;
+    }
+
+    public void loadSessions() {
+        if (cleared) return;
+        if (!auth.hasSession()) {
+            clearAccount();
+            return;
+        }
+        if (accountReady && flow != null) flow.loadSessions();
+        else {
+            pendingSessions = true;
+            prepare();
+        }
     }
 
     public void prepare() {
@@ -67,6 +86,7 @@ public final class ChatViewModel extends AndroidViewModel {
         int request = ++generation;
         loadingAccount = true;
         accountReady = false;
+        history.setValue(null);
         state.setValue(ChatState.forAccount(ScreenState.loading()));
         auth.<Integer>resource(() -> ScreenState.success(auth.currentProfile().id), result -> main.post(() -> {
             if (cleared || request != generation) return;
@@ -84,9 +104,17 @@ public final class ChatViewModel extends AndroidViewModel {
                 Application app = getApplication();
                 flow = new ChatFlow(new ChatRepository(RetrofitClient.getChatbotService(), result.data, app::getString), result.data, action -> main.post(action),
                     this::publishFlow, app::getString, System::currentTimeMillis);
+                flow.observeHistory(value -> {
+                    if (!cleared && accountReady && flow != null && auth.hasSession()) history.setValue(value);
+                });
             }
             accountReady = true;
+            history.setValue(flow.historyState());
             state.setValue(flow.state());
+            if (pendingSessions) {
+                pendingSessions = false;
+                flow.loadSessions();
+            }
         }));
     }
 
@@ -98,7 +126,9 @@ public final class ChatViewModel extends AndroidViewModel {
         generation++;
         loadingAccount = false;
         accountReady = false;
+        pendingSessions = false;
         discardFlow();
+        history.setValue(null);
         if (!cleared) state.setValue(ChatState.empty());
     }
 

@@ -21,15 +21,19 @@ public class ChatFlowTest {
     private static class Gateway implements ChatActions {
         final List<String> messages = new ArrayList<>(), sessions = new ArrayList<>();
         final List<Consumer<ScreenState<ChatResponse>>> replies = new ArrayList<>();
+        final List<Consumer<ScreenState<List<Session>>>> listings = new ArrayList<>();
+        final List<Consumer<ScreenState<List<HistoryMessage>>>> histories = new ArrayList<>();
+        final List<String> opened = new ArrayList<>();
 
         @Override
         public void sessions(Consumer<ScreenState<List<Session>>> callback) {
-            throw new AssertionError("Session listing belongs to a later stage");
+            listings.add(callback);
         }
 
         @Override
         public void history(String sessionId, Consumer<ScreenState<List<HistoryMessage>>> callback) {
-            throw new AssertionError("History belongs to a later stage");
+            opened.add(sessionId);
+            histories.add(callback);
         }
 
         @Override
@@ -67,6 +71,84 @@ public class ChatFlowTest {
     private void send(String text) {
         flow.setDraft(text);
         flow.send();
+    }
+
+    private Session session(String id, String date) {
+        Session session = new Session();
+        session.sessionId = id;
+        session.createdAt = date;
+        return session;
+    }
+
+    @Test
+    public void listingIsDeduplicatedAndDoesNotFetchPreviews() {
+        flow.loadSessions();
+        flow.loadSessions();
+        assertTrue(flow.historyState().sessions.busy());
+        assertEquals(1, gateway.listings.size());
+        gateway.listings.get(0).accept(ScreenState.success(List.of()));
+        drain();
+        flow.loadSessions();
+        assertEquals(ScreenState.Status.SUCCESS, flow.historyState().sessions.status);
+        assertTrue(flow.historyState().sessions.data.isEmpty());
+        assertEquals(1, gateway.listings.size());
+        assertTrue(gateway.histories.isEmpty());
+    }
+
+    @Test
+    public void sessionsSortByInstantWithInvalidDatesLastAndIdsAsTieBreakers() {
+        flow.loadSessions();
+        Session mutable = session("z", "2026-10-25T09:00:00-03:00");
+        gateway.listings.get(0).accept(ScreenState.success(List.of(session("invalid", "nonsense"), mutable,
+            session("old", "2026-10-24T12:00:00Z"), session("a", "2026-10-25T12:00:00Z"))));
+        drain();
+        mutable.sessionId = "changed";
+        assertEquals(List.of("a", "z", "old", "invalid"), flow.historyState().sessions.data.stream().map(entry -> entry.id).collect(java.util.stream.Collectors.toList()));
+        assertNull(flow.historyState().sessions.data.get(3).created);
+        assertThrows(UnsupportedOperationException.class, () -> flow.historyState().sessions.data.clear());
+    }
+
+    @Test
+    public void naiveDateIsNotSilentlyAssignedATimeZone() {
+        flow.loadSessions();
+        gateway.listings.get(0).accept(ScreenState.success(List.of(session("a", "2026-10-25T12:00:00"))));
+        drain();
+        assertNull(flow.historyState().sessions.data.get(0).created);
+    }
+
+    @Test
+    public void duplicateSessionIdentityIsAnInvalidResponse() {
+        flow.loadSessions();
+        gateway.listings.get(0).accept(ScreenState.success(List.of(session("a", "bad"), session("a", "bad"))));
+        drain();
+        assertEquals(ScreenState.Status.ERROR, flow.historyState().sessions.status);
+        assertEquals(strings.apply(R.string.chat_error_invalid_response), flow.historyState().sessions.message);
+    }
+
+    @Test
+    public void listingFailureRetriesOnlyAfterExplicitActionAndRetryAt() {
+        flow.loadSessions();
+        gateway.listings.get(0).accept(ScreenState.error("Aguarde", 429, 2000));
+        drain();
+        assertEquals(ScreenState.Status.ERROR, flow.historyState().sessions.status);
+        flow.loadSessions();
+        assertEquals(1, gateway.listings.size());
+        now.set(2000);
+        flow.loadSessions();
+        assertEquals(2, gateway.listings.size());
+        gateway.listings.get(1).accept(ScreenState.success(List.of()));
+        drain();
+        assertEquals(ScreenState.Status.SUCCESS, flow.historyState().sessions.status);
+    }
+
+    @Test
+    public void logoutDiscardsLateSessionListing() {
+        flow.loadSessions();
+        flow.invalidate();
+        gateway.listings.get(0).accept(ScreenState.success(List.of(session("a", "bad"))));
+        drain();
+        assertEquals(ScreenState.Status.IDLE, flow.historyState().sessions.status);
+        assertNull(flow.historyState().sessions.data);
     }
 
     @Test

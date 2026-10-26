@@ -39,7 +39,9 @@ Fonte: resposta E.3. Referência visual: [tela inicial](design/telainicialchatbo
 
 **Decidido:** usar os ícones predefinidos no Figma e uma apresentação alternativa compatível com os dados disponíveis. Desconsiderar o acesso “Ver todos” nesta entrega.
 
-**Pendente:** definir a regra dos rótulos e da associação entre ícones e conversas. Não foi decidido gerar títulos, buscar todas as mensagens para extrair prévias ou criar metadados locais.
+**Decidido na etapa 7:** listar como “Conversa de [data e hora]”, com um único ícone neutro, ordenar da mais recente para a mais antiga e colocar datas inválidas ao final como “Conversa sem data”. O ID diferencia sessões com a mesma data. Não buscar todas as mensagens para fabricar títulos. Fonte: resposta nesta conversa — “Aprovar essa apresentação (recomendado)”.
+
+**Ícone aprovado na etapa 7:** reutilizar o balão `figma_menu_chat.png`, já exportado do mesmo Figma. O MCP atingiu seu limite antes de permitir exportar um ícone isolado do histórico; não recortar nem redesenhar o conjunto. Fonte: resposta nesta conversa — “Reutilizar o balão existente (recomendado)”.
 
 Fonte: resposta E.4. A listagem atual retorna somente `session_id` e `created_at`, conforme o [contrato](api-contract.md#get-sessionsuser_id--listar-conversas).
 

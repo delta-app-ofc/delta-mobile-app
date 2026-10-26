@@ -28,9 +28,38 @@
         android:layout_height="wrap_content"
         android:visibility="gone" />
 
-    <FrameLayout
+    <LinearLayout
         android:id="@+id/chat_history_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone" />
+        android:layout_marginTop="@dimen/chat_section_spacing"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            style="@style/Home.Section"
+            android:accessibilityHeading="true"
+            android:text="@string/chat_history_title" />
+
+        <TextView
+            android:id="@+id/chat_sessions_status"
+            style="@style/Home.Body"
+            android:layout_marginTop="@dimen/chat_composer_spacing"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone" />
+
+        <com.aula.delta_mobile_app.view.StatusNoticeView
+            android:id="@+id/chat_sessions_notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/chat_sessions_retry"
+            style="@style/Chat.Action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/chat_retry"
+            android:visibility="gone" />
+    </LinearLayout>
 </LinearLayout>

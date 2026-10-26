@@ -26,8 +26,12 @@ import com.aula.delta_mobile_app.model.ChatMessage;
 import com.aula.delta_mobile_app.model.ChatState;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.view.ChatMessageAdapter;
+import com.aula.delta_mobile_app.view.ChatSessionAdapter;
 import com.aula.delta_mobile_app.view.StatusNoticeView;
+import com.aula.delta_mobile_app.viewmodel.ChatFlow.HistoryState;
+import com.aula.delta_mobile_app.viewmodel.ChatViewModel;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -39,12 +43,21 @@ public final class ChatFragment extends Fragment {
     private RecyclerView messages;
     private ChatMessageAdapter adapter;
     private FeedbackAdapter feedback;
+    private LandingAdapter landing;
+    private ChatSessionAdapter sessions;
+    private LiveData<HistoryState> historySource;
+    private HistoryState history;
+    private Runnable reloadSessions;
+    private boolean productionHistory;
     private EditText input;
     private TextView counter;
     private View sendButton;
     private TextWatcher watcher;
     private boolean rendering;
-    private final Runnable retryReady = () -> render(current);
+    private final Runnable retryReady = () -> {
+        render(current);
+        if (landing != null) landing.notifyItemChanged(0);
+    };
 
     public ChatFragment() {
         super(R.layout.fragment_chat);
@@ -57,9 +70,22 @@ public final class ChatFragment extends Fragment {
         sendAction = Objects.requireNonNull(send);
     }
 
+    public void bindHistory(LiveData<HistoryState> state, Runnable reload) {
+        if (getView() != null) throw new IllegalStateException("Bind history before creating the view");
+        historySource = Objects.requireNonNull(state);
+        reloadSessions = Objects.requireNonNull(reload);
+    }
+
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         super.onViewCreated(view, state);
+        if (conversation == null) {
+            ChatViewModel model = ChatViewModel.forActivity(requireActivity());
+            conversation = model.state();
+            historySource = model.history();
+            reloadSessions = model::loadSessions;
+            productionHistory = true;
+        }
         view.setAccessibilityPaneTitle(getText(R.string.chat_title));
         messages = view.findViewById(R.id.chat_messages);
         input = view.findViewById(R.id.chat_input);
@@ -67,8 +93,11 @@ public final class ChatFragment extends Fragment {
         sendButton = view.findViewById(R.id.chat_send);
         adapter = new ChatMessageAdapter();
         feedback = new FeedbackAdapter();
+        landing = new LandingAdapter();
+        sessions = new ChatSessionAdapter(id -> {});
         messages.setLayoutManager(new LinearLayoutManager(requireContext()));
-        messages.setAdapter(new ConcatAdapter(new LandingAdapter(), adapter, feedback));
+        messages.setItemAnimator(null);
+        messages.setAdapter(new ConcatAdapter(landing, sessions, adapter, feedback));
         watcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence value, int start, int count, int after) {}
@@ -103,6 +132,8 @@ public final class ChatFragment extends Fragment {
         });
         render(conversation == null ? ChatState.empty() : conversation.getValue());
         if (conversation != null) conversation.observe(getViewLifecycleOwner(), this::render);
+        if (historySource != null) historySource.observe(getViewLifecycleOwner(), this::renderHistory);
+        if (productionHistory) reloadSessions.run();
         ViewCompat.requestApplyInsets(view);
     }
 
@@ -132,12 +163,26 @@ public final class ChatFragment extends Fragment {
         if (root != null) {
             root.removeCallbacks(retryReady);
             long delay = current.sending.retryAt - System.currentTimeMillis();
+            if (history != null) {
+                for (long deadline : new long[]{history.sessions.retryAt}) {
+                    long waiting = deadline - System.currentTimeMillis();
+                    if (waiting > 0 && (delay <= 0 || waiting < delay)) delay = waiting;
+                }
+            }
             if (delay > 0) root.postDelayed(retryReady, Math.min(delay, 60000));
         }
     }
 
     private boolean ready() {
-        return conversation != null && current.account.status == ScreenState.Status.SUCCESS;
+        return updateDraft != null && sendAction != null && current.account.status == ScreenState.Status.SUCCESS;
+    }
+
+    private void renderHistory(HistoryState state) {
+        history = state;
+        if (sessions == null) return;
+        sessions.submitList(state == null || state.sessions.data == null ? Collections.emptyList() : state.sessions.data);
+        landing.notifyItemChanged(0);
+        render(current);
     }
 
     private boolean canSend() {
@@ -192,6 +237,8 @@ public final class ChatFragment extends Fragment {
         messages = null;
         adapter = null;
         feedback = null;
+        landing = null;
+        sessions = null;
         super.onDestroyView();
     }
 
@@ -201,7 +248,7 @@ public final class ChatFragment extends Fragment {
         }
     }
 
-    private static final class LandingAdapter extends RecyclerView.Adapter<StaticHolder> {
+    private final class LandingAdapter extends RecyclerView.Adapter<StaticHolder> {
         @NonNull
         @Override
         public StaticHolder onCreateViewHolder(@NonNull ViewGroup parent, int type) {
@@ -213,7 +260,22 @@ public final class ChatFragment extends Fragment {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull StaticHolder holder, int position) {}
+        public void onBindViewHolder(@NonNull StaticHolder holder, int position) {
+            View container = holder.itemView.findViewById(R.id.chat_history_container);
+            container.setVisibility(historySource == null ? View.GONE : View.VISIBLE);
+            TextView status = holder.itemView.findViewById(R.id.chat_sessions_status);
+            boolean busy = history != null && history.sessions.busy();
+            boolean empty = history != null && history.sessions.status == ScreenState.Status.SUCCESS && history.sessions.data.isEmpty();
+            status.setVisibility(busy || empty ? View.VISIBLE : View.GONE);
+            status.setText(busy ? R.string.chat_sessions_loading : R.string.chat_sessions_empty);
+            ScreenState<?> failure = history == null ? current.account : history.sessions;
+            if (current.account.status == ScreenState.Status.ERROR) failure = current.account;
+            ((StatusNoticeView) holder.itemView.findViewById(R.id.chat_sessions_notice)).setText(failure.status == ScreenState.Status.ERROR ? failure.message : "");
+            View retry = holder.itemView.findViewById(R.id.chat_sessions_retry);
+            retry.setVisibility(failure.status == ScreenState.Status.ERROR ? View.VISIBLE : View.GONE);
+            retry.setEnabled(System.currentTimeMillis() >= failure.retryAt);
+            retry.setOnClickListener(view -> { if (reloadSessions != null) reloadSessions.run(); });
+        }
 
         @Override
         public int getItemCount() {

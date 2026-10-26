@@ -3,19 +3,55 @@ package com.aula.delta_mobile_app.viewmodel;
 import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.ChatMessage;
 import com.aula.delta_mobile_app.model.ChatModels.ChatResponse;
+import com.aula.delta_mobile_app.model.ChatModels.Session;
 import com.aula.delta_mobile_app.model.ChatState;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.repository.ChatActions;
 import com.aula.delta_mobile_app.services.network.ChatbotErrors;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.LongSupplier;
 
 public final class ChatFlow {
+    public static final class SessionEntry {
+        public final String id;
+        public final String createdAt;
+        public final Instant created;
+
+        public SessionEntry(String id, String createdAt) {
+            this.id = Objects.requireNonNull(id);
+            this.createdAt = createdAt;
+            Instant parsed = null;
+            try {
+                if (createdAt != null) parsed = OffsetDateTime.parse(createdAt).toInstant();
+            } catch (DateTimeParseException ignored) {}
+            created = parsed;
+        }
+    }
+
+    public static final class HistoryState {
+        public final ScreenState<List<SessionEntry>> sessions;
+        public final ScreenState<List<ChatMessage>> history;
+        public final String selectedId;
+        public final String notice;
+
+        private HistoryState(ScreenState<List<SessionEntry>> sessions, ScreenState<List<ChatMessage>> history, String selectedId, String notice) {
+            this.sessions = sessions;
+            this.history = history;
+            this.selectedId = selectedId;
+            this.notice = notice;
+        }
+    }
+
     private final ChatActions actions;
     private final Consumer<Runnable> dispatch;
     private final Consumer<ChatState> observer;
@@ -24,6 +60,11 @@ public final class ChatFlow {
     private ChatState state;
     private long nextId, attempt, generation;
     private boolean active = true;
+    private ScreenState<List<SessionEntry>> sessions = ScreenState.idle();
+    private ScreenState<List<ChatMessage>> history = ScreenState.idle();
+    private String selectedId, historyNotice = "";
+    private long listAttempt, historyAttempt;
+    private Consumer<HistoryState> historyObserver = value -> {};
 
     public ChatFlow(ChatActions actions, int userId, Consumer<Runnable> dispatch, Consumer<ChatState> observer, IntFunction<String> strings, LongSupplier now) {
         if (userId <= 0) throw new IllegalArgumentException("userId must be positive");
@@ -37,6 +78,47 @@ public final class ChatFlow {
 
     public ChatState state() {
         return state;
+    }
+
+    public HistoryState historyState() {
+        return new HistoryState(sessions, history, selectedId, historyNotice);
+    }
+
+    public void observeHistory(Consumer<HistoryState> observer) {
+        historyObserver = Objects.requireNonNull(observer);
+        publishHistory();
+    }
+
+    public void loadSessions() {
+        if (!active || sessions.busy() || sessions.status == ScreenState.Status.SUCCESS || now.getAsLong() < sessions.retryAt) return;
+        long identity = generation, request = ++listAttempt;
+        sessions = ScreenState.loading();
+        publishHistory();
+        actions.sessions(result -> dispatch.accept(() -> {
+            if (!active || identity != generation || request != listAttempt || !sessions.busy()) return;
+            if (result != null && result.status == ScreenState.Status.SUCCESS && result.data != null) {
+                List<SessionEntry> entries = new ArrayList<>();
+                for (Session session : result.data) {
+                    if (session == null || session.sessionId == null || session.sessionId.isEmpty() || entries.stream().anyMatch(entry -> entry.id.equals(session.sessionId))) {
+                        sessions = ChatbotErrors.invalidBody(strings);
+                        publishHistory();
+                        return;
+                    }
+                    entries.add(new SessionEntry(session.sessionId, session.createdAt));
+                }
+                entries.sort(Comparator.comparing((SessionEntry entry) -> entry.created, Comparator.nullsLast(Comparator.reverseOrder())).thenComparing(entry -> entry.id));
+                sessions = ScreenState.success(Collections.unmodifiableList(entries));
+            } else sessions = failure(result);
+            publishHistory();
+        }));
+    }
+
+    private <T> ScreenState<T> failure(ScreenState<?> result) {
+        return result != null && result.status == ScreenState.Status.ERROR ? ScreenState.error(result.message, result.code, result.retryAt) : ChatbotErrors.invalidBody(strings);
+    }
+
+    private void publishHistory() {
+        historyObserver.accept(historyState());
     }
 
     public void setDraft(String value) {
@@ -75,6 +157,11 @@ public final class ChatFlow {
     public void invalidate() {
         active = false;
         generation++;
+        sessions = ScreenState.idle();
+        history = ScreenState.idle();
+        selectedId = null;
+        historyNotice = "";
+        publishHistory();
         publish(ChatState.empty());
     }
 
