@@ -57,7 +57,9 @@ Fonte: resposta E.5.
 
 **Decidido:** gráficos ficam fora da entrega atual. A exibição e a recuperação dos gráficos ao reabrir conversas não serão requisitos desta etapa.
 
-**Pendente:** a resposta não define como renderizar Markdown, links ou as referências textuais produzidas pelo RAG.
+**Decidido na etapa 6:** mostrar respostas como texto simples selecionável, preservando integralmente quebras de linha, listas, fontes RAG e URLs. Não converter Markdown nem abrir links automaticamente nesta entrega. Fonte: resposta nesta conversa à pergunta de formatação — “Texto simples selecionável (recomendado)”. Essa apresentação não acrescenta nem remove fontes do texto recebido.
+
+**Decisão técnica da etapa 6:** usar RecyclerView para a lista e declarar sua dependência explicitamente. Fonte: resposta nesta conversa — “Usar RecyclerView (recomendado)”. Versão adotada: `1.4.0`, compatível com o `compileSdk=36` do app; a documentação exige API 35 ou superior. Fonte: [releases oficiais do RecyclerView](https://developer.android.com/jetpack/androidx/releases/recyclerview).
 
 Fonte: resposta E.6. O formato e a persistência de `chart_data` permanecem documentados no [contrato](api-contract.md#formato-real-de-chart_data).
 

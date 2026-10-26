@@ -2,6 +2,9 @@
 <resources>
     <color name="chat_background">#1B1D1E</color>
     <color name="chat_placeholder_text">#C1C4CC</color>
+    <color name="chat_user_bubble_end">#486EA6</color>
+    <color name="chat_assistant_bubble">#E7EFFF</color>
+    <color name="chat_assistant_text">#234FA3</color>
 
     <style name="Chat.Heading" parent="Home.Body">
         <item name="android:textSize">@dimen/chat_heading_size</item>
@@ -19,5 +22,25 @@
         <item name="android:background">@drawable/home_outline_background</item>
         <item name="android:textColor">@color/chat_placeholder_text</item>
         <item name="android:enabled">false</item>
+    </style>
+
+    <style name="Chat.Message" parent="Home.Body">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:textSize">@dimen/chat_message_text_size</item>
+        <item name="android:textIsSelectable">true</item>
+        <item name="android:autoLink">none</item>
+        <item name="android:linksClickable">false</item>
+        <item name="android:breakStrategy">simple</item>
+        <item name="android:hyphenationFrequency">none</item>
+    </style>
+
+    <style name="Chat.Action" parent="Widget.Material3.Button">
+        <item name="android:minWidth">@dimen/chat_send_min_width</item>
+        <item name="android:minHeight">@dimen/chat_composer_min_height</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="backgroundTint">@color/auth_blue</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
     </style>
 </resources>

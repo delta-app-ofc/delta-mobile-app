@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingBottom="@dimen/chat_message_spacing">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginStart="@dimen/chat_bubble_gutter"
+        android:background="@drawable/chat_user_bubble"
+        android:padding="@dimen/chat_bubble_padding"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/chat_message_text"
+            style="@style/Chat.Message" />
+    </LinearLayout>
+</FrameLayout>

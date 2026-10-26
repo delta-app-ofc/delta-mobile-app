@@ -1,48 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/chat_surface_background">
 
-    <ScrollView
-        android:id="@+id/chat_scroll"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingBottom="@dimen/chat_menu_clearance"
-        android:clipToPadding="false"
-        android:fillViewport="true"
-        android:saveEnabled="false"
-        android:scrollbars="none">
+    <LinearLayout
+        android:id="@+id/chat_content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="@dimen/chat_horizontal_margin"
+        android:layout_marginEnd="@dimen/chat_horizontal_margin"
+        android:layout_marginBottom="@dimen/chat_menu_clearance"
+        android:orientation="vertical"
+        app:layout_constraintWidth_max="@dimen/chat_content_max_width"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/chat_messages"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingTop="@dimen/chat_top_spacing"
+            android:clipToPadding="false"
+            android:scrollbars="vertical" />
 
-            <LinearLayout
-                android:id="@+id/chat_content"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/chat_horizontal_margin"
-                android:layout_marginEnd="@dimen/chat_horizontal_margin"
-                android:paddingTop="@dimen/chat_top_spacing"
-                android:orientation="vertical"
-                app:layout_constraintWidth_max="@dimen/chat_content_max_width"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
-
-                <include
-                    android:id="@+id/chat_landing"
-                    layout="@layout/include_chat_landing" />
-
-                <FrameLayout
-                    android:id="@+id/chat_messages_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:visibility="gone" />
-            </LinearLayout>
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </ScrollView>
-</FrameLayout>
+        <include
+            android:id="@+id/chat_composer"
+            layout="@layout/include_chat_composer" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

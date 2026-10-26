@@ -3,6 +3,12 @@
     <string name="chat_title">Gluh Helper</string>
     <string name="chat_landing_heading">Monitore cada <b>gota</b>\ncom mais precisão.</string>
     <string name="chat_composer_hint">Pergunte algo ao gluh…</string>
+    <string name="chat_send">Enviar</string>
+    <string name="chat_user_author">Você</string>
+    <string name="chat_assistant_author">Assistente</string>
+    <string name="chat_message_accessibility">%1$s: %2$s</string>
+    <string name="chat_character_count">%1$d / 2.000</string>
+    <string name="chat_character_count_accessibility">%1$d de 2.000 caracteres</string>
     <string name="chat_error_request">Não foi possível concluir a solicitação ao assistente.</string>
     <string name="chat_error_validation">O assistente não pôde aceitar os dados enviados. Confira sua mensagem.</string>
     <string name="chat_error_empty_message">Escreva uma mensagem antes de enviar.</string>

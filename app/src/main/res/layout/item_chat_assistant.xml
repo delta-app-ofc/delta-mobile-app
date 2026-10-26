@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingBottom="@dimen/chat_message_spacing">
+
+    <TextView
+        android:id="@+id/chat_message_text"
+        style="@style/Chat.Message"
+        android:layout_gravity="start"
+        android:layout_marginEnd="@dimen/chat_bubble_gutter"
+        android:background="@drawable/chat_assistant_bubble"
+        android:padding="@dimen/chat_bubble_padding"
+        android:textColor="@color/chat_assistant_text" />
+</FrameLayout>

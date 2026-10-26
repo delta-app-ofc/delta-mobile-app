@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
+    implementation(libs.recyclerview)
     implementation(libs.core.splashscreen)
     implementation(libs.material)
     implementation(libs.navigation.fragment)
