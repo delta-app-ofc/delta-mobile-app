@@ -176,6 +176,17 @@ public class ChatFlowTest {
     }
 
     @Test
+    public void logoutDiscardsFailedReplyAsWellAsSuccessfulReply() {
+        send("Privado");
+        flow.invalidate();
+        gateway.replies.get(0).accept(ScreenState.error("Falha antiga", 500, 0));
+        drain();
+        assertTrue(flow.state().messages.isEmpty());
+        assertEquals(ScreenState.Status.IDLE, flow.state().sending.status);
+        assertEquals("", flow.state().draft);
+    }
+
+    @Test
     public void listingIsDeduplicatedAndDoesNotFetchPreviews() {
         flow.loadSessions();
         flow.loadSessions();

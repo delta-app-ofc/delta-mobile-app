@@ -115,7 +115,9 @@ Fonte histórica: resposta E.9; a revisão acima substitui a obrigatoriedade de 
 
 **Decidido na etapa 6:** usar um aviso dentro da conversa, acima do campo, com a mensagem de erro e o botão “Tentar novamente”. Em timeout, informar que a conclusão não foi confirmada e que reenviar pode repetir uma operação. O rascunho permanece preservado. Fonte: resposta nesta conversa — “Aviso e botão de nova tentativa (recomendado)”.
 
-**Pendente:** tratamento visual da resposta recebida enquanto a tela estiver fora de exibição. O comportamento da chamada ao trocar de chat também depende de D05. As decisões acima não resolvem essas pendências nem autorizam ativar chamadas reais na interface nesta etapa.
+**Decidido na etapa 8:** guardar no ViewModel a resposta recebida enquanto outra aba estiver aberta e apresentá-la na conversa ao voltar, sem popup, notificação nem mudança automática de aba. Na recriação por rotação, preservar a conversa e o envio em andamento. Fonte: resposta nesta conversa — “Guardar e mostrar ao voltar (recomendado)”. Isso vale durante a vida do ViewModel, sem garantia após morte do processo Android.
+
+**Pendente:** o comportamento do botão de novo chat continua dependendo de D05 e da etapa 9. A ativação do envio ao serviço publicado permanece bloqueada por P03 conforme a decisão da etapa 8 acima.
 
 **Limite técnico conhecido:** a API não tem deduplicação de envios. **INCERTO — risco inferido:** repetir uma chamada após timeout pode duplicar operações. Ver [contrato](api-contract.md#post-chat--enviar-mensagem).
 

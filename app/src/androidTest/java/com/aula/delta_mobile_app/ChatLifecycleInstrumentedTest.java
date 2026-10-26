@@ -1,6 +1,8 @@
 package com.aula.delta_mobile_app;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.os.SystemClock;
 import android.view.View;
@@ -53,6 +55,7 @@ import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isEnabled;
+import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.not;
@@ -194,6 +197,19 @@ public class ChatLifecycleInstrumentedTest {
         await(() -> state().sending.status != ScreenState.Status.LOADING);
     }
 
+    private void leave() {
+        scenario.onActivity(activity -> {
+            ((FragmentNavigator.Destination) nav(activity).getGraph().findNode(R.id.signupAccountFragment)).setClassName(Fragment.class.getName());
+            nav(activity).navigate(R.id.signupAccountFragment);
+        });
+        await(() -> chat() == null);
+    }
+
+    private void back() {
+        scenario.onActivity(activity -> assertTrue(nav(activity).popBackStack()));
+        await(() -> chat() != null && chat().getView() != null);
+    }
+
     private void scrollToEnd() {
         await(() -> {
             RecyclerView list = chat().requireView().findViewById(R.id.chat_messages);
@@ -248,6 +264,125 @@ public class ChatLifecycleInstrumentedTest {
     }
 
     @Test
+    public void replyReceivedInAnotherDestinationIsVisibleOnlyWhenReturning() throws IOException {
+        send("Pergunta fora da tela");
+        leave();
+        answer(0, "Resposta recebida fora da tela", "created-session");
+        assertNull(chat());
+        back();
+        scrollToEnd();
+        onView(withText("Resposta recebida fora da tela")).check(matches(isDisplayed()));
+        assertEquals(1, account.gateway.replies.size());
+        capture("returned-response");
+    }
+
+    @Test
+    public void returningBeforeReplyKeepsTheSamePendingRequest() {
+        send("Pergunta");
+        leave();
+        back();
+        onView(withId(R.id.chat_send)).check(matches(not(isEnabled())));
+        assertEquals(1, account.gateway.replies.size());
+        answer(0, "Resposta única", "created-session");
+        assertEquals(2, state().messages.size());
+    }
+
+    @Test
+    public void recreationKeepsModelDraftAndPendingReplyWithoutNewRequest() {
+        send("Pergunta");
+        onView(withId(R.id.chat_input)).perform(replaceText("Próximo rascunho"), closeSoftKeyboard());
+        scenario.recreate();
+        await(() -> chat() != null && chat().getView() != null);
+        scenario.onActivity(activity -> assertSame(model, ChatViewModel.forActivity(activity)));
+        onView(withId(R.id.chat_input)).check(matches(withText("Próximo rascunho")));
+        assertEquals(1, account.gateway.replies.size());
+        answer(0, "Resposta após recriar", "created-session");
+        assertEquals("Próximo rascunho", state().draft);
+        assertEquals(2, state().messages.size());
+    }
+
+    @Test
+    public void rotationKeepsPendingRequestAndReceivesReply() {
+        send("Pergunta");
+        int[] target = {0};
+        scenario.onActivity(activity -> {
+            boolean landscape = activity.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
+            target[0] = landscape ? Configuration.ORIENTATION_PORTRAIT : Configuration.ORIENTATION_LANDSCAPE;
+            activity.setRequestedOrientation(landscape ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        });
+        await(() -> {
+            ChatFragment current = chat();
+            return current != null && current.getView() != null && current.getResources().getConfiguration().orientation == target[0];
+        });
+        scenario.onActivity(activity -> assertSame(model, ChatViewModel.forActivity(activity)));
+        assertEquals(1, account.gateway.replies.size());
+        answer(0, "Resposta após girar", "created-session");
+        assertEquals(2, state().messages.size());
+    }
+
+    @Test
+    public void timeoutWhileAwayKeepsDraftAndRequiresManualRetry() throws IOException {
+        send("Rascunho preservado");
+        leave();
+        scenario.onActivity(activity -> account.gateway.replies.get(0).accept(ScreenState.error(activity.getString(R.string.chat_error_timeout))));
+        await(() -> state().sending.status == ScreenState.Status.ERROR);
+        back();
+        scrollToEnd();
+        onView(withId(R.id.chat_input)).check(matches(withText("Rascunho preservado")));
+        scenario.onActivity(activity -> {
+            TextView notice = chat().requireView().findViewById(R.id.chat_notice);
+            assertTrue(notice.getText().toString().contains(activity.getString(R.string.chat_retry_uncertain)));
+            assertEquals(1, account.gateway.replies.size());
+        });
+        capture("timeout");
+        onView(withId(R.id.chat_retry)).perform(click());
+        assertEquals(2, account.gateway.replies.size());
+    }
+
+    @Test
+    public void logoutWhileAwayDiscardsLateReplyAndPrivateDraft() {
+        send("Texto privado");
+        leave();
+        scenario.onActivity(activity -> account.valid.setValue(false));
+        answer(0, "Resposta privada", "old-session");
+        back();
+        await(() -> state().messages.isEmpty());
+        onView(withId(R.id.chat_input)).check(matches(withText(""))).check(matches(not(isEnabled())));
+        assertNull(state().sessionId);
+    }
+
+    @Test
+    public void lateOldAccountReplyCannotEnterNewAccountConversation() {
+        send("Conta antiga");
+        scenario.onActivity(activity -> {
+            account.valid.setValue(false);
+            account.userId = 77;
+            account.valid.setValue(true);
+        });
+        await(() -> Integer.valueOf(77).equals(state().account.data));
+        send("Conta nova");
+        answer(1, "Resposta nova", "new-session");
+        answer(0, "Resposta antiga", "old-session");
+        assertEquals(List.of(42, 77), account.identities);
+        assertEquals("new-session", state().sessionId);
+        assertEquals("Resposta nova", state().messages.get(1).content);
+    }
+
+    @Test
+    public void delayedAccountValidationCannotPublishIntoLoggedOutScreen() {
+        scenario.onActivity(activity -> {
+            account.valid.setValue(false);
+            account.delayed = true;
+            account.valid.setValue(true);
+            account.valid.setValue(false);
+            account.loads.get(account.loads.size() - 1).accept(ScreenState.success(42));
+        });
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        assertEquals(ScreenState.Status.IDLE, state().account.status);
+        assertTrue(account.gateway.replies.isEmpty());
+    }
+
+    @Test
     public void disabledSendingGateBlocksBothModelAndComposer() throws IOException {
         scenario.onActivity(activity -> {
             activity.getViewModelStore().clear();
@@ -273,4 +408,19 @@ public class ChatLifecycleInstrumentedTest {
         capture("blocked");
     }
 
+    @Test
+    public void closingActivityRemovesSessionObserverAndInvalidatesPendingReply() {
+        send("Pergunta");
+        scenario.close();
+        scenario = null;
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            assertFalse(account.valid.hasObservers());
+            ChatResponse response = new ChatResponse();
+            response.response = "Resposta atrasada";
+            response.sessionId = "closed-host";
+            account.gateway.replies.get(0).accept(ScreenState.success(response));
+        });
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        assertEquals(1, account.gateway.replies.size());
+    }
 }
