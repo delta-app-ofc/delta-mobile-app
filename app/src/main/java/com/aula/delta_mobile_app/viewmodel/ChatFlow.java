@@ -5,6 +5,7 @@ import com.aula.delta_mobile_app.model.ChatMessage;
 import com.aula.delta_mobile_app.model.ChatModels.ChatResponse;
 import com.aula.delta_mobile_app.model.ChatModels.HistoryMessage;
 import com.aula.delta_mobile_app.model.ChatModels.Session;
+import com.aula.delta_mobile_app.model.ChatModels.CloseResponse;
 import com.aula.delta_mobile_app.model.ChatState;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.repository.ChatActions;
@@ -44,12 +45,14 @@ public final class ChatFlow {
         public final ScreenState<List<ChatMessage>> history;
         public final String selectedId;
         public final String notice;
+        public final ScreenState<String> closing;
 
-        private HistoryState(ScreenState<List<SessionEntry>> sessions, ScreenState<List<ChatMessage>> history, String selectedId, String notice) {
+        private HistoryState(ScreenState<List<SessionEntry>> sessions, ScreenState<List<ChatMessage>> history, String selectedId, String notice, ScreenState<String> closing) {
             this.sessions = sessions;
             this.history = history;
             this.selectedId = selectedId;
             this.notice = notice;
+            this.closing = closing;
         }
     }
 
@@ -65,6 +68,8 @@ public final class ChatFlow {
     private ScreenState<List<ChatMessage>> history = ScreenState.idle();
     private String selectedId, historyNotice = "";
     private long listAttempt, historyAttempt;
+    private long closeAttempt;
+    private ScreenState<String> closing = ScreenState.idle();
     private Consumer<HistoryState> historyObserver = value -> {};
 
     public ChatFlow(ChatActions actions, int userId, Consumer<Runnable> dispatch, Consumer<ChatState> observer, IntFunction<String> strings, LongSupplier now) {
@@ -82,7 +87,55 @@ public final class ChatFlow {
     }
 
     public HistoryState historyState() {
-        return new HistoryState(sessions, history, selectedId, historyNotice);
+        return new HistoryState(sessions, history, selectedId, historyNotice, closing);
+    }
+
+    public void showIntroduction() {
+        if (active) publish(new ChatState(state.account, true, state.draft, state.sessionId, state.messages, state.sending));
+    }
+
+    public void resumeConversation() {
+        if (active) publish(new ChatState(state.account, false, state.draft, state.sessionId, state.messages, state.sending));
+    }
+
+    public void newChat(boolean discardDraft) {
+        if (!active || closing.busy() || state.sending.busy() || history.busy() || now.getAsLong() < closing.retryAt) return;
+        if (!state.draft.isEmpty() && !discardDraft) {
+            historyNotice = strings.apply(R.string.chat_new_confirm_message);
+            publishHistory();
+            return;
+        }
+        String session = state.sessionId;
+        if (session == null) {
+            closing = ScreenState.idle();
+            resetConversation();
+            return;
+        }
+        long identity = generation, request = ++closeAttempt;
+        historyNotice = "";
+        closing = ScreenState.loading();
+        publishHistory();
+        actions.close(session, result -> dispatch.accept(() -> {
+            if (!active || generation != identity || request != closeAttempt || !closing.busy() || !Objects.equals(state.sessionId, session)) return;
+            CloseResponse response = result == null ? null : result.data;
+            if (result != null && result.status == ScreenState.Status.SUCCESS && response != null && "ok".equals(response.status) && session.equals(response.sessionId)) {
+                closing = ScreenState.success(session);
+                resetConversation();
+            } else {
+                closing = failure(result != null && result.status == ScreenState.Status.ERROR ? result : ChatbotErrors.invalidBody(strings));
+                publishHistory();
+            }
+        }));
+    }
+
+    private void resetConversation() {
+        attempt++;
+        historyAttempt++;
+        selectedId = null;
+        history = ScreenState.idle();
+        historyNotice = "";
+        publishHistory();
+        publish(new ChatState(state.account, true, "", null, Collections.emptyList(), ScreenState.idle()));
     }
 
     public void observeHistory(Consumer<HistoryState> observer) {
@@ -115,7 +168,7 @@ public final class ChatFlow {
     }
 
     public void openSession(String sessionId) {
-        if (!active || sessions.data == null || sessions.data.stream().noneMatch(entry -> entry.id.equals(sessionId))) return;
+        if (!active || closing.busy() || sessions.data == null || sessions.data.stream().noneMatch(entry -> entry.id.equals(sessionId))) return;
         if (state.sending.busy() || !state.draft.isEmpty()) {
             historyNotice = strings.apply(state.sending.busy() ? R.string.chat_history_busy : R.string.chat_history_draft);
             publishHistory();
@@ -123,6 +176,8 @@ public final class ChatFlow {
         }
         if (Objects.equals(selectedId, sessionId) && (history.busy() || history.status == ScreenState.Status.SUCCESS || now.getAsLong() < history.retryAt)) return;
         selectedId = sessionId;
+        closing = ScreenState.idle();
+        closeAttempt++;
         historyNotice = "";
         history = ScreenState.loading();
         long identity = generation, request = ++historyAttempt;
@@ -142,7 +197,7 @@ public final class ChatFlow {
                         message.content, ScreenState.Status.SUCCESS, null));
                 }
                 history = ScreenState.success(Collections.unmodifiableList(messages));
-                publish(new ChatState(state.account, false, "", sessionId, messages, ScreenState.idle()));
+                publish(new ChatState(state.account, state.showIntroduction, "", sessionId, messages, ScreenState.idle()));
             } else history = failure(result);
             publishHistory();
         }));
@@ -157,12 +212,13 @@ public final class ChatFlow {
     }
 
     public void setDraft(String value) {
-        if (!active) return;
+        if (!active || closing.busy()) return;
         publish(new ChatState(state.account, state.showIntroduction, value == null ? "" : value, state.sessionId, state.messages, state.sending));
     }
 
     public void send() {
-        if (!active || state.sending.busy() || history.busy() || history.status == ScreenState.Status.ERROR || now.getAsLong() < state.sending.retryAt) return;
+        if (!active || closing.busy() || state.sending.busy() || history.busy() || history.status == ScreenState.Status.ERROR || now.getAsLong() < state.sending.retryAt
+            || state.showIntroduction && (state.sessionId != null || !state.messages.isEmpty())) return;
         String content = state.draft;
         if (content.codePoints().allMatch(value -> Character.isWhitespace(value) || Character.isSpaceChar(value))) {
             invalidInput(R.string.chat_error_empty_message);
@@ -196,6 +252,7 @@ public final class ChatFlow {
         history = ScreenState.idle();
         selectedId = null;
         historyNotice = "";
+        closing = ScreenState.idle();
         publishHistory();
         publish(ChatState.empty());
     }
@@ -220,13 +277,13 @@ public final class ChatFlow {
         if (success) {
             ChatMessage reply = new ChatMessage(++nextId, ChatMessage.Author.ASSISTANT, response.response, ScreenState.Status.SUCCESS, response.agentUsed);
             messages.add(reply);
-            publish(new ChatState(state.account, false, state.draft.equals(content) ? "" : state.draft, response.sessionId, messages, ScreenState.success(reply)));
+            publish(new ChatState(state.account, state.showIntroduction, state.draft.equals(content) ? "" : state.draft, response.sessionId, messages, ScreenState.success(reply)));
             if (session == null && (sessions.busy() || sessions.status == ScreenState.Status.SUCCESS)) {
                 sessions = ScreenState.idle();
                 loadSessions();
             }
         } else {
-            publish(new ChatState(state.account, false, state.draft, session, messages, ScreenState.error(result.message, result.code, result.retryAt)));
+            publish(new ChatState(state.account, state.showIntroduction, state.draft, session, messages, ScreenState.error(result.message, result.code, result.retryAt)));
         }
     }
 

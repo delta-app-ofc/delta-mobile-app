@@ -119,6 +119,23 @@ public final class ChatViewModel extends AndroidViewModel {
         loadAccount();
     }
 
+    public void showIntroduction() {
+        if (!cleared && flow != null) flow.showIntroduction();
+    }
+
+    public void resumeConversation() {
+        if (accountReady && !cleared && flow != null && account.hasSession()) flow.resumeConversation();
+        else if (!cleared && !account.hasSession()) clearAccount();
+    }
+
+    public void newChat(boolean discardDraft) {
+        if (!cleared && !account.hasSession()) {
+            clearAccount();
+            return;
+        }
+        if (accountReady && !cleared && flow != null && (sendingEnabled || flow.state().sessionId == null)) flow.newChat(discardDraft);
+    }
+
     public void setDraft(String value) {
         if (accountReady && !cleared && flow != null && account.hasSession()) flow.setDraft(value);
         else if (!cleared && !account.hasSession()) clearAccount();

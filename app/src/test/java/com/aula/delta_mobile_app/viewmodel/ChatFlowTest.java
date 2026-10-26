@@ -24,6 +24,8 @@ public class ChatFlowTest {
         final List<Consumer<ScreenState<List<Session>>>> listings = new ArrayList<>();
         final List<Consumer<ScreenState<List<HistoryMessage>>>> histories = new ArrayList<>();
         final List<String> opened = new ArrayList<>();
+        final List<String> closed = new ArrayList<>();
+        final List<Consumer<ScreenState<CloseResponse>>> closings = new ArrayList<>();
 
         @Override
         public void sessions(Consumer<ScreenState<List<Session>>> callback) {
@@ -45,7 +47,8 @@ public class ChatFlowTest {
 
         @Override
         public void close(String sessionId, Consumer<ScreenState<CloseResponse>> callback) {
-            throw new AssertionError("Closing belongs to a later stage");
+            closed.add(sessionId);
+            closings.add(callback);
         }
     }
 
@@ -92,6 +95,222 @@ public class ChatFlowTest {
         flow.loadSessions();
         gateway.listings.get(0).accept(ScreenState.success(List.of(session("a", "2026-10-25T12:00:00Z"), session("b", "2026-10-24T12:00:00Z"))));
         drain();
+    }
+
+    private void conversation() {
+        send("Pergunta");
+        gateway.replies.get(0).accept(reply("Resposta", "a"));
+        drain();
+    }
+
+    private void closeReply(int request, String status, String sessionId) {
+        CloseResponse response = new CloseResponse();
+        response.status = status;
+        response.sessionId = sessionId;
+        gateway.closings.get(request).accept(ScreenState.success(response));
+        drain();
+    }
+
+    @Test
+    public void newChatWithoutSessionOnlyResetsLocalStateAfterDraftConfirmation() {
+        flow.setDraft("Rascunho");
+        flow.newChat(false);
+        assertEquals("Rascunho", flow.state().draft);
+        flow.newChat(true);
+        assertEquals("", flow.state().draft);
+        assertTrue(flow.state().showIntroduction);
+        assertNull(flow.state().sessionId);
+        assertTrue(gateway.closed.isEmpty());
+        assertTrue(gateway.messages.isEmpty());
+    }
+
+    @Test
+    public void closeUsesOriginalIdOnceAndNewSendStartsWithoutIt() {
+        conversation();
+        flow.newChat(false);
+        flow.newChat(false);
+        assertEquals(List.of("a"), gateway.closed);
+        assertTrue(flow.historyState().closing.busy());
+        assertEquals("a", flow.state().sessionId);
+        closeReply(0, "ok", "a");
+        assertNull(flow.state().sessionId);
+        assertTrue(flow.state().messages.isEmpty());
+        assertTrue(flow.state().showIntroduction);
+        send("Nova pergunta");
+        assertNull(gateway.sessions.get(1));
+        gateway.replies.get(1).accept(reply("Nova resposta", "b"));
+        drain();
+        assertEquals("b", flow.state().sessionId);
+    }
+
+    @Test
+    public void closeFailurePreservesPreviousConversationAndDraftUntilManualRetry() {
+        conversation();
+        flow.setDraft("Rascunho guardado");
+        flow.newChat(true);
+        gateway.closings.get(0).accept(ScreenState.error("Falha", 500, 0));
+        drain();
+        assertEquals("a", flow.state().sessionId);
+        assertEquals(2, flow.state().messages.size());
+        assertEquals("Rascunho guardado", flow.state().draft);
+        assertEquals(ScreenState.Status.ERROR, flow.historyState().closing.status);
+        assertEquals(1, gateway.closed.size());
+        flow.newChat(false);
+        assertEquals(1, gateway.closed.size());
+        flow.newChat(true);
+        assertEquals(2, gateway.closed.size());
+        closeReply(1, "ok", "a");
+        assertEquals("", flow.state().draft);
+    }
+
+    @Test
+    public void closeTimeoutDoesNotAutomaticallyRepeatOrDiscardSession() {
+        conversation();
+        flow.newChat(false);
+        gateway.closings.get(0).accept(ScreenState.error(strings.apply(R.string.chat_error_timeout)));
+        drain();
+        assertEquals("a", flow.state().sessionId);
+        assertEquals(strings.apply(R.string.chat_error_timeout), flow.historyState().closing.message);
+        assertEquals(1, gateway.closings.size());
+    }
+
+    @Test
+    public void closeRateLimitHonorsRetryAt() {
+        conversation();
+        flow.newChat(false);
+        gateway.closings.get(0).accept(ScreenState.error("Aguarde", 429, 2000));
+        drain();
+        flow.newChat(false);
+        assertEquals(1, gateway.closed.size());
+        now.set(2000);
+        flow.newChat(false);
+        assertEquals(2, gateway.closed.size());
+    }
+
+    @Test
+    public void newChatDoesNotCancelSendingOrHistoryLoading() {
+        send("Em andamento");
+        flow.newChat(true);
+        assertTrue(gateway.closed.isEmpty());
+        assertTrue(flow.state().sending.busy());
+        gateway.replies.get(0).accept(reply("Resposta", "a"));
+        drain();
+        listSessions();
+        flow.openSession("b");
+        flow.newChat(true);
+        assertTrue(gateway.closed.isEmpty());
+        assertTrue(flow.historyState().history.busy());
+    }
+
+    @Test
+    public void closingBlocksSendEditAndOpeningAnotherSession() {
+        listSessions();
+        conversation();
+        flow.newChat(false);
+        flow.setDraft("Não alterar");
+        flow.send();
+        flow.openSession("b");
+        assertEquals("", flow.state().draft);
+        assertEquals(1, gateway.messages.size());
+        assertTrue(gateway.opened.isEmpty());
+        assertEquals("a", flow.state().sessionId);
+    }
+
+    @Test
+    public void invalidCloseResponseCannotResetTheConversation() {
+        conversation();
+        flow.newChat(false);
+        closeReply(0, "ok", "different-session");
+        assertEquals("a", flow.state().sessionId);
+        assertEquals(ScreenState.Status.ERROR, flow.historyState().closing.status);
+        flow.newChat(false);
+        closeReply(1, "unexpected", "a");
+        assertEquals("a", flow.state().sessionId);
+    }
+
+    @Test
+    public void closedConversationRemainsInHistoryAndCanBeOpenedAgain() {
+        listSessions();
+        conversation();
+        gateway.listings.get(1).accept(ScreenState.success(List.of(session("a", "2026-10-25T12:00:00Z"))));
+        drain();
+        flow.newChat(false);
+        closeReply(0, "ok", "a");
+        assertEquals(1, flow.historyState().sessions.data.size());
+        flow.openSession("a");
+        gateway.histories.get(0).accept(ScreenState.success(List.of(history("assistant", "Resposta anterior"))));
+        drain();
+        assertEquals("Resposta anterior", flow.state().messages.get(0).content);
+    }
+
+    @Test
+    public void staleSendAndCloseCallbacksCannotAppendToNewConversation() {
+        conversation();
+        flow.newChat(false);
+        closeReply(0, "ok", "a");
+        send("Nova");
+        gateway.replies.get(0).accept(reply("Duplicada da anterior", "a"));
+        gateway.closings.get(0).accept(ScreenState.error("Falha atrasada"));
+        drain();
+        assertEquals(1, flow.state().messages.size());
+        assertNull(flow.state().sessionId);
+        gateway.replies.get(1).accept(reply("Resposta nova", "b"));
+        drain();
+        assertEquals("Resposta nova", flow.state().messages.get(1).content);
+    }
+
+    @Test
+    public void staleCloseFailureCannotCompleteANewerCloseAttempt() {
+        conversation();
+        flow.newChat(false);
+        gateway.closings.get(0).accept(ScreenState.error("Falha"));
+        drain();
+        flow.newChat(false);
+        closeReply(0, "ok", "a");
+        assertTrue(flow.historyState().closing.busy());
+        assertEquals("a", flow.state().sessionId);
+        closeReply(1, "ok", "a");
+        assertNull(flow.state().sessionId);
+    }
+
+    @Test
+    public void logoutDiscardsCloseAlreadyQueuedForMainThread() {
+        conversation();
+        flow.newChat(false);
+        CloseResponse response = new CloseResponse();
+        response.status = "ok";
+        response.sessionId = "a";
+        gateway.closings.get(0).accept(ScreenState.success(response));
+        flow.invalidate();
+        drain();
+        assertEquals(ScreenState.Status.IDLE, flow.historyState().closing.status);
+        assertNull(flow.state().sessionId);
+    }
+
+    @Test
+    public void enteringIntroductionKeepsPendingReplyUntilExplicitResume() {
+        send("Pergunta");
+        flow.showIntroduction();
+        gateway.replies.get(0).accept(reply("Resposta", "a"));
+        drain();
+        assertTrue(flow.state().showIntroduction);
+        assertEquals(2, flow.state().messages.size());
+        assertTrue(gateway.closed.isEmpty());
+        flow.resumeConversation();
+        assertFalse(flow.state().showIntroduction);
+        assertEquals("Resposta", flow.state().messages.get(1).content);
+    }
+
+    @Test
+    public void returningToIntroductionDoesNotPermitImplicitSendToRetainedSession() {
+        conversation();
+        flow.showIntroduction();
+        flow.setDraft("Rascunho");
+        flow.send();
+        assertEquals(1, gateway.replies.size());
+        flow.resumeConversation();
+        flow.send();
+        assertEquals("a", gateway.sessions.get(1));
     }
 
     @Test
