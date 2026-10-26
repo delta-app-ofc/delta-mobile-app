@@ -4,7 +4,9 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -40,6 +42,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -211,6 +214,9 @@ public class ChatRenderingInstrumentedTest {
         AtomicBoolean drawn = new AtomicBoolean();
         scenario.onActivity(activity -> list().postOnAnimation(() -> list().postOnAnimation(() -> drawn.set(true))));
         await(drawn::get);
+        scenario.onActivity(activity -> Log.i("ChatAcceptance", String.format(Locale.ROOT, "%s viewportDp=%.1fx%.1f fontScale=%.2f", name,
+            fragment.requireView().getWidth() / activity.getResources().getDisplayMetrics().density,
+            fragment.requireView().getHeight() / activity.getResources().getDisplayMetrics().density, activity.getResources().getConfiguration().fontScale)));
         Bitmap image = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
         assertNotNull(image);
         File directory = InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null);
@@ -250,6 +256,13 @@ public class ChatRenderingInstrumentedTest {
             assertFalse(text.getLinksClickable());
             assertEquals(0, text.getUrls().length);
             assertEquals(0, text.getLayout().getEllipsisCount(text.getLayout().getLineCount() - 1));
+            int lastLine = text.getLayout().getLineCount() - 1;
+            assertEquals(reply.length(), text.getLayout().getLineEnd(lastLine));
+            for (int line = 0; line <= lastLine; line++) assertTrue(text.getLayout().getLineWidth(line) <= text.getLayout().getWidth() + 1);
+            int[] textPosition = new int[2], composerPosition = new int[2];
+            text.getLocationOnScreen(textPosition);
+            fragment.requireView().findViewById(R.id.chat_composer).getLocationOnScreen(composerPosition);
+            assertTrue(textPosition[1] + text.getTotalPaddingTop() + text.getLayout().getLineBottom(lastLine) <= composerPosition[1]);
             assertEquals(activity.getString(R.string.chat_message_accessibility, activity.getString(R.string.chat_assistant_author), reply), text.getContentDescription());
         });
         capture("response");
@@ -364,7 +377,6 @@ public class ChatRenderingInstrumentedTest {
         onView(withId(R.id.chat_input)).perform(closeSoftKeyboard());
         await(() -> ((ConstraintLayout.LayoutParams) fragment.requireView().findViewById(R.id.chat_content).getLayoutParams()).bottomMargin > 0);
         onView(withId(R.id.chat_character_count)).check(matches(isDisplayed()));
-        scenario.onActivity(activity -> assertEquals(4, ((EditText) fragment.requireView().findViewById(R.id.chat_input)).getMaxLines()));
     }
 
     @Test
@@ -462,5 +474,59 @@ public class ChatRenderingInstrumentedTest {
         });
         await(() -> sessions().getItemCount() == 0);
         onView(withId(R.id.chat_input)).check(matches(withText("")));
+    }
+
+    @Test
+    public void lastHistoryRowExposesOneLabeledActionAboveComposer() throws IOException {
+        seedSessions();
+        scrollToEnd();
+        scenario.onActivity(activity -> {
+            View row = list().getLayoutManager().findViewByPosition(2);
+            AccessibilityNodeInfo node = row.createAccessibilityNodeInfo();
+            assertTrue(node.isClickable());
+            assertTrue(node.isFocusable());
+            assertTrue(node.getActionList().contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK));
+            assertEquals(activity.getString(R.string.chat_session_open, activity.getString(R.string.chat_session_no_date), "session-b"), node.getContentDescription());
+            assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO, row.findViewById(R.id.chat_session_title).getImportantForAccessibility());
+            assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO, row.findViewById(R.id.chat_session_identity).getImportantForAccessibility());
+            int minimum = activity.getResources().getDimensionPixelSize(R.dimen.chat_composer_min_height);
+            assertTrue(row.getWidth() >= minimum && row.getHeight() >= minimum);
+            Rect bounds = new Rect();
+            assertTrue(row.getGlobalVisibleRect(bounds));
+            assertTrue(bounds.height() >= minimum);
+            int[] composer = new int[2];
+            fragment.requireView().findViewById(R.id.chat_composer).getLocationOnScreen(composer);
+            assertTrue(bounds.bottom <= composer[1]);
+            assertTrue(list().getWidth() <= activity.getResources().getDimensionPixelSize(R.dimen.chat_content_max_width));
+        });
+        capture("stage10-accessibility-history");
+    }
+
+    @Test
+    public void retryAndComposerExposeLabelsAndReachableTouchTargets() throws IOException {
+        send("Água");
+        scenario.onActivity(activity -> gateway.replies.get(0).accept(ScreenState.error(activity.getString(R.string.chat_error_network))));
+        await(() -> fragment.requireView().findViewById(R.id.chat_retry) != null);
+        scrollToEnd();
+        scenario.onActivity(activity -> {
+            int minimum = activity.getResources().getDimensionPixelSize(R.dimen.chat_composer_min_height);
+            for (int id : new int[]{R.id.chat_retry, R.id.chat_send, R.id.chat_input}) {
+                View action = fragment.requireView().findViewById(id);
+                AccessibilityNodeInfo node = action.createAccessibilityNodeInfo();
+                assertTrue(node.isEnabled());
+                assertTrue(node.isFocusable());
+                assertTrue(action.getWidth() >= minimum && action.getHeight() >= minimum);
+                Rect bounds = new Rect();
+                assertTrue(action.getGlobalVisibleRect(bounds));
+                assertTrue("Action " + id + " visible=" + bounds + "; minimum=" + minimum, bounds.width() >= minimum && bounds.height() >= minimum);
+                if (id == R.id.chat_input) assertEquals(activity.getString(R.string.chat_composer_hint), node.getContentDescription());
+                else {
+                    assertTrue(node.getActionList().contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK));
+                    assertEquals(activity.getString(id == R.id.chat_send ? R.string.chat_send : R.string.chat_retry), node.getText());
+                }
+            }
+            assertEquals(activity.getString(R.string.chat_character_count_accessibility, 4), fragment.requireView().findViewById(R.id.chat_character_count).getContentDescription());
+        });
+        capture("stage10-accessibility-retry");
     }
 }

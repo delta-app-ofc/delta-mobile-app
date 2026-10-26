@@ -4,8 +4,11 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -46,6 +49,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -55,6 +59,7 @@ import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static androidx.test.espresso.matcher.ViewMatchers.isEnabled;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
@@ -254,6 +259,9 @@ public class ChatLifecycleInstrumentedTest {
         AtomicBoolean drawn = new AtomicBoolean();
         scenario.onActivity(activity -> chat().requireView().postOnAnimation(() -> chat().requireView().postOnAnimation(() -> drawn.set(true))));
         await(drawn::get);
+        scenario.onActivity(activity -> Log.i("ChatAcceptance", String.format(Locale.ROOT, "%s viewportDp=%.1fx%.1f fontScale=%.2f", name,
+            chat().requireView().getWidth() / activity.getResources().getDisplayMetrics().density,
+            chat().requireView().getHeight() / activity.getResources().getDisplayMetrics().density, activity.getResources().getConfiguration().fontScale)));
         Bitmap image = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
         assertNotNull(image);
         File directory = InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null);
@@ -604,6 +612,7 @@ public class ChatLifecycleInstrumentedTest {
         onView(withId(R.id.chat_new)).perform(click());
         scenario.onActivity(activity -> account.valid.setValue(false));
         await(() -> state().account.status == ScreenState.Status.IDLE);
+        onView(withText(R.string.chat_new_confirm_title)).check(doesNotExist());
         assertTrue(account.gateway.closed.isEmpty());
         assertEquals("", state().draft);
     }
@@ -634,6 +643,32 @@ public class ChatLifecycleInstrumentedTest {
         backToIntroduction();
         assertTrue(state().showIntroduction);
         assertEquals(2, state().messages.size());
+        assertTrue(account.gateway.closed.isEmpty());
+    }
+
+    @Test
+    public void newChatAndResumeExposeLabeledReachableAccessibilityActions() throws IOException {
+        conversation();
+        leave();
+        backToIntroduction();
+        onView(withId(R.id.chat_resume)).check(matches(isDisplayed()));
+        scenario.onActivity(activity -> {
+            int minimum = activity.getResources().getDimensionPixelSize(R.dimen.chat_composer_min_height);
+            for (int id : new int[]{R.id.chat_new, R.id.chat_resume}) {
+                View action = chat().requireView().findViewById(id);
+                AccessibilityNodeInfo node = action.createAccessibilityNodeInfo();
+                assertTrue(node.isEnabled());
+                assertTrue(node.isClickable());
+                assertTrue(node.isFocusable());
+                assertEquals(activity.getString(id == R.id.chat_new ? R.string.chat_new : R.string.chat_resume), node.getText());
+                assertTrue(node.getActionList().contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK));
+                assertTrue(action.getHeight() >= minimum && action.getWidth() >= minimum);
+                Rect bounds = new Rect();
+                assertTrue(action.getGlobalVisibleRect(bounds));
+                assertTrue(bounds.height() >= minimum && bounds.width() >= minimum);
+            }
+        });
+        capture("stage10-accessibility-actions");
         assertTrue(account.gateway.closed.isEmpty());
     }
 }

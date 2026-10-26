@@ -288,13 +288,13 @@ public final class ChatFragment extends Fragment {
     private void updateComposer(boolean keyboard) {
         View root = getView();
         if (root == null || input == null) return;
-        boolean compact = keyboard && root.getHeight() > 0 && root.getHeight() < getResources().getDimensionPixelSize(R.dimen.chat_composer_min_height) * 3;
+        boolean compact = root.getHeight() > 0 && root.getHeight() < getResources().getDimensionPixelSize(R.dimen.chat_composer_min_height) * (keyboard ? 3 : 8);
         int spacing = getResources().getDimensionPixelSize(R.dimen.chat_composer_spacing);
         View composer = root.findViewById(R.id.chat_composer);
         View row = root.findViewById(R.id.chat_composer_row);
         composer.setPaddingRelative(0, compact ? 0 : spacing, 0, 0);
         row.setPaddingRelative(spacing, compact ? 0 : spacing, spacing, compact ? 0 : spacing);
-        counter.setVisibility(compact ? View.GONE : View.VISIBLE);
+        counter.setVisibility(compact && keyboard ? View.GONE : View.VISIBLE);
         if (input.getMaxLines() != (compact ? 1 : 4)) input.setMaxLines(compact ? 1 : 4);
     }
 
