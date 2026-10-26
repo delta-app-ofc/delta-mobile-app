@@ -26,6 +26,7 @@ import com.aula.delta_mobile_app.model.ChatMessage;
 import com.aula.delta_mobile_app.model.ChatState;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.view.ChatMessageAdapter;
+import com.aula.delta_mobile_app.view.StatusNoticeView;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -37,11 +38,13 @@ public final class ChatFragment extends Fragment {
     private ChatState current = ChatState.empty();
     private RecyclerView messages;
     private ChatMessageAdapter adapter;
+    private FeedbackAdapter feedback;
     private EditText input;
     private TextView counter;
     private View sendButton;
     private TextWatcher watcher;
     private boolean rendering;
+    private final Runnable retryReady = () -> render(current);
 
     public ChatFragment() {
         super(R.layout.fragment_chat);
@@ -63,8 +66,9 @@ public final class ChatFragment extends Fragment {
         counter = view.findViewById(R.id.chat_character_count);
         sendButton = view.findViewById(R.id.chat_send);
         adapter = new ChatMessageAdapter();
+        feedback = new FeedbackAdapter();
         messages.setLayoutManager(new LinearLayoutManager(requireContext()));
-        messages.setAdapter(new ConcatAdapter(new LandingAdapter(), adapter));
+        messages.setAdapter(new ConcatAdapter(new LandingAdapter(), adapter, feedback));
         watcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence value, int start, int count, int after) {}
@@ -117,12 +121,19 @@ public final class ChatFragment extends Fragment {
             follow |= last.author == ChatMessage.Author.USER && last.status == ScreenState.Status.LOADING;
         }
         updateAvailability();
+        feedback.update(current);
         ChatMessageAdapter submitted = adapter;
         boolean scroll = follow;
         adapter.submitList(current.messages, () -> {
             if (adapter == submitted && messages != null && scroll && messages.getAdapter() != null)
                 messages.scrollToPosition(messages.getAdapter().getItemCount() - 1);
         });
+        View root = getView();
+        if (root != null) {
+            root.removeCallbacks(retryReady);
+            long delay = current.sending.retryAt - System.currentTimeMillis();
+            if (delay > 0) root.postDelayed(retryReady, Math.min(delay, 60000));
+        }
     }
 
     private boolean ready() {
@@ -169,6 +180,7 @@ public final class ChatFragment extends Fragment {
     public void onDestroyView() {
         View root = getView();
         if (root != null) {
+            root.removeCallbacks(retryReady);
             ViewCompat.setOnApplyWindowInsetsListener(root, null);
         }
         if (input != null) input.removeTextChangedListener(watcher);
@@ -179,6 +191,7 @@ public final class ChatFragment extends Fragment {
         sendButton = null;
         messages = null;
         adapter = null;
+        feedback = null;
         super.onDestroyView();
     }
 
@@ -208,4 +221,47 @@ public final class ChatFragment extends Fragment {
         }
     }
 
+    private final class FeedbackAdapter extends RecyclerView.Adapter<StaticHolder> {
+        private ChatState state = ChatState.empty();
+
+        private boolean visible() {
+            return state.account.busy() || state.sending.busy() || state.account.status == ScreenState.Status.ERROR || state.sending.status == ScreenState.Status.ERROR;
+        }
+
+        void update(ChatState value) {
+            boolean wasVisible = visible();
+            state = value;
+            if (wasVisible && visible()) notifyItemChanged(0);
+            else if (wasVisible) notifyItemRemoved(0);
+            else if (visible()) notifyItemInserted(0);
+        }
+
+        @NonNull
+        @Override
+        public StaticHolder onCreateViewHolder(@NonNull ViewGroup parent, int type) {
+            return new StaticHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.include_chat_feedback, parent, false));
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull StaticHolder holder, int position) {
+            boolean busy = state.account.busy() || state.sending.busy();
+            holder.itemView.findViewById(R.id.chat_waiting).setVisibility(busy ? View.VISIBLE : View.GONE);
+            ((TextView) holder.itemView.findViewById(R.id.chat_waiting_text)).setText(state.account.busy() ? R.string.chat_preparing : R.string.chat_waiting);
+            ScreenState<?> failure = state.account.status == ScreenState.Status.ERROR ? state.account : state.sending;
+            String message = failure.status == ScreenState.Status.ERROR ? failure.message : "";
+            if (getString(R.string.chat_error_timeout).equals(message)) message += "\n" + getString(R.string.chat_retry_uncertain);
+            ((StatusNoticeView) holder.itemView.findViewById(R.id.chat_notice)).setText(message);
+            TextView retry = holder.itemView.findViewById(R.id.chat_retry);
+            retry.setVisibility(state.sending.status == ScreenState.Status.ERROR ? View.VISIBLE : View.GONE);
+            retry.setEnabled(canSend());
+            retry.setAlpha(retry.isEnabled() ? 1f : .45f);
+            retry.setText(System.currentTimeMillis() < state.sending.retryAt ? R.string.chat_retry_wait : R.string.chat_retry);
+            retry.setOnClickListener(button -> attemptSend());
+        }
+
+        @Override
+        public int getItemCount() {
+            return visible() ? 1 : 0;
+        }
+    }
 }

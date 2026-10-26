@@ -34,6 +34,11 @@
         <item name="android:hyphenationFrequency">none</item>
     </style>
 
+    <style name="Chat.MessageStatus" parent="Home.Caption">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:textSize">@dimen/chat_message_status_size</item>
+    </style>
+
     <style name="Chat.Action" parent="Widget.Material3.Button">
         <item name="android:minWidth">@dimen/chat_send_min_width</item>
         <item name="android:minHeight">@dimen/chat_composer_min_height</item>

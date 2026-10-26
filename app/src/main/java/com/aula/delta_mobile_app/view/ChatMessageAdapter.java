@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.ChatMessage;
+import com.aula.delta_mobile_app.model.ScreenState;
 
 import java.util.Objects;
 
@@ -50,14 +51,22 @@ public final class ChatMessageAdapter extends ListAdapter<ChatMessage, ChatMessa
         int author = message.author == ChatMessage.Author.USER ? R.string.chat_user_author : R.string.chat_assistant_author;
         holder.content.setContentDescription(holder.itemView.getContext().getString(R.string.chat_message_accessibility,
             holder.itemView.getContext().getString(author), message.content));
+        if (holder.status != null) {
+            int status = message.status == ScreenState.Status.LOADING ? R.string.chat_message_sending : R.string.chat_message_failed;
+            boolean visible = message.status == ScreenState.Status.LOADING || message.status == ScreenState.Status.ERROR;
+            holder.status.setText(visible ? holder.itemView.getContext().getString(status) : "");
+            holder.status.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
     }
 
     public static final class Holder extends RecyclerView.ViewHolder {
         private final TextView content;
+        private final TextView status;
 
         Holder(View view) {
             super(view);
             content = view.findViewById(R.id.chat_message_text);
+            status = view.findViewById(R.id.chat_message_status);
         }
     }
 }

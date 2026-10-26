@@ -16,6 +16,8 @@
     <dimen name="chat_bubble_padding">12dp</dimen>
     <dimen name="chat_message_spacing">12dp</dimen>
     <dimen name="chat_message_text_size">16sp</dimen>
+    <dimen name="chat_message_status_size">12sp</dimen>
     <dimen name="chat_composer_spacing">8dp</dimen>
     <dimen name="chat_send_min_width">72dp</dimen>
+    <dimen name="chat_progress_size">24dp</dimen>
 </resources>
