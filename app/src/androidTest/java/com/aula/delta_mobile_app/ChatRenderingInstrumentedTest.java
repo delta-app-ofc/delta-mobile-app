@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -31,6 +32,7 @@ import com.aula.delta_mobile_app.view.ChatSessionAdapter;
 import com.aula.delta_mobile_app.view.activities.login.LoginActivity;
 import com.aula.delta_mobile_app.view.fragments.ChatFragment;
 import com.aula.delta_mobile_app.viewmodel.ChatFlow;
+import com.aula.delta_mobile_app.viewmodel.ChatViewModel;
 
 import org.junit.After;
 import org.junit.Before;
@@ -232,6 +234,7 @@ public class ChatRenderingInstrumentedTest {
         scenario.onActivity(activity -> {
             fragment = new ChatFragment();
             activity.getSupportFragmentManager().beginTransaction().replace(R.id.auth_nav_host, fragment).commitNow();
+            assertTrue(ChatViewModel.forActivity(activity).sendingEnabled());
         });
         await(() -> list().getWidth() > 0);
         onView(withId(R.id.chat_input)).check(matches(not(isEnabled())));
@@ -281,6 +284,7 @@ public class ChatRenderingInstrumentedTest {
         });
         scrollToEnd();
         onView(withId(R.id.chat_waiting)).check(matches(isDisplayed()));
+        onView(withId(R.id.chat_input)).check(matches(withText("")));
         onView(withId(R.id.chat_send)).check(matches(not(isEnabled())));
         scenario.onActivity(activity -> {
             assertEquals(1, gateway.replies.size());
@@ -522,7 +526,10 @@ public class ChatRenderingInstrumentedTest {
                 if (id == R.id.chat_input) assertEquals(activity.getString(R.string.chat_composer_hint), node.getContentDescription());
                 else {
                     assertTrue(node.getActionList().contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK));
-                    assertEquals(activity.getString(id == R.id.chat_send ? R.string.chat_send : R.string.chat_retry), node.getText());
+                    if (id == R.id.chat_send) {
+                        assertEquals(activity.getString(R.string.chat_send), node.getContentDescription());
+                        assertNotNull(((ImageButton) action).getDrawable());
+                    } else assertEquals(activity.getString(R.string.chat_retry), node.getText());
                 }
             }
             assertEquals(activity.getString(R.string.chat_character_count_accessibility, 4), fragment.requireView().findViewById(R.id.chat_character_count).getContentDescription());

@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -492,15 +493,33 @@ public class ChatLifecycleInstrumentedTest {
 
     @Test
     public void newChatWithoutSessionConfirmsDraftAndDoesNotCallClose() throws IOException {
-        onView(withId(R.id.chat_input)).perform(replaceText("Rascunho local"), closeSoftKeyboard());
+        send("Rascunho local");
+        scenario.onActivity(activity -> account.gateway.replies.get(0).accept(ScreenState.error(activity.getString(R.string.chat_error_network))));
+        await(() -> state().sending.status == ScreenState.Status.ERROR);
         onView(withId(R.id.chat_new)).perform(click());
         onView(withText(R.string.chat_new_cancel)).perform(click());
         onView(withId(R.id.chat_input)).check(matches(withText("Rascunho local")));
         onView(withId(R.id.chat_new)).perform(click());
         onView(withId(android.R.id.button1)).perform(click());
         onView(withId(R.id.chat_input)).check(matches(withText("")));
+        onView(withId(R.id.chat_new)).check(matches(withEffectiveVisibility(GONE)));
         assertTrue(account.gateway.closed.isEmpty());
         capture("stage9-new-empty");
+    }
+
+    @Test
+    public void backActionPreservesConversationAndDraft() {
+        conversation();
+        onView(withId(R.id.chat_input)).perform(replaceText("Rascunho guardado"), closeSoftKeyboard());
+        onView(withId(R.id.chat_back)).perform(click());
+        await(() -> state().showIntroduction);
+        onView(withId(R.id.chat_back)).check(matches(withEffectiveVisibility(GONE)));
+        onView(withId(R.id.chat_new)).check(matches(withEffectiveVisibility(GONE)));
+        onView(withId(R.id.chat_resume)).perform(click());
+        await(() -> !state().showIntroduction);
+        onView(withId(R.id.chat_input)).check(matches(withText("Rascunho guardado")));
+        assertEquals(2, state().messages.size());
+        assertTrue(account.gateway.closed.isEmpty());
     }
 
     @Test
@@ -652,15 +671,28 @@ public class ChatLifecycleInstrumentedTest {
         leave();
         backToIntroduction();
         onView(withId(R.id.chat_resume)).check(matches(isDisplayed()));
+        onView(withId(R.id.chat_new)).check(matches(withEffectiveVisibility(GONE)));
+        onView(withId(R.id.chat_back)).check(matches(withEffectiveVisibility(GONE)));
+        scenario.onActivity(activity -> {
+            View resume = chat().requireView().findViewById(R.id.chat_resume);
+            AccessibilityNodeInfo node = resume.createAccessibilityNodeInfo();
+            assertEquals(activity.getString(R.string.chat_resume), node.getText());
+            assertTrue(node.isClickable() && node.isFocusable());
+        });
+        onView(withId(R.id.chat_resume)).perform(click());
+        await(() -> !state().showIntroduction);
         scenario.onActivity(activity -> {
             int minimum = activity.getResources().getDimensionPixelSize(R.dimen.chat_composer_min_height);
-            for (int id : new int[]{R.id.chat_new, R.id.chat_resume}) {
+            for (int id : new int[]{R.id.chat_new, R.id.chat_back}) {
                 View action = chat().requireView().findViewById(id);
                 AccessibilityNodeInfo node = action.createAccessibilityNodeInfo();
                 assertTrue(node.isEnabled());
                 assertTrue(node.isClickable());
                 assertTrue(node.isFocusable());
-                assertEquals(activity.getString(id == R.id.chat_new ? R.string.chat_new : R.string.chat_resume), node.getText());
+                if (id == R.id.chat_back) {
+                    assertEquals(activity.getString(R.string.chat_back_to_start), node.getContentDescription());
+                    assertNotNull(((ImageButton) action).getDrawable());
+                } else assertEquals(activity.getString(R.string.chat_new), node.getText());
                 assertTrue(node.getActionList().contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK));
                 assertTrue(action.getHeight() >= minimum && action.getWidth() >= minimum);
                 Rect bounds = new Rect();

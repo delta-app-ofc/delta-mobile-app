@@ -122,6 +122,7 @@ public final class ChatFragment extends Fragment {
         sendButton = view.findViewById(R.id.chat_send);
         newButton = view.findViewById(R.id.chat_new);
         newButton.setOnClickListener(button -> requestNewChat());
+        view.findViewById(R.id.chat_back).setOnClickListener(button -> { if (introductionAction != null && !current.showIntroduction) introductionAction.run(); });
         adapter = new ChatMessageAdapter();
         feedback = new FeedbackAdapter();
         landing = new LandingAdapter();
@@ -151,7 +152,7 @@ public final class ChatFragment extends Fragment {
         sendButton.setOnClickListener(button -> attemptSend());
         ViewCompat.setOnApplyWindowInsetsListener(view, (root, insets) -> {
             boolean keyboard = insets.isVisible(WindowInsetsCompat.Type.ime());
-            root.findViewById(R.id.chat_actions).setVisibility(keyboard ? View.GONE : View.VISIBLE);
+            root.findViewById(R.id.chat_actions).setVisibility(keyboard || current.showIntroduction || introductionAction == null ? View.GONE : View.VISIBLE);
             View column = root.findViewById(R.id.chat_content);
             ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) column.getLayoutParams();
             int bottom = keyboard ? 0 : getResources().getDimensionPixelSize(R.dimen.chat_menu_clearance);
@@ -203,6 +204,9 @@ public final class ChatFragment extends Fragment {
         });
         View root = getView();
         if (root != null) {
+            WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(root);
+            root.findViewById(R.id.chat_actions).setVisibility(current.showIntroduction || introductionAction == null
+                || insets != null && insets.isVisible(WindowInsetsCompat.Type.ime()) ? View.GONE : View.VISIBLE);
             root.removeCallbacks(retryReady);
             long delay = current.sending.retryAt - System.currentTimeMillis();
             if (history != null) {
@@ -255,7 +259,7 @@ public final class ChatFragment extends Fragment {
     }
 
     private boolean canStartNewChat() {
-        return newChatAction != null && current.account.status == ScreenState.Status.SUCCESS && !current.sending.busy()
+        return !current.showIntroduction && newChatAction != null && current.account.status == ScreenState.Status.SUCCESS && !current.sending.busy()
             && (sendingEnabled || current.sessionId == null)
             && (history == null || (!history.history.busy() && !history.closing.busy() && System.currentTimeMillis() >= history.closing.retryAt));
     }
@@ -290,10 +294,11 @@ public final class ChatFragment extends Fragment {
         if (root == null || input == null) return;
         boolean compact = root.getHeight() > 0 && root.getHeight() < getResources().getDimensionPixelSize(R.dimen.chat_composer_min_height) * (keyboard ? 3 : 8);
         int spacing = getResources().getDimensionPixelSize(R.dimen.chat_composer_spacing);
+        int innerSpacing = getResources().getDimensionPixelSize(R.dimen.chat_composer_inner_spacing);
         View composer = root.findViewById(R.id.chat_composer);
         View row = root.findViewById(R.id.chat_composer_row);
         composer.setPaddingRelative(0, compact ? 0 : spacing, 0, 0);
-        row.setPaddingRelative(spacing, compact ? 0 : spacing, spacing, compact ? 0 : spacing);
+        row.setPaddingRelative(spacing, compact ? 0 : innerSpacing, spacing, compact ? 0 : innerSpacing);
         counter.setVisibility(compact && keyboard ? View.GONE : View.VISIBLE);
         if (input.getMaxLines() != (compact ? 1 : 4)) input.setMaxLines(compact ? 1 : 4);
     }

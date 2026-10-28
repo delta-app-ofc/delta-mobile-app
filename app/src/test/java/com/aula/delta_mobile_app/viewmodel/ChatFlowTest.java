@@ -652,14 +652,14 @@ public class ChatFlowTest {
     }
 
     @Test
-    public void startsOnePendingMessageWithoutClearingDraftOrCreatingSession() {
+    public void startsOnePendingMessageAndClearsDraftWithoutCreatingSession() {
         String text = "  Como economizar?\nÁgua 💧  ";
         send(text);
 
         assertEquals(1, gateway.messages.size());
         assertEquals(text, gateway.messages.get(0));
         assertNull(gateway.sessions.get(0));
-        assertEquals(text, flow.state().draft);
+        assertEquals("", flow.state().draft);
         assertEquals(1, flow.state().messages.size());
         assertEquals(ChatMessage.Author.USER, flow.state().messages.get(0).author);
         assertEquals(ScreenState.Status.LOADING, flow.state().messages.get(0).status);
@@ -716,6 +716,28 @@ public class ChatFlowTest {
         flow.send();
         assertEquals("Próxima pergunta", gateway.messages.get(1));
         assertEquals("session-a", gateway.sessions.get(1));
+    }
+
+    @Test
+    public void successfulReplyKeepsNewDraftEvenWhenTextMatchesSentMessage() {
+        send("Água");
+        flow.setDraft("Água");
+        gateway.replies.get(0).accept(reply("Resposta", "session-a"));
+        drain();
+
+        assertEquals("Água", flow.state().draft);
+    }
+
+    @Test
+    public void failedReplyDoesNotOverwriteNewDraftTypedWhileWaiting() {
+        send("Primeira");
+        flow.setDraft("Próxima pergunta");
+        gateway.replies.get(0).accept(ScreenState.error("resource:error"));
+        drain();
+
+        assertEquals("Próxima pergunta", flow.state().draft);
+        assertEquals("Primeira", flow.state().messages.get(0).content);
+        assertEquals(ScreenState.Status.ERROR, flow.state().messages.get(0).status);
     }
 
     @Test

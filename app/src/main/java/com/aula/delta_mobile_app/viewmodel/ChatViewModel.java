@@ -41,7 +41,7 @@ public final class ChatViewModel extends AndroidViewModel {
     private boolean pendingSessions;
 
     public ChatViewModel(Application application) {
-        this(application, account(application), false);
+        this(application, account(application), true);
     }
 
     public ChatViewModel(Application application, Account account, boolean sendingEnabled) {

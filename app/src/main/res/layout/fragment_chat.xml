@@ -24,13 +24,29 @@
             android:id="@+id/chat_actions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_marginTop="@dimen/chat_section_spacing"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/chat_back"
+                android:layout_width="@dimen/chat_composer_min_height"
+                android:layout_height="@dimen/chat_composer_min_height"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/chat_back_to_start"
+                android:src="@drawable/hourly_icon_back" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/chat_new"
-                style="@style/Chat.Action"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                style="@style/Chat.SubtleAction"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/chat_composer_min_height"
                 android:enabled="false"
                 android:text="@string/chat_new" />
 

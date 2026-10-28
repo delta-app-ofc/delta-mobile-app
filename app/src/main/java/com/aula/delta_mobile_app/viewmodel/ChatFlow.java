@@ -241,7 +241,7 @@ public final class ChatFlow {
         String session = state.sessionId;
         long request = ++attempt;
         long identity = generation;
-        publish(new ChatState(state.account, false, state.draft, session, messages, ScreenState.loading()));
+        publish(new ChatState(state.account, false, "", session, messages, ScreenState.loading()));
         actions.send(content, session, result -> dispatch.accept(() -> finish(identity, request, id, content, session, result)));
     }
 
@@ -277,13 +277,14 @@ public final class ChatFlow {
         if (success) {
             ChatMessage reply = new ChatMessage(++nextId, ChatMessage.Author.ASSISTANT, response.response, ScreenState.Status.SUCCESS, response.agentUsed);
             messages.add(reply);
-            publish(new ChatState(state.account, state.showIntroduction, state.draft.equals(content) ? "" : state.draft, response.sessionId, messages, ScreenState.success(reply)));
+            publish(new ChatState(state.account, state.showIntroduction, state.draft, response.sessionId, messages, ScreenState.success(reply)));
             if (session == null && (sessions.busy() || sessions.status == ScreenState.Status.SUCCESS)) {
                 sessions = ScreenState.idle();
                 loadSessions();
             }
         } else {
-            publish(new ChatState(state.account, state.showIntroduction, state.draft, session, messages, ScreenState.error(result.message, result.code, result.retryAt)));
+            publish(new ChatState(state.account, state.showIntroduction, state.draft.isEmpty() ? content : state.draft, session, messages,
+                ScreenState.error(result.message, result.code, result.retryAt)));
         }
     }
 

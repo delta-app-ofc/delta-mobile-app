@@ -12,7 +12,8 @@
         android:layout_height="wrap_content"
         android:baselineAligned="false"
         android:background="@drawable/home_outline_background"
-        android:padding="@dimen/chat_composer_spacing"
+        android:paddingHorizontal="@dimen/chat_composer_spacing"
+        android:paddingVertical="@dimen/chat_composer_inner_spacing"
         android:gravity="bottom"
         android:orientation="horizontal">
 
@@ -28,7 +29,8 @@
             android:hint="@string/chat_composer_hint"
             android:contentDescription="@string/chat_composer_hint"
             android:fontFamily="sans-serif"
-            android:textSize="@dimen/chat_message_text_size"
+            android:includeFontPadding="false"
+            android:textSize="@dimen/chat_composer_text_size"
             android:textColor="@color/white"
             android:textColorHint="@color/chat_placeholder_text"
             android:background="@android:color/transparent"
@@ -37,14 +39,17 @@
             android:importantForAutofill="no"
             android:scrollbars="vertical" />
 
-        <com.google.android.material.button.MaterialButton
+        <ImageButton
             android:id="@+id/chat_send"
-            style="@style/Chat.Action"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="@dimen/chat_composer_min_height"
+            android:layout_height="@dimen/chat_composer_min_height"
             android:layout_marginStart="@dimen/chat_composer_spacing"
+            android:background="@drawable/chat_send_background"
+            android:contentDescription="@string/chat_send"
             android:enabled="false"
-            android:text="@string/chat_send" />
+            android:padding="0dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/chat_send_icon" />
     </LinearLayout>
 
     <TextView
