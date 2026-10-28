@@ -23,6 +23,8 @@ Registrar as decisões de produto e integração antes de escrever código. Uma 
 
 **Decidido na etapa 8:** preparar a integração e manter o envio ao serviço publicado bloqueado até a confirmação externa de P03. Não executar perguntas reais na API durante os testes. Fonte: resposta nesta conversa — “Manter bloqueado até confirmação (recomendado)”. O construtor padrão do ViewModel mantém o envio desabilitado; testes usam composição manual com serviço substituído e envio habilitado explicitamente, sem opção de desbloqueio na interface.
 
+**Decisão revisada em 26/10/2026:** a pessoa usuária autorizou testar o contrato disponível e liberar o envio real no app: “vamos testar com o que temos da api por enquanto, libera ae”. A composição padrão do ViewModel passa a habilitar `POST /chat` e, para “Novo chat” com sessão identificada, `POST /sessions/{session_id}/close`. Permanecem a exigência de conta autenticada no app, as regras de envio único e nova tentativa manual, e a preservação da conversa se `close` falhar. A autorização substitui o bloqueio operacional da etapa 8; não comprova a revisão publicada nem a configuração de autenticação/gateway. **INCERTO:** o ambiente publicado pode diferir do repositório analisado; testar o fluxo autenticado e registrar o resultado antes do aceite final. Fontes: pedido desta conversa, [ChatViewModel](../../app/src/main/java/com/aula/delta_mobile_app/viewmodel/ChatViewModel.java), [contrato](api-contract.md).
+
 Fonte: resposta E.1. A ausência de autenticação HTTP no código analisado está descrita no [contrato](api-contract.md#ambiente-transporte-e-autenticação); não comprova a configuração externa do Render.
 
 ### D02 — Escopo dos dados
@@ -55,11 +57,13 @@ Fonte: resposta E.4. A listagem atual retorna somente `session_id` e `created_at
 
 **Decidido na etapa 9:** posicionar “Novo chat” no topo da seção, acima do conteúdo rolável. Na apresentação inicial, mostrar “Retomar conversa” quando houver sessão, mensagens, rascunho ou envio guardado. Entrar pela aba apresenta o início sem apagar nem encerrar a conversa; rotação preserva a tela atual. Fonte: resposta nesta conversa — “Aprovar posição e retomada (recomendado)”. A resposta anterior da etapa 8 continua valendo para guardar o resultado fora da tela; o acesso ao resultado agora passa por “Retomar conversa”.
 
+**Decisão revisada em 27/10/2026:** “Novo chat” aparece somente durante uma conversa. Na apresentação inicial sem conversa guardada, a pessoa pode começar pelo campo de mensagem; quando houver conversa guardada, “Retomar conversa” continua disponível. Durante a conversa, acrescentar uma ação “Voltar ao início do chatbot”, que mostra a apresentação inicial sem encerrar a sessão, apagar mensagens ou descartar o rascunho. “Novo chat” permanece no topo da conversa. Esta revisão substitui a visibilidade de “Novo chat” na apresentação inicial definida na etapa 9. Fonte: pedido explícito nesta conversa — “na tela inicial nao faz sentido ter uma botão de novo chat ... somente durante um chat ... durante uma conversa precisa ter um botão pra voltar pra tela inicial do chatbot”; [fluxo de apresentação](../../app/src/main/java/com/aula/delta_mobile_app/viewmodel/ChatFlow.java), [ações da tela](../../app/src/main/java/com/aula/delta_mobile_app/view/fragments/ChatFragment.java).
+
 **Decidido na etapa 9:** bloquear novo chat durante envio/carregamento de mensagens e confirmar descarte de rascunho não vazio. Sem rascunho, seguir diretamente. Nunca cancelar a chamada existente para trocar de conversa. Fonte: resposta nesta conversa — “Bloquear operação em andamento e confirmar descarte (recomendado)”.
 
 **Decidido na etapa 9:** se `close` falhar, preservar sessão, mensagens e rascunho anteriores; oferecer somente nova tentativa manual. Em timeout, esclarecer que a confirmação não chegou e que repetir pode gerar memória novamente. Fonte: resposta nesta conversa — “Manter a conversa anterior e oferecer nova tentativa manual (recomendado)”. Uma conversa nova sem sessão anterior é apenas estado local; nenhum POST cria sessão vazia.
 
-**Limite mantido de P03:** a composição padrão continua sem habilitar operações de escrita no serviço de IA; com sessão anterior identificada, “Novo chat” não executa `close` enquanto esse bloqueio vigorar. O reset sem sessão é local. Os testes de fechamento usam exclusivamente serviço substituído.
+**Histórico da etapa 9:** a composição padrão bloqueava operações de escrita; com sessão anterior identificada, “Novo chat” não executava `close`. A decisão revisada em D01 acima libera essa operação. O reset sem sessão continua local. Os testes de fechamento até a etapa 10 usaram exclusivamente serviço substituído.
 
 **Limite técnico:** o endpoint `close` gera memória da conversa, mas não marca a sessão como fechada nem impede novos envios. A decisão de encerrar a conversa no fluxo do app não altera essa semântica do servidor. Ver [contrato](api-contract.md#post-sessionssession_idclose--gerar-memória-da-conversa).
 
@@ -119,11 +123,13 @@ Fonte histórica: resposta E.9; a revisão acima substitui a obrigatoriedade de 
 
 **Decidido na etapa 4:** permitir somente um envio por vez na conversa. Enquanto a chamada estiver em andamento, bloquear outro envio nessa conversa. Após falha, manter o texto no rascunho e permitir nova tentativa somente por ação explícita da pessoa usuária, sem reenvio automático. Fontes: respostas às duas perguntas P06 nesta conversa, durante a implementação da etapa 4 — “Um envio por vez (recomendado)” e “Manter texto e permitir reenvio manual”.
 
+**Atualização em 27/10/2026:** limpar o campo assim que uma mensagem for enviada. Se a chamada falhar e o campo continuar vazio, restaurar nele a mensagem enviada para permitir nova tentativa manual. Se outro rascunho tiver sido escrito durante a espera, preservá-lo; a mensagem que falhou continua visível na conversa. Fonte: pedido explícito nesta conversa — “o texto continua no input text dps de enviar tem como deixar a barra limpa dps de enviar?”; [fluxo de envio](../../app/src/main/java/com/aula/delta_mobile_app/viewmodel/ChatFlow.java).
+
 **Decidido na etapa 6:** usar um aviso dentro da conversa, acima do campo, com a mensagem de erro e o botão “Tentar novamente”. Em timeout, informar que a conclusão não foi confirmada e que reenviar pode repetir uma operação. O rascunho permanece preservado. Fonte: resposta nesta conversa — “Aviso e botão de nova tentativa (recomendado)”.
 
 **Decidido na etapa 8:** guardar no ViewModel a resposta recebida enquanto outra aba estiver aberta e apresentá-la na conversa ao voltar, sem popup, notificação nem mudança automática de aba. Na recriação por rotação, preservar a conversa e o envio em andamento. Fonte: resposta nesta conversa — “Guardar e mostrar ao voltar (recomendado)”. Isso vale durante a vida do ViewModel, sem garantia após morte do processo Android.
 
-**Atualização da etapa 9:** o comportamento do botão de novo chat e a retomada foram definidos em D05. A ativação de operações de escrita no serviço publicado permanece bloqueada por P03 conforme a decisão da etapa 8 acima.
+**Atualização da etapa 9:** o comportamento do botão de novo chat e a retomada foram definidos em D05. O bloqueio de operações de escrita adotado nessa etapa foi substituído pela decisão revisada em D01 em 26/10/2026.
 
 **Limite técnico conhecido:** a API não tem deduplicação de envios. **INCERTO — risco inferido:** repetir uma chamada após timeout pode duplicar operações. Ver [contrato](api-contract.md#post-chat--enviar-mensagem).
 
@@ -133,8 +139,8 @@ Fonte: resposta E.10. “Não tem que fechar a chamada” foi registrado como ma
 
 Esta ordem organiza a conversa; não representa decisões já aceitas sobre as soluções.
 
-1. **Ambiente publicado — P03:** o contrato HTTP foi comparado, mas faltam revisão em execução e confirmação da autenticação/gateway nas operações de chat/sessões. Encaminhar a verificação ao responsável pelo ambiente; não repetir à pessoa usuária perguntas às quais ela já respondeu “não sei”.
-2. **Ciclo da conversa — P05, resolvido na etapa 9:** botão de novo chat, retomada, falha de encerramento e requisições em andamento definidos em D05. A execução remota ainda depende de P03.
+1. **Ambiente publicado — P03:** o contrato HTTP foi comparado e a pessoa usuária autorizou a integração provisória. Ainda faltam revisão em execução, confirmação da autenticação/gateway nas operações de chat/sessões e teste real com conta autenticada. Encaminhar a verificação ao responsável pelo ambiente; não repetir à pessoa usuária perguntas às quais ela já respondeu “não sei”.
+2. **Ciclo da conversa — P05, resolvido na etapa 9:** botão de novo chat, retomada, falha de encerramento e requisições em andamento definidos em D05. A execução remota está habilitada provisoriamente, sujeita à verificação de P03.
 3. **Envio e falhas — P06:** concorrência, mensagem de erro, nova tentativa e entrega de respostas fora da tela.
 4. **Continuidade e metas — P07/P08:** critérios de aceite diante do contexto limitado e operações permitidas para metas.
 5. **Apresentação — P04/P08:** sugestões iniciais, histórico alternativo e formatação do texto.

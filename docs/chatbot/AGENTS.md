@@ -14,9 +14,9 @@ O briefing define os critérios de aceite; `decisions.md` registra os ajustes ap
 
 ## Etapa atual
 
-- Na etapa registrada em 25/10/2026, a implementação do chatbot aguarda autorização explícita. O backend permanece sem ajustes por enquanto. Fonte: [objetivo e D07](decisions.md).
+- A implementação foi autorizada nas etapas registradas em [decisions.md](decisions.md). Em 26/10/2026, a pessoa usuária também autorizou testar a integração publicada com o contrato disponível; o backend permanece sem ajustes por enquanto. Fonte: [D01 e D07](decisions.md).
 - Registre respostas sobre o fluxo em [decisions.md](decisions.md), mantendo os identificadores D01–D10 e as pendências específicas.
-- O bloqueio de escrita de hábitos como pré-requisito para habilitar o envio real ainda é proposta pendente; não está aprovado. Fonte: [D08](decisions.md).
+- A pessoa usuária permitiu que o chat registre hábitos se o backend oferecer essa ferramenta. Fonte: [D08](decisions.md).
 
 ## Regras de produto já decididas
 
@@ -24,11 +24,11 @@ Consulte o texto completo e as pendências de cada decisão em [decisions.md](de
 
 - **D01–D02:** serviço de IA em `https://delta-artificial-intelligence.onrender.com`; `user_id` corresponde ao ID de `/delta/auth/me`; contexto da conta toda. Revisão publicada e autenticação externa seguem sem confirmação.
 - **D03–D04:** conteúdo e interação das sugestões iniciais seguem pendentes. Usar ícones predefinidos no Figma e apresentação alternativa do histórico; desconsiderar “Ver todos”. Não inventar títulos ou prévias como se viessem da API.
-- **D05:** entrar sempre pela apresentação inicial e incluir um botão de novo chat, que inicia outra conversa e encerra a anterior no fluxo do app. Tratamento de falhas e requisições em andamento ainda precisa de decisão.
+- **D05:** entrar sempre pela apresentação inicial; mostrar “Novo chat” e “Voltar ao início do chatbot” somente durante a conversa. Voltar preserva sessão, mensagens e rascunho; “Retomar conversa” reabre o conteúdo guardado. Novo chat encerra a conversa anterior no fluxo do app, conforme [decisions.md](decisions.md).
 - **D06:** gráficos ficam fora da entrega atual. Isso não altera o contrato existente de `chart_data`.
-- **D07–D08:** manter o backend sem ajustes por enquanto; o chatbot deve apenas orientar, sem salvar hábitos. A capacidade de escrita do backend analisado é uma incompatibilidade a resolver, não algo que a interface garanta impedir.
-- **D09:** considerar clima atual e previsão futura, além de histórico. Não apresentar histórico climático como previsão nem afirmar que a fonte já atende ao requisito sem verificação.
-- **D10:** sair da tela não cancela a chamada; prever uma apresentação de erro adicional às referências. Concorrência e nova tentativa continuam pendentes. O tratamento geral de menu/teclado está no AGENTS.md da raiz.
+- **D07–D08:** manter o backend sem ajustes por enquanto; o chat pode registrar hábitos quando o backend permitir.
+- **D09:** aceitar histórico climático na primeira entrega; clima atual e previsão futura ficam para depois. Não apresentar histórico como previsão.
+- **D10:** sair da tela não cancela a chamada; permitir um envio por vez, preservar o rascunho e exigir nova tentativa manual após falha. O tratamento geral de menu/teclado está no AGENTS.md da raiz.
 
 Envio de imagens, áudios, arquivos e notificações push estão fora do escopo, conforme o [briefing](briefing.md).
 

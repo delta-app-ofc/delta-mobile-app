@@ -1,5 +1,9 @@
 # Validação do chatbot — etapa 10
 
+**Atualização posterior, 26/10/2026:** a pessoa usuária liberou provisoriamente o envio e o fechamento de sessões com o contrato publicado disponível. O bloqueio P03 descrito abaixo registra o estado **durante a etapa 10**, antes dessa decisão; não é mais o estado do código de produção. A confirmação da revisão/autenticação do serviço e o teste real com conta autenticada continuam pendentes. Fontes: [D01 revisada](decisions.md), [ChatViewModel][vm].
+
+**Atualização posterior, 27/10/2026:** a decisão D05 foi revisada: a apresentação inicial não mostra “Novo chat”; durante a conversa há “Novo chat” e uma ação para voltar ao início sem apagar o conteúdo. As capturas e a comparação visual abaixo continuam sendo evidência histórica da etapa 10, anterior a essa revisão. Fontes: [D05 revisada](decisions.md), [Fragment][fragment].
+
 ## Situação do aceite
 
 **Data:** 26/10/2026, America/Sao_Paulo. **Base:** `53cbf6cd6f5fb7a9a8c9fa4b405bb646a1846d8e`, acrescida da correção localizada, dos testes e documentos desta etapa, ainda sem commits. A alteração preexistente de `local.properties` foi preservada.
@@ -10,7 +14,7 @@ Não há decisão nova de produto nesta etapa. Mantêm-se as decisões explícit
 
 ## Organização nos dois grupos previstos
 
-1. **10.1 — `test: completa cenários de aceite do chatbot`:** alterações nos dois testes instrumentados previstos e correção localizada no Fragment, conforme a previsão de corrigir defeitos encontrados nesta etapa. Acrescentados testes da semântica acessível e dos alvos de toque de histórico, compositor, nova tentativa, novo chat e retomada; reforçadas a verificação do fim da resposta longa e a remoção do diálogo após logout. As capturas registram no log as dimensões disponíveis do Fragment em dp e a escala da fonte. Fontes: [renderização][rendering], [lifecycle][lifecycle], [Fragment][fragment].
+1. **10.1 — `feat: completa cenários de aceite do chatbot`:** alterações nos dois testes instrumentados previstos e correção localizada no Fragment, conforme a previsão de corrigir defeitos encontrados nesta etapa. Acrescentados testes da semântica acessível e dos alvos de toque de histórico, compositor, nova tentativa, novo chat e retomada; reforçadas a verificação do fim da resposta longa e a remoção do diálogo após logout. As capturas registram no log as dimensões disponíveis do Fragment em dp e a escala da fonte. Fontes: [renderização][rendering], [lifecycle][lifecycle], [Fragment][fragment].
 2. **10.2 — `docs: registra validação do chatbot em celular e tablet`:** este registro, as capturas de evidência vinculadas abaixo e a atualização dos critérios do [briefing](briefing.md). Contrato e decisões permanecem sem alterações. Nenhum commit foi realizado.
 
 ## Ambiente e limites

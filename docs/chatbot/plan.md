@@ -369,7 +369,7 @@ O primeiro commit já respeita a separação de estado/rede da View definida na 
 
 | Ordem | Mensagem sugerida | Conteúdo do commit |
 | --- | --- | --- |
-| 10.1 | `test: completa cenários de aceite do chatbot` | Completar testes instrumentados relevantes de lifecycle, acessibilidade e cenários da matriz; incluir fixtures/recursos de teste necessários. Não criar teste redundante apenas para gerar commit. |
+| 10.1 | `feat: completa cenários de aceite do chatbot` | Completar testes instrumentados relevantes de lifecycle, acessibilidade e cenários da matriz; incluir fixtures/recursos de teste necessários. Não criar teste redundante apenas para gerar commit. |
 | 10.2 | `docs: registra validação do chatbot em celular e tablet` | Criar `acceptance.md` com resultados reais; atualizar briefing e, somente se houver evidência/decisão nova, contrato e decisões. Manter critérios bloqueados sem marca de conclusão. |
 
 Se os testes planejados já estiverem completos antes desta etapa, o primeiro commit poderá registrar a primeira parte das evidências reais em `acceptance.md`, com mensagem `docs: registra verificações automatizadas do chatbot`; o segundo acrescentará matriz visual e aceite de negócio. A adaptação preserva duas entregas úteis sem inventar testes ou execução.
