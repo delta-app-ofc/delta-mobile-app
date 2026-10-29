@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="routine_page_padding">16dp</dimen>
+    <dimen name="routine_section_spacing">20dp</dimen>
+    <dimen name="routine_card_padding">16dp</dimen>
+    <dimen name="routine_item_spacing">12dp</dimen>
+    <dimen name="routine_menu_clearance">136dp</dimen>
+    <dimen name="routine_touch_size">48dp</dimen>
+    <dimen name="routine_day_min_height">72dp</dimen>
+    <dimen name="routine_week_outset">-4dp</dimen>
+    <dimen name="routine_calendar_width">352dp</dimen>
+    <dimen name="routine_column_gap">24dp</dimen>
+    <dimen name="routine_card_radius">14dp</dimen>
+    <dimen name="routine_day_radius">10dp</dimen>
+    <dimen name="routine_day_padding">4dp</dimen>
+    <dimen name="routine_selected_stroke">2dp</dimen>
+    <dimen name="routine_empty_icon_size">48dp</dimen>
+    <dimen name="routine_empty_min_height">240dp</dimen>
+</resources>

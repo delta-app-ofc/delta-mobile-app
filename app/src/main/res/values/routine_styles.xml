@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="routine_background">#1B1D1E</color>
+    <color name="routine_surface">#252C38</color>
+    <color name="routine_card">#202D35</color>
+    <color name="routine_border">#648CA5</color>
+    <color name="routine_text">#FFFFFF</color>
+    <color name="routine_muted">#CDD3DC</color>
+    <color name="routine_accent">#306BE5</color>
+    <color name="routine_metric">#92B7FF</color>
+    <style name="Routine.Body" parent="Home.Body">
+        <item name="android:textColor">@color/routine_text</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+    <style name="Routine.Heading" parent="Routine.Body">
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:accessibilityHeading">true</item>
+    </style>
+    <style name="Routine.Section" parent="Routine.Body">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:accessibilityHeading">true</item>
+    </style>
+    <style name="Routine.Caption" parent="Routine.Body">
+        <item name="android:textColor">@color/routine_muted</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+    <style name="Routine.Metric" parent="Routine.Body">
+        <item name="android:textColor">@color/routine_metric</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Routine.Action" parent="Widget.Material3.Button.TextButton">
+        <item name="android:singleLine">false</item>
+        <item name="android:minWidth">@dimen/routine_touch_size</item>
+        <item name="android:minHeight">@dimen/routine_touch_size</item>
+        <item name="android:textColor">@color/routine_text</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+    <style name="Routine.Day" parent="Widget.Material3.Button">
+        <item name="android:singleLine">false</item>
+        <item name="android:minWidth">@dimen/routine_touch_size</item>
+        <item name="android:minHeight">@dimen/routine_day_min_height</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:paddingStart">@dimen/routine_day_padding</item>
+        <item name="android:paddingEnd">@dimen/routine_day_padding</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="cornerRadius">@dimen/routine_day_radius</item>
+    </style>
+    <style name="Routine.Calendar" parent="ThemeOverlay.Material3.MaterialCalendar">
+        <item name="colorPrimary">@color/routine_accent</item>
+        <item name="colorOnPrimary">@color/routine_text</item>
+        <item name="colorSurface">@color/routine_background</item>
+        <item name="colorSurfaceContainerHigh">@color/routine_surface</item>
+        <item name="colorOnSurface">@color/routine_text</item>
+        <item name="colorOnSurfaceVariant">@color/routine_muted</item>
+    </style>
+</resources>

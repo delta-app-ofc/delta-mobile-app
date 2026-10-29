@@ -475,6 +475,54 @@ public class RoutineViewModelTest {
         }
     }
 
+    @Test
+    public void calendarWeekCanSelectAdjacentMonthDaysWithoutReloading() {
+        load(data(73, 1));
+        viewModel.selectDate(LocalDate.of(2026, 8, 1));
+        LocalDate monday = state().selectedDate.minusDays(state().selectedDate.getDayOfWeek().getValue() - 1);
+        assertEquals(LocalDate.of(2026, 7, 27), monday);
+        viewModel.selectDate(monday);
+        assertEquals(YearMonth.of(2026, 7), state().displayedMonth);
+        viewModel.selectDate(monday.plusDays(6));
+        assertEquals(LocalDate.of(2026, 8, 2), state().selectedDate);
+        assertEquals(YearMonth.of(2026, 8), state().displayedMonth);
+        assertEquals(1, repository.callbacks.size());
+    }
+
+    @Test
+    public void datePickerUtcSelectionDoesNotShiftTheChosenCalendarDay() {
+        load(data(73, 1));
+        long utcSelection = Instant.parse("2028-02-29T00:00:00Z").toEpochMilli();
+        viewModel.selectDate(Instant.ofEpochMilli(utcSelection).atZone(java.time.ZoneOffset.UTC).toLocalDate());
+        assertEquals(LocalDate.of(2028, 2, 29), state().selectedDate);
+        assertEquals(YearMonth.of(2028, 2), state().displayedMonth);
+        assertEquals(1, repository.callbacks.size());
+    }
+
+    @Test
+    public void todayActionChangesSelectionWithoutLosingTheLoadedSnapshot() {
+        RoutineData snapshot = data(73, 1);
+        load(snapshot);
+        viewModel.selectDate(LocalDate.of(2028, 2, 29));
+        clock.now = clock.now.plusSeconds(86400);
+        viewModel.selectDate(LocalDate.now(clock));
+        assertEquals(LocalDate.of(2026, 2, 1), state().selectedDate);
+        assertSame(snapshot, state().data);
+        assertEquals(1, repository.callbacks.size());
+    }
+
+    @Test
+    public void supportedCalendarEndpointsKeepProjectionAndCanReturnToTheCurrentMonth() {
+        load(data(73, 1));
+        viewModel.selectDate(LocalDate.of(1900, 1, 1));
+        assertEquals(YearMonth.of(1900, 1), state().displayedMonth);
+        viewModel.selectDate(LocalDate.of(2100, 12, 31));
+        assertEquals(YearMonth.of(2100, 12), state().displayedMonth);
+        viewModel.showMonth(YearMonth.from(INITIAL));
+        assertEquals(INITIAL, state().selectedDate);
+        assertEquals(1, repository.callbacks.size());
+    }
+
     private RoutineUiState state() {
         return viewModel.state().getValue();
     }
