@@ -82,9 +82,19 @@ public final class ApiModels {
         public Integer userId;
         public Integer habitId;
         public String habitName;
+        public String habitCategory;
         public String habitDescription;
         public Integer frequency;
         public List<Integer> daysOfWeek;
+        public String startTime;
+        public String endTime;
+        public BigDecimal estimatedLiters;
+        public List<UserHabitScheduleResponse> schedule;
+    }
+
+    public static class UserHabitScheduleResponse {
+        public Integer dayOfWeek;
+        public List<String> startTimes;
     }
 
     public static class UpdateDeviceRequest {
