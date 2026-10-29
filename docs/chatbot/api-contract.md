@@ -1,5 +1,20 @@
 # Contrato da API do chatbot
 
+## Atualização do serviço publicado — 27/10/2026
+
+O [OpenAPI publicado](https://delta-artificial-intelligence.onrender.com/openapi.json) agora declara `agents_used` como lista opcional de strings em `ChatResponse`; `agent_used` não aparece mais nesse schema. A pessoa usuária confirmou uma resposta real de `POST /chat` com `agents_used: []`, `session_id` como string e `chart_data: null`. O app aceita a lista vazia, une nomes quando houver agentes e continua aceitando o campo antigo `agent_used` para compatibilidade. O OpenAPI local e a análise histórica abaixo documentam a revisão de 25/10/2026 e não representam mais esse campo da resposta publicada.
+
+Exemplo baseado na estrutura observada, com texto e ID substituídos:
+
+```json
+{
+  "response": "Oi! Posso ajudar.",
+  "agents_used": [],
+  "session_id": "exemplo",
+  "chart_data": null
+}
+```
+
 ## Objetivo e versão analisada
 
 Registrar o contrato HTTP e o comportamento implementado para orientar a integração do chatbot no app mobile, incluindo os detalhes que o OpenAPI não descreve.
