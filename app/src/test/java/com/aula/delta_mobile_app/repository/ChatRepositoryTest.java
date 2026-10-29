@@ -318,6 +318,25 @@ public class ChatRepositoryTest {
     }
 
     @Test
+    public void sendAcceptsPublishedAgentsListIncludingEmptyList() {
+        Result<ChatResponse> empty = new Result<>(), multiple = new Result<>(), absent = new Result<>();
+        repository.send("Olá", null, empty);
+        repository.send("Consumo e hábitos", null, multiple);
+        repository.send("Sem metadados", null, absent);
+        api.sends.get(0).respond(json("{\"response\":\"Oi! Posso ajudar.\",\"agents_used\":[],\"session_id\":\"13\",\"chart_data\":null}", ChatResponse.class));
+        api.sends.get(1).respond(json("{\"response\":\"Confira seus dados.\",\"agents_used\":[\"forecast\",\"habits\"],\"session_id\":\"14\"}", ChatResponse.class));
+        api.sends.get(2).respond(json("{\"response\":\"Resposta disponível.\",\"session_id\":\"15\"}", ChatResponse.class));
+
+        assertEquals(ScreenState.Status.SUCCESS, empty.only().status);
+        assertEquals("Oi! Posso ajudar.", empty.only().data.response);
+        assertEquals("", empty.only().data.agentUsed);
+        assertEquals(ScreenState.Status.SUCCESS, multiple.only().status);
+        assertEquals("forecast, habits", multiple.only().data.agentUsed);
+        assertEquals(ScreenState.Status.SUCCESS, absent.only().status);
+        assertNull(absent.only().data.agentUsed);
+    }
+
+    @Test
     public void continuingSendKeepsRequestedSessionAndAcceptsChartObject() {
         Result<ChatResponse> result = new Result<>();
         repository.send("Continue", "opaque-session", result);
@@ -330,7 +349,7 @@ public class ChatRepositoryTest {
 
     @Test
     public void incompleteSendResponseOrWrongSessionNeverBecomesSuccess() {
-        for (String body : new String[] {"null", "{}", "{\"response\":\"Resposta\",\"session_id\":\"opaque-session\"}",
+        for (String body : new String[] {"null", "{}",
                 "{\"response\":\" \",\"agent_used\":\"rag\",\"session_id\":\"opaque-session\"}",
                 "{\"response\":\"Resposta\",\"agent_used\":\"rag\",\"session_id\":\"\"}",
                 "{\"response\":\"Resposta\",\"agent_used\":\"rag\",\"session_id\":\"different-session\"}",

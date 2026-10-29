@@ -26,6 +26,8 @@ public final class ChatModels {
         public String response;
         @SerializedName("agent_used")
         public String agentUsed;
+        @SerializedName("agents_used")
+        public List<String> agentsUsed;
         @SerializedName("session_id")
         public String sessionId;
         @SerializedName("chart_data")

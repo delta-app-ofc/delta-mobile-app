@@ -50,9 +50,10 @@ public final class ChatRepository implements ChatActions {
     @Override
     public void send(String message, String sessionId, Consumer<ScreenState<ChatResponse>> callback) {
         request(api.chat(new ChatRequest(userId, Objects.requireNonNull(message), sessionId)), body -> {
-            if (!text(body.response) || !text(body.agentUsed) || !present(body.sessionId)) return null;
+            if (!text(body.response) || !present(body.sessionId)) return null;
             if (present(sessionId) && !sessionId.equals(body.sessionId)) return null;
             if (body.chartData != null && !body.chartData.isJsonNull() && !body.chartData.isJsonObject()) return null;
+            if (body.agentsUsed != null) body.agentUsed = String.join(", ", body.agentsUsed);
             return body;
         }, callback);
     }
