@@ -4,6 +4,8 @@
 
 Este registro distingue requisito aprovado, capacidade observada e proposta. Uma decisão de produto não significa que a API já a suporte. Fontes: pedido e respostas da pessoa usuária nesta conversa, [briefing](briefing.md), [OpenAPI](openapi.json), [contrato analisado](api-contract.md) e [AGENTS.md](../../AGENTS.md). **INCERTO** identifica dedução ou proposta ainda não aprovada.
 
+**Etapa 0, recorte de leitura especificado em 29/10/2026:** D14–D23 registram a autorização e as confirmações posteriores ao planejamento. Elas substituem apenas as pendências explicitamente resolvidas nos registros históricos D01–D13. A tabela P01–P11 abaixo reflete o estado atual. Não houve implementação Android/backend, chamada ao serviço ou atualização do OpenAPI oficial.
+
 ## D01 — Etapa documental
 
 **Decidido pela pessoa usuária:** analisar as fontes na ordem solicitada e escrever somente `docs/rotina/api-contract.md` e `docs/rotina/decisions.md`. Não escrever código, alterar dependências, implementar telas ou antecipar outras etapas. Fonte: pedido inicial desta conversa em 28/10/2026.
@@ -133,16 +135,80 @@ Fonte direta: “a gente pode tomar essas decisoes depois marque como incerto e 
 
 As decisões já registradas permanecem válidas. As pendências abaixo e os trechos anteriores identificados como PENDENTE devem ser lidos como **INCERTO — definição adiada**, não como requisito aprovado nem como permissão para escolher silenciosamente um comportamento. O [plano](plan.md) associa essas definições às etapas dependentes. Nenhuma nova resposta é exigida para concluir esta documentação; a implementação continua fora do escopo desta etapa.
 
-## INCERTO — definições adiadas
+## D14 — Execução autorizada somente da etapa 0
+
+**Decidido pela pessoa usuária em 29/10/2026:** executar somente a etapa 0 do [plano](plan.md#etapa-0--confirmar-o-contrato-por-recorte), sem commit e sem alterar arquivos fora desse recorte. Fonte direta: “Implemente APENAS a etapa 0 do plano” e “não faça o commit: eu reviso o diff antes”. Esta autorização atualiza o limite documental de D01/D13 apenas para essa etapa; não autoriza código Android nem alterações no backend.
+
+À pergunta sobre uma fonte oficial do contrato ampliado ou definição conjunta, a pessoa usuária respondeu “Vamos definir juntos agora”. As respostas seguintes especificam requisitos acordados para a ampliação, sem comprovar implementação ou publicação. O `openapi.json` só será atualizado com fonte oficial, conforme a etapa 0. O commit previsto continua `docs: definir contrato confirmado para o recorte inicial`, sem execução nesta entrega.
+
+**Estado da etapa:** especificação acordada do recorte inicial de leitura concluída em D15–D23, com exemplos em [api-contract.md](api-contract.md#etapa-0--especificação-acordada-do-recorte-de-leitura--29102026). Distribuição, horários, legado, projeção, cálculo e catálogo foram definidos. Implementação/publicação do backend, correspondência do catálogo no ambiente e snapshot oficial ampliado continuam sem comprovação. Regras exclusivas de escrita continuam pendentes para as etapas dependentes. Esta conclusão não declara integração real nem autoriza a etapa 1.
+
+## D15 — Somente início obrigatório por execução
+
+**Decidido pela pessoa usuária em 29/10/2026:** cada execução terá apenas horário de início, sem horário de fim obrigatório nem duração a informar. Fonte direta: à pergunta “Cada execução terá apenas um horário de início (por exemplo, 07:00) ou um intervalo com início e fim (07:00–07:20)?”, a pessoa usuária respondeu “Apenas horário de início”. A pergunta esclareceu que a estimativa continua baseada na média fixa por execução aprovada em D09/D10.
+
+Esta decisão resolve a alternativa início versus intervalo em D11/D12/P03. Não define formato de transporte, precisão, fuso, horários iguais ou tratamento de registros anteriores. Não deduzir duração, fim ou consumo por tempo a partir desse início. O par opcional `startTime`/`endTime` no OpenAPI continua descrevendo o contrato anterior por registro, sem comprovar suporte a horários individuais.
+
+## D16 — Distribuição representada pelos horários de cada dia
+
+**Decidido pela pessoa usuária em 29/10/2026:** representar a distribuição como lista de dias únicos, cada um com pelo menos um horário de execução; a soma dos horários deve ser igual à frequência semanal. Fonte direta: à pergunta com essa estrutura e validação, incluindo o exemplo de frequência cinco com dois horários na segunda e três na quarta, a pessoa usuária respondeu “Sim, usar essa estrutura e validação”.
+
+A quantidade diária é o tamanho da lista de horários daquele dia. Não manter quantidade independente que possa divergir dessa lista, repetir IDs de dias ou duplicar registros para representar execuções. Esta decisão resolve a estrutura conceitual e a igualdade antes inferida em D04; não comprova suporte publicado nem define sozinha os nomes dos campos JSON. A associação com o formato de horário está em D17.
+
+## D17 — Hora local em HH:mm
+
+**Decidido pela pessoa usuária em 29/10/2026:** horários no formato de 24 horas `HH:mm`, de `00:00` a `23:59`, sem segundos nem conversão automática de fuso. Fonte direta: à pergunta com essas condições e o exemplo de `07:00` continuar aparecendo como `07:00`, a pessoa usuária respondeu “Sim, hora local em HH:mm”.
+
+O valor representa hora local da rotina, não instante UTC nem duração. D15 mantém somente início por execução. Horários iguais e legado ficaram pendentes neste ponto da conversa e foram resolvidos posteriormente em D22 e D19. Esta decisão não escolhe o fuso de “hoje” do calendário em P07 nem altera o formato não especificado do OpenAPI anterior.
+
+## D18 — Cálculo diário no mobile e ausência de referência
+
+**Decidido pela pessoa usuária em 29/10/2026:** calcular no mobile com a tabela de D10; total diário do hábito = litros por execução × número de horários naquele dia; total do dia = soma dos totais diários dos hábitos. Para tipo sem referência, mostrar estimativa indisponível e total incompleto, sem substituir por zero. Os seis valores atuais geram litros inteiros, sem arredondamento. Fonte direta: à pergunta que apresentou essas regras, a pessoa usuária respondeu “Sim, adotar essas regras”.
+
+Esta decisão resolve local, fórmula, unidade, ausência de referência e precisão para a tabela inicial em P02. Duas execuções de banho longo representam 80 L por execução e 160 L no resumo do hábito naquele dia; não multiplicar os 160 L novamente pela quantidade. Esses números são exemplos aritméticos com a estimativa aprovada, não medições da conta. `estimatedLiters` do contrato anterior não tem unidade temporal confirmada e não substitui esse cálculo. Referências fracionárias futuras exigem nova definição de precisão; não fazem parte da tabela atual.
+
+## D19 — Legado preservado com agenda incompleta
+
+**Decidido pela pessoa usuária em 29/10/2026:** hábitos antigos sem distribuição ou horários completos permanecem identificados como “agenda incompleta”, fora das linhas por horário, sem inventar dias/horários. Enquanto existirem, a agenda e o total serão sinalizados como incompletos, inclusive se não houver outras execuções no dia. Fonte direta: à pergunta com essas condições, a pessoa usuária respondeu “Sim, preservar e sinalizar como incompletos”.
+
+Não reconstruir a distribuição dividindo a frequência entre os dias, copiando o horário único do contrato anterior ou criando horários padrão. Uma coleção com esses registros não comprova dia livre nem total zero. A decisão define o tratamento de leitura e não executa migração, atualização ou exclusão dos dados antigos. A apresentação visual do aviso será implementada na etapa correspondente.
+
+## D20 — Semana padrão projetada em qualquer data
+
+**Decidido pela pessoa usuária em 29/10/2026:** aplicar a semana padrão a qualquer data, inclusive passada. Fonte direta: à escolha entre data de início inclusiva com repetição sem fim e aplicar a semana padrão a qualquer data, a pessoa usuária selecionou “Aplicar a semana padrão a qualquer data, inclusive passada”.
+
+Para o recorte de leitura, selecionar a distribuição correspondente ao dia da semana da data consultada, sem início/fim de vigência. A agenda é projeção da rotina cadastrada; não é histórico de execução, medição ou comprovação de hábito realizado no passado. Não acrescentar `startDate` nem reconstruir versões históricas. Esta decisão resolve a projeção de leitura em P04; semântica de PUT/DELETE, série versus ocorrência e seus efeitos continua para os recortes de escrita.
+
+## D21 — Catálogo fechado para o recorte inicial
+
+**Decidido pela pessoa usuária em 29/10/2026:** limitar os tipos aos seis do catálogo local, IDs 1 a 6, na ordem banho longo, lavar quintal, lavar roupa, regar plantas, lavar carro e lavar louça; dias de 1=segunda até 7=domingo. Fonte direta: à pergunta com esse mapeamento e a ressalva de que a correspondência no banco publicado continua sem comprovação, a pessoa usuária respondeu “Sim, usar apenas esse catálogo”.
+
+Não criar tipo/nome/categoria livre nesse recorte. Fonte local dos IDs: [registration_catalog.json][catalog]. A estimativa usa o mapeamento explícito desses tipos à tabela de D10, sem correspondência por aproximação textual. Esta é a especificação desejada; não comprova IDs válidos no banco publicado. Tipo recebido sem referência não vira zero, conforme D18.
+
+## D22 — Horários distintos dentro do mesmo hábito/dia
+
+**Decidido pela pessoa usuária em 29/10/2026:** impedir horários repetidos para o mesmo hábito no mesmo dia; permitir que hábitos diferentes tenham o mesmo horário. Fonte direta: à pergunta com o exemplo de dois banhos às `07:00` na segunda versus banho e regar plantas às `07:00`, a pessoa usuária respondeu “Sim, impedir repetição no mesmo hábito/dia”.
+
+Não há intervalo/duração para avaliar sobreposição. Essa regra não resolve a duplicidade de registros do mesmo tipo na conta, nem substitui o critério de conflito do POST/PUT em P05.
+
+## D23 — Payload de leitura ampliado acordado
+
+**Decidido pela pessoa usuária em 29/10/2026:** aprovar os nomes e a estrutura de leitura `schedule`, `dayOfWeek` e `startTimes`, com `daysOfWeek` e `frequency` coerentes com a lista. Fonte direta: após o exemplo JSON com duas execuções na segunda e três na quarta, à pergunta sobre sua aprovação como especificação para o backend, preservando o OpenAPI e sem declarar publicação, a pessoa usuária respondeu “Sim, aprovar esse payload de leitura”.
+
+`schedule` associa cada dia único à lista de inícios individuais. `daysOfWeek` representa exatamente os dias dessa lista, sem repetição; `frequency` corresponde ao total de horários. Os exemplos completos e as regras de projeção/estimativa estão em [api-contract.md](api-contract.md#etapa-0--especificação-acordada-do-recorte-de-leitura--29102026). Sem `schedule` completo, aplicar D19, sem inferir distribuição pelos campos antigos.
+
+Preservar as rotas existentes de listagem/detalhe, sem parâmetros de data/mês inventados. O contrato acordado ainda precisa ser implementado e confirmado pelo backend; o snapshot oficial local permanece anterior. POST/PUT/DELETE e seus exemplos de releitura serão especificados nos recortes de escrita, conforme a etapa 0, sem presumir que um request de escrita deva copiar este response.
+
+## Pendências — estado após a etapa 0
 
 | ID | Decisão/definição necessária | Origem |
 | --- | --- | --- |
-| P01 | **INCERTO:** ampliação aprovada em D06; falta especificar representação, validações e compatibilidade da distribuição por dia e dos horários individuais de D11, e atualizar o OpenAPI | [OpenAPI](openapi.json), D03/D04/D06/D11 |
-| P02 | **INCERTO:** total diário com média fixa e tabela inicial aprovados em D07–D10; faltam regra diária, local do cálculo, representação, ausência, precisão e cálculo do total da agenda | D07–D10, [OpenAPI](openapi.json), [briefing](briefing.md), [detalhes](design/detalhesHabito.png) |
-| P03 | **INCERTO:** horário individual obrigatório por execução aprovado em D11/D12; faltam início ou intervalo, duração, formato/precisão/fuso, meia-noite, sobreposição e tratamento de registros anteriores sem horário | D11/D12, [OpenAPI](openapi.json), [agenda](design/habitos.png) |
-| P04 | **INCERTO:** vigência, histórico, dias passados/futuros e editar/excluir série ou ocorrência | [OpenAPI](openapi.json), [briefing](briefing.md) |
+| P01 | **ESPECIFICADA para leitura em D16/D19/D23:** distribuição recuperável por `schedule`, dias únicos com horários, coerência com dias/frequência e legado incompleto. **PENDENTE DE BACKEND:** implementação/publicação e OpenAPI oficial. **INCERTO para escrita:** schemas e demais validações de POST/PUT | [OpenAPI](openapi.json), D16/D19/D23 |
+| P02 | **RESOLVIDA para leitura em D18/D19:** mobile, média × quantidade diária e soma da agenda, litros inteiros sem arredondamento; referência/agenda ausente deixa estimativa indisponível/total incompleto. Suporte publicado não comprovado | D07–D10/D18/D19, [OpenAPI](openapi.json), [briefing](briefing.md) |
+| P03 | **ESPECIFICADA para leitura em D15/D17/D19/D22:** apenas início obrigatório, hora local `HH:mm` de `00:00` a `23:59`, sem segundos/conversão de fuso/duração; sem repetição dentro do hábito/dia; legado incompleto sem horários inventados. Suporte publicado não comprovado | D15/D17/D19/D22, [OpenAPI](openapi.json) |
+| P04 | **RESOLVIDA para leitura em D20:** semana padrão em qualquer data passada/futura, sem vigência nem histórico de execução. **INCERTO para escrita:** semântica e efeitos de editar/excluir série ou ocorrência | D20, [OpenAPI](openapi.json), [briefing](briefing.md) |
 | P05 | **INCERTO:** contrato real de erros por campo, limites, omissão no PUT e critério de duplicidade | [OpenAPI](openapi.json), [ApiErrors][errors] |
-| P06 | **INCERTO:** confirmar catálogo local no ambiente; permitir só tipos existentes ou criar tipos/nome/categoria livres | [catálogo][catalog], [AUTH_MOBILE.md][auth-doc], [OpenAPI](openapi.json) |
+| P06 | **ESPECIFICADA em D21:** apenas seis tipos locais, IDs 1–6, dias 1–7, sem tipos livres. **PENDENTE DE BACKEND:** comprovar correspondência no ambiente; aprovação não comprova banco/deploy | D21, [catálogo][catalog], [AUTH_MOBILE.md][auth-doc], [OpenAPI](openapi.json) |
 | P07 | **INCERTO:** interação da faixa semanal, seletor de mês, semanas de fronteira, marcações, limites de navegação, fuso de “hoje” e acesso a adicionar na agenda preenchida | [agenda](design/habitos.png), [vazio](design/habitosvazio.png), [briefing](briefing.md) |
 | P08 | **INCERTO:** layout de criar/editar/distribuir, estado de salvamento, descarte/retorno e erro com nova tentativa sem perder o formulário | [design/](design/), [briefing](briefing.md), [MainSectionFragment][fragment] |
 | P09 | **INCERTO:** fonte e escopo de “Meta ideal”, percentual/meta máxima, alerta de pico, “Ajustar automático” e “Ignorar”; não foi aprovada exclusão nem inclusão funcional desses itens | [agenda](design/habitos.png), [alerta](design/habitosAlerta.png), [detalhes](design/detalhesHabito.png), [OpenAPI](openapi.json) |

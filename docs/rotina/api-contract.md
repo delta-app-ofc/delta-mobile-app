@@ -14,6 +14,131 @@ Fontes complementares: [briefing](briefing.md), [decisões desta conversa](decis
 
 **Encerramento do planejamento em 29/10/2026:** por solicitação da pessoa usuária, as definições ainda pendentes ficam como **INCERTO — decisão adiada**. A análise do contrato atual não foi substituída por um contrato futuro presumido. O [plano](plan.md) registra a sequência de implementação e as definições necessárias em cada etapa, sem novas perguntas nesta rodada. Fonte: [D13](decisions.md#d13-adiar-decisões-restantes-e-fechar-o-plano).
 
+## Etapa 0 — Especificação acordada do recorte de leitura — 29/10/2026
+
+A pessoa usuária autorizou somente a etapa 0 do [plano](plan.md#etapa-0--confirmar-o-contrato-por-recorte), sem commit, e escolheu definir o contrato conjuntamente. Esta seção registra as novas confirmações; as tabelas e exemplos do OpenAPI nas demais seções continuam representando o contrato anterior. Não foi fornecido um snapshot oficial ampliado nem verificado o serviço publicado nesta execução. Fonte: [D14](decisions.md#d14--execução-autorizada-somente-da-etapa-0).
+
+**Estado:** especificação do recorte inicial de leitura concluída com as respostas D15–D23. Ela resolve as definições necessárias a modelos/testes de leitura com serviço substituído; não comprova compatibilidade para integração real. As referências anteriores a estrutura, fórmula, início versus intervalo, legado, vigência e catálogo ainda pendentes são históricas e ficam substituídas, somente nesses pontos, pelas confirmações desta seção. Regras exclusivas de escrita continuam adiadas. O `openapi.json` permanece intacto até existir fonte oficial ampliada.
+
+**Confirmado em D15:** cada execução terá apenas horário de início obrigatório. Não exigir fim nem duração, nem calcular consumo pelo tempo. A estimativa permanece baseada na média fixa por execução aprovada em D09/D10. Essa decisão substitui somente a alternativa início versus intervalo anteriormente pendente; não altera os campos do OpenAPI anterior. Fonte: [D15](decisions.md#d15--somente-início-obrigatório-por-execução).
+
+**Confirmado em D16:** distribuição como lista de dias únicos, cada dia com lista não vazia de horários; a quantidade diária é o tamanho dessa lista e a soma deve ser igual à frequência semanal. Não repetir IDs de dias nem duplicar hábitos para representar execuções. Nomes dos campos de transporte ainda não foram definidos. Fonte: [D16](decisions.md#d16--distribuição-representada-pelos-horários-de-cada-dia).
+
+**Confirmado em D17:** início em hora local no formato de 24 horas `HH:mm`, entre `00:00` e `23:59`, sem segundos nem conversão automática de fuso. O valor não representa um instante UTC nem duração; `07:00` continua `07:00` na agenda. Fonte: [D17](decisions.md#d17--hora-local-em-hhmm).
+
+**Confirmado em D18:** cálculo no mobile com a tabela inicial de D10. Total diário do hábito = litros por execução × número de horários no dia; total do dia = soma desses totais, uma única vez. Exemplo aritmético: duas execuções de banho longo, de 80 L cada, resultam em 160 L no resumo do hábito, não 320 L. São estimativas, não medições. Os seis valores atuais produzem litros inteiros, sem arredondamento. Tipo sem referência fica com estimativa indisponível e total incompleto; não usar zero nem o `estimatedLiters` anterior, cuja unidade temporal não está confirmada, para preencher essa lacuna. Fonte: [D18](decisions.md#d18--cálculo-diário-no-mobile-e-ausência-de-referência).
+
+**Confirmado em D19:** preservar hábitos antigos sem distribuição ou horários completos, identificados como “agenda incompleta” e fora das linhas por horário. Não inferir quantidade por dia nem copiar horário único para múltiplas execuções. Enquanto houver esses registros, agenda e total permanecem incompletos, mesmo sem outras execuções no dia; não mostrar vazio confirmado/zero como se a coleção fosse completa. Não há migração ou escrita autorizada. Fonte: [D19](decisions.md#d19--legado-preservado-com-agenda-incompleta).
+
+**Confirmado em D20:** projetar a semana padrão em qualquer data, inclusive passada, pelo dia da semana. Não exigir início/fim de vigência nem acrescentar data ao payload. Essa agenda representa planejamento com a rotina cadastrada, não histórico de hábitos executados ou de consumo medido. Efeitos de edição/exclusão continuam para os recortes de escrita. Fonte: [D20](decisions.md#d20--semana-padrão-projetada-em-qualquer-data).
+
+**Confirmado em D21/D22:** tipos limitados aos seis do catálogo local, com os IDs abaixo; dias de 1=segunda a 7=domingo. Não permitir tipos livres. Horários do mesmo hábito no mesmo dia não podem se repetir; hábitos diferentes podem compartilhar horário. Não há duração para avaliar sobreposição. A correspondência desses IDs no banco publicado permanece sem comprovação. Fontes: [D21/D22](decisions.md), [catálogo local][catalog].
+
+| `habitId` | Tipo de hábito | Litros estimados por execução |
+| --- | --- | --- |
+| 1 | Banho longo | 80 L |
+| 2 | Lavar quintal | 150 L |
+| 3 | Lavar roupa | 100 L |
+| 4 | Regar plantas | 15 L |
+| 5 | Lavar carro | 200 L |
+| 6 | Lavar louça | 20 L |
+
+Fonte dos valores: D10; adoção do catálogo: D21. Não inferir IDs de tipos desconhecidos por semelhança de nome. Tipo sem referência segue D18, sem estimativa inventada.
+
+### Estrutura acordada das respostas de leitura
+
+**Confirmado em D23:** manter `GET /delta/habits/{userId}` como coleção completa, sem query de dia/mês, e `GET /delta/habits/{userId}/{id}` como detalhe do registro. Preservar identidade da conta real e conferir o dono. Acrescentar a estrutura abaixo ao objeto de hábito retornado; não confundir o ID do registro com o ID do catálogo. Esta é especificação acordada para a ampliação, não descrição do OpenAPI oficial anterior nem evidência de response HTTP real.
+
+| Campo | Tipo/semântica no recorte ampliado |
+| --- | --- |
+| `id`, `userId`, `habitId` | Inteiros de identidade do registro, dono e tipo, já existentes |
+| `frequency` | Inteiro de execuções semanais, igual à soma dos tamanhos de `startTimes` |
+| `daysOfWeek` | Lista de dias únicos de 1 a 7, exatamente os dias de `schedule`; a ordem não define cronologia |
+| `schedule` | Lista de dias únicos com pelo menos um início por dia; necessária para agenda completa |
+| `schedule[].dayOfWeek` | Inteiro de 1=segunda a 7=domingo, correspondente a `daysOfWeek` |
+| `schedule[].startTimes` | Lista não vazia de strings `HH:mm`, válidas de `00:00` a `23:59`, sem repetição dentro desse hábito/dia |
+
+`habitName`, `habitCategory` e `habitDescription` continuam metadados do registro conforme o contrato anterior, sem inventar nome/categoria livres. Não definir nova obrigatoriedade desses metadados nesta etapa. `startTime`, `endTime` e `estimatedLiters` antigos não representam a distribuição nem determinam a projeção/cálculo novo. Sua remoção ou política de escrita não é definida por este recorte.
+
+A lista de horários é a fonte da quantidade diária; não acrescentar um contador paralelo. O app seleciona o dia da semana e ordena os inícios cronologicamente para a agenda, sem depender da ordem recebida no JSON. Não há campos de data, duração, execução concluída, medição, imóvel ou total diário calculado pelo servidor nesta ampliação acordada. Fonte das regras: D15–D23; a ordenação cronológica já está prevista na etapa 4 do [plano](plan.md).
+
+### Exemplo de listagem ampliada — especificado, sem deploy comprovado
+
+Resposta desejada de `GET /delta/habits/42`, status `200`. IDs de conta/registro e horários são ilustrativos; os tipos e litros seguem o catálogo aprovado. A coleção é array, sem envelope. O exemplo permite duas execuções do mesmo hábito na segunda e três na quarta, e outro hábito no mesmo horário de segunda.
+
+```json
+[
+  {
+    "id": 105,
+    "userId": 42,
+    "habitId": 1,
+    "habitName": "Banho longo",
+    "frequency": 5,
+    "daysOfWeek": [1, 3],
+    "schedule": [
+      {"dayOfWeek": 1, "startTimes": ["07:00", "20:00"]},
+      {"dayOfWeek": 3, "startTimes": ["08:00", "14:00", "21:00"]}
+    ]
+  },
+  {
+    "id": 106,
+    "userId": 42,
+    "habitId": 4,
+    "habitName": "Regar plantas",
+    "frequency": 1,
+    "daysOfWeek": [1],
+    "schedule": [
+      {"dayOfWeek": 1, "startTimes": ["07:00"]}
+    ]
+  }
+]
+```
+
+Fonte: estrutura aprovada em D23 e regras D15–D22. Resultado esperado da projeção desse exemplo, sem hábitos incompletos adicionais:
+
+| Dia selecionado | Execuções | Resumo por hábito | Total estimado do dia |
+| --- | --- | --- | --- |
+| Segunda-feira | Banho às 07:00 e 20:00; plantas às 07:00 | Banho 160 L; plantas 15 L | 175 L |
+| Quarta-feira | Banho às 08:00, 14:00 e 21:00 | Banho 240 L | 240 L |
+| Terça-feira | Nenhuma | Vazio confirmado | 0 L |
+
+Cada linha por execução mostra sua estimativa individual (banho 80 L, plantas 15 L); o resumo diário de banho não deve ser repetido como valor de cada execução. Semana padrão é projeção e não histórico de realização, inclusive para datas passadas. Coleção válida `[]`, sem registros incompletos, também permite vazio confirmado e zero; corpo nulo/falha de consulta não permite essa conclusão. Fontes: D18–D20, tratamento existente de body nulo em [SectionsViewModel][sections], [plano](plan.md), [AGENTS.md](../../AGENTS.md).
+
+### Exemplo de detalhe ampliado — mesma distribuição da coleção
+
+Resposta desejada de `GET /delta/habits/42/105`, status `200`, sem envelope. O detalhe usa o ID do registro, não `habitId`. Seus horários e frequência correspondem ao primeiro objeto da listagem:
+
+```json
+{
+  "id": 105,
+  "userId": 42,
+  "habitId": 1,
+  "habitName": "Banho longo",
+  "frequency": 5,
+  "daysOfWeek": [1, 3],
+  "schedule": [
+    {"dayOfWeek": 1, "startTimes": ["07:00", "20:00"]},
+    {"dayOfWeek": 3, "startTimes": ["08:00", "14:00", "21:00"]}
+  ]
+}
+```
+
+Fonte: D23. A igualdade entre os exemplos especifica leitura sem perda da distribuição; não prova gravação, persistência ou releitura de um POST/PUT executado.
+
+### Compatibilidade, pendências e verificação do recorte
+
+Registros antigos sem `schedule` completo continuam legíveis como cadastro, com agenda/total incompletos conforme D19. Não atribuir automaticamente uma ocorrência a cada `daysOfWeek`, nem usar `frequency` para repartir execuções, nem propagar o antigo `startTime`. Dias/frequência/horários incoerentes não constituem agenda completa válida; não corrigir silenciosamente a distribuição recebida. D16/D22/D23 definem as invariantes, sem definir novo schema de erro HTTP por campo.
+
+**Ainda dependente do backend:** implementar e publicar essa estrutura, confirmar IDs do catálogo no ambiente e fornecer OpenAPI oficial ampliado. A aprovação conjunta é especificação, sem confirmação técnica do backend. Não substituir o snapshot local por schema produzido manualmente. Nenhum endpoint autenticado foi chamado nesta etapa.
+
+**INCERTO — adiado para escrita:** schemas de POST/PUT, limites adicionais, omissão/nulos, conflito entre registros, mapa real de erros, efeitos de edição/exclusão e resultado incerto de mutação (P01/P04/P05/P11). Definir exemplos de escrita e releitura antes de suas implementações, sem presumir que os requests copiem o response de leitura. Interação do calendário/formulário, layout e metas/alertas continuam em P07–P10. Esta entrega não resolve essas pendências nem implementa controles de UI.
+
+**Como verificar a especificação:** validar sintaxe dos JSONs; conferir dias únicos, faixas/horários distintos, correspondência de `daysOfWeek`, soma igual à frequência e igualdade do detalhe com o objeto da coleção; recalcular 160 L + 15 L = 175 L na segunda e 240 L na quarta. Ao implementar modelos/testes da etapa 1, acrescentar legado, referência ausente, vazio e fronteiras de calendário. Integração real exige responses oficiais correspondentes e verificação de persistência nos recortes de escrita.
+
+**Verificação aplicável agora:** revisão documental, conferência dos exemplos e `git diff --check`. Sem build/teste Android, mudança de tela ou commit para este recorte documental, conforme o plano.
+
+**Executado em 29/10/2026:** os dois exemplos ampliados foram parseados com `ConvertFrom-Json` e conferidos por script PowerShell local: dias únicos na faixa 1–7, correspondência de dias, horários válidos/distintos, soma igual à frequência, detalhe idêntico ao primeiro item da coleção e totais de 175 L/240 L. Os IDs foram comparados ao catálogo local, sem acesso ao banco. `git diff --check` passou. Essa checagem documental não é teste de classes Java, rede, persistência ou tela.
+
 ## Transporte, autenticação e ponto de integração
 
 - O OpenAPI declara servidor `https://delta-api-postgres.onrender.com` e segurança global `bearerAuth`, HTTP Bearer/JWT. Nenhuma das cinco operações de hábitos sobrescreve essa segurança. Requests de escrita usam `application/json`; respostas com conteúdo declaram `*/*`. Fonte: [OpenAPI](openapi.json), `servers`, `security`, `components.securitySchemes.bearerAuth` e `paths./delta/habits/*`.
@@ -193,20 +318,17 @@ Reutilizar `ScreenState` e avisos existentes, mantendo validação associada ao 
 
 O schema não impõe frequência positiva, embora o app já valide assim; não apresentar essa validação local como limite documentado do backend. Nenhuma adaptação de DTO ou fluxo foi implementada nesta análise. Fontes: [OpenAPI](openapi.json), [SectionsViewModel][sections]; escopo autorizado nesta conversa.
 
-## INCERTO — confirmações adiadas para as etapas dependentes
+## Confirmações restantes após a especificação do recorte de leitura
 
-1. Especificar campos, validações e compatibilidade da distribuição por dia exigida em D04 e dos horários por execução aprovados em D11; a ampliação da API foi aprovada em D06. Atualizar o contrato disponível quando a definição existir.
-2. Horários individuais obrigatórios por execução confirmados em D11/D12; faltam início ou intervalo, duração, formato, precisão/fuso, meia-noite, horários sobrepostos e tratamento de registros anteriores sem horário.
-3. Total diário com média fixa e tabela inicial aprovados em D07–D10; faltam regra diária, local do cálculo, representação, precisão e ausência de `estimatedLiters`, cálculo do total da agenda e duração.
-4. Semântica de omissão de campos opcionais no PUT, nulos e limites numéricos reais.
-5. IDs/catálogo válidos no ambiente, categorias e critério de duplicidade por usuário/hábito/dia/horário.
-6. Corpo real de erros de validação, associação aos campos e exemplos de `400/404/409`.
-7. Vigência, exceções, datas passadas/futuras, atualização da série e escopo da exclusão.
-8. Fonte de metas/percentuais/alertas do design e significado das marcações do calendário.
+1. **PENDENTE DE BACKEND:** implementar/publicar a estrutura de leitura acordada em D23 e fornecer OpenAPI oficial ampliado. O snapshot local ainda não contém `schedule`.
+2. **PENDENTE DE BACKEND:** comprovar correspondência dos seis tipos e dias do catálogo de D21 no ambiente publicado.
+3. **INCERTO para escrita:** schemas de POST/PUT, limites adicionais, omissão de opcionais/nulos, critério de duplicidade entre registros e erros reais por campo. A regra de horários repetidos de D22 não resolve conflito entre cadastros.
+4. **INCERTO para escrita:** efeitos da edição/exclusão de série ou ocorrência e política de resultado incerto/timeout, incluindo mudanças por outro fluxo/dispositivo.
+5. **INCERTO para UI:** calendário e fuso de “hoje”, formulário, tablet/paisagem e fontes/ações de metas, percentuais e alertas (P07–P10).
 
-Fontes das lacunas: [OpenAPI](openapi.json), [briefing](briefing.md), [agenda](design/habitos.png), [alerta](design/habitosAlerta.png), [detalhes](design/detalhesHabito.png). A ordem e o estado das decisões estão em [decisions.md](decisions.md); nenhum desses pontos é resolvido por suposição nesta documentação.
+Distribuição, horário de início `HH:mm`, legado incompleto, projeção da semana padrão em qualquer data e cálculo diário no mobile foram especificados em D15–D23; deixam de ser decisões de leitura em aberto. Isso não elimina as lacunas técnicas do OpenAPI anterior descritas acima nem comprova deploy. Fontes: [decisões](decisions.md), [OpenAPI](openapi.json).
 
-Todos os itens desta seção permanecem **INCERTO**, conforme D13. O momento de resolvê-los está indicado no [plano](plan.md); eles não impedem concluir o plano documental e não autorizam implementar uma interpretação silenciosa.
+O [plano](plan.md) indica quando resolver as pendências restantes. Nenhuma etapa posterior foi implementada ou autorizada nesta entrega, e nenhum critério de aceite de tela foi marcado como concluído.
 
 [readme]: ../../README.md
 [api]: ../../app/src/main/java/com/aula/delta_mobile_app/services/api/ApiService.java

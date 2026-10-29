@@ -39,6 +39,14 @@ A etapa 4 conclui o primeiro marco funcional: leitura completa antes do CRUD. Ad
 
 Nas tabelas, caminhos relativos à raiz usam: `J = app/src/main/java/com/aula/delta_mobile_app`, `T = app/src/test/java/com/aula/delta_mobile_app`, `I = app/src/androidTest/java/com/aula/delta_mobile_app` e `R = app/src/main/res`. São abreviações, não novos diretórios. Os comandos VJ/VB/VT/VI são definidos ao final.
 
+## Commits por etapa
+
+**Definido pela pessoa usuária em 29/10/2026:** prever pelo menos dois commits por etapa, incluindo as documentais 0 e 10. Fonte direta nesta conversa: “deixe pelo menos dois commits por etapa do plano também”. São **22 commits planejados no mínimo**, nas etapas 0–10. A divisão abaixo é proposta técnica; mensagens e fronteiras podem ser ajustadas na revisão, preservando entregas úteis e o mínimo solicitado.
+
+Cada commit deve ser coeso, compilável e verificável após seus pré-requisitos, incluindo os testes necessários ao comportamento que introduz. Não deixar referências quebradas, testes essenciais para um commit posterior, commits vazios ou alterações cosméticas apenas para atingir a contagem. Recursos ainda sem fluxo público não devem expor botões sem ação. Se o segundo recorte depender de contrato, decisão ou evidência indisponível, a etapa permanece pendente; não inventar execução para completá-la.
+
+Os dois commits de cada etapa são sequenciais, não etapas independentes. Podem existir commits adicionais; não contar merges, commits de outras etapas ou o mesmo commit duas vezes. A previsão não autoriza implementação de etapas posteriores nem execução de commits. O pedido vigente de revisão do diff antes de qualquer commit permanece válido. Nesta atualização, somente o plano é alterado; as mudanças documentais da etapa 0 continuam preparadas para revisão.
+
 ## Etapa 0 — Confirmar o contrato por recorte
 
 | Arquivos futuros | Responsabilidade |
@@ -53,7 +61,12 @@ Nas tabelas, caminhos relativos à raiz usam: `J = app/src/main/java/com/aula/de
 
 **O que aprender.** Converter requisito em contrato e separar decisão de produto, schema e capacidade publicada.
 
-**Commit previsto:** `docs(rotina): definir contrato confirmado para o recorte inicial`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 0.1 | `docs: definir contrato confirmado para o recorte inicial` | Consolidar em `api-contract.md` os payloads, regras, exemplos e limites do recorte confirmado; atualizar `openapi.json` somente se houver fonte oficial. Identificar a origem das confirmações no próprio contrato. |
+| 0.2 | `docs: registrar decisoes e pendencias do recorte inicial` | Consolidar em `decisions.md` as respostas com origem e o estado das pendências, distinguindo especificação de publicação; incluir a previsão de commits em `plan.md` nesta rodada documental. |
 
 ## Etapa 1 — Modelos de leitura, agenda e total
 
@@ -73,7 +86,12 @@ Tabela inicial aprovada em D10: banho longo 80 L; lavar quintal 150 L; lavar rou
 
 **O que aprender.** Separar transporte de domínio, projetar recorrência e preservar unidades no cálculo.
 
-**Commit previsto:** `feat(rotina): modelar agenda e estimativas do dia`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 1.1 | `feat: completar modelos de leitura dos habitos` | Ampliar somente os DTOs de resposta em `ApiModels.java` conforme contrato; iniciar `RoutineDataTest.java` com casos de desserialização que preservem distribuição/horários e representem legado/ausências. |
+| 1.2 | `feat: modelar agenda e estimativas do dia` | Criar `RoutineData.java` com projeção, agrupamento e totais; ampliar o mesmo teste para calendário, unidades, ausência e prevenção de soma duplicada. |
 
 ## Etapa 2 — Repository de leitura autenticada
 
@@ -91,7 +109,12 @@ Tabela inicial aprovada em D10: banho longo 80 L; lavar quintal 150 L; lavar rou
 
 **O que aprender.** Isolar rede/identidade por composição e distinguir vazio de erro sem chamar produção.
 
-**Commit previsto:** `feat(rotina): adicionar repositorio autenticado de leitura`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 2.1 | `feat: consultar colecao autenticada de habitos` | Criar `RoutineActions`, `RoutineRepository` e a composição injetável para listagem; incluir em `RoutineRepositoryTest` identidade, dono, vazio/nulo e erros da coleção. |
+| 2.2 | `feat: consultar detalhe autenticado do habito` | Acrescentar o detalhe por ID ao contrato/repositório e ampliar os testes para alvo, dono, corpo incompatível, 404 e demais falhas relevantes. |
 
 ## Etapa 3 — Estado de leitura no ViewModel
 
@@ -111,7 +134,12 @@ Reutilizar `ScreenState<RoutineData>`: vazio é SUCCESS sem itens, não novo sta
 
 **O que aprender.** Fonte única de estado, concorrência determinística e diferença entre rotação e morte do processo.
 
-**Commit previsto:** `feat(rotina): manter selecao e carregamento no viewmodel`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 3.1 | `feat: definir estado de leitura e selecao` | Criar o snapshot `RoutineUiState.java`, com dia/mês, coleção/projeção e estado de leitura separados, incluindo representação dos dados anteriores durante refresh. Não introduzir dependência de um ViewModel ainda inexistente. |
+| 3.2 | `feat: manter selecao e carregamento no viewmodel` | Criar `RoutineViewModel`, Factory e testes reais de seleção/carga/retry, concorrência, troca de conta e limpeza; manter os checks de lifecycle previstos para a etapa visual. |
 
 ## Etapa 4 — Calendário, lista e total responsivos
 
@@ -140,7 +168,12 @@ Exibir seleção sem depender só de cor, lista cronológica, unidade, total, va
 
 **O que aprender.** Renderizar estado, adaptar à janela e validar acessibilidade de calendário próprio.
 
-**Commit previsto:** `feat(rotina): exibir calendario agenda e total responsivos`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 4.1 | `feat: exibir calendario agenda e estados de leitura` | Entregar Fragment, adapters, layout compacto, recursos necessários, navegação e testes das ações conectadas; incluir lista/total, loading, vazio, erro/retry, rolagem e acessibilidade básica sem botões de mutação inativos. |
+| 4.2 | `feat: adaptar agenda para janelas largas` | Acrescentar layout/dimensões da composição larga e ajustar comportamento ao espaço/fonte; executar a matriz visual da etapa, verificando as duas orientações, teclado, rotação e acessibilidade, com correções locais necessárias. |
 
 ## Etapa 5 — Detalhe somente para leitura
 
@@ -159,7 +192,12 @@ Usar ID real e contexto do dia/execução clicados, GET e retry. Duração só s
 
 **O que aprender.** Compartilhar ViewModel no escopo adequado e distinguir registro recorrente de execução.
 
-**Commit previsto:** `feat(rotina): apresentar detalhes do habito selecionado`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 5.1 | `feat: coordenar leitura do detalhe selecionado` | Acrescentar alvo/estado/comandos do detalhe ao estado e ViewModel; ampliar testes do ViewModel/repositório para dono, erro/retry, seleção concorrente e retorno tardio. |
+| 5.2 | `feat: apresentar detalhes do habito selecionado` | Criar diálogo/layout/recursos e conectar a agenda ao detalhe; verificar restauração, rotação, unidade e responsividade sem ativar Editar/Excluir antes das etapas correspondentes. |
 
 ## Etapa 6 — Formulário, rascunho e validação sem gravar
 
@@ -185,7 +223,12 @@ Erro local fica em TextInputLayout ou aviso associado ao grupo/dia/execução, c
 
 **O que aprender.** Separar texto em edição de valor validado e validar coleções de campos sem perder rascunho.
 
-**Commit previsto:** `feat(rotina): preparar formulario restauravel com validacao`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 6.1 | `feat: modelar rascunho e validacao do formulario` | Criar `RoutineFormState`/`RoutineFormValidator`, ações em memória e testes de validação/preservação no ViewModel, conforme regras confirmadas; sem gravação. |
+| 6.2 | `feat: preparar editor restauravel de habitos` | Criar diálogo, campos dinâmicos e recursos; conectar rascunho/erros e incluir `RoutineFormInstrumentedTest` para abertura controlada, rotação, IME e ações alcançáveis, sem CTA público de demonstração. |
 
 ## Etapa 7 — Adicionar
 
@@ -204,7 +247,12 @@ Erro local fica em TextInputLayout ou aviso associado ao grupo/dia/execução, c
 
 **O que aprender.** Coordenar validação, gravação e leitura sem duplicação nem perda de entrada.
 
-**Commit previsto:** `feat(rotina): adicionar habito e atualizar agenda`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 7.1 | `feat: persistir criacao autenticada de habito` | Completar request de criação e operação no contrato/repositório com testes de payload, identidade, resposta 201 e falhas; não expor ainda ação pública de criação. |
+| 7.2 | `feat: adicionar habito e atualizar agenda` | Coordenar envio/recarga no ViewModel e ativar Adicionar/Salvar com recursos e testes de duplo toque, rascunho, falha de recarga e respostas tardias; executar cenários de tela da etapa. |
 
 ## Etapa 8 — Editar
 
@@ -223,7 +271,12 @@ Erro local fica em TextInputLayout ou aviso associado ao grupo/dia/execução, c
 
 **O que aprender.** Reusar formulário com identidade estável e separar detalhe recebido de alterações locais.
 
-**Commit previsto:** `feat(rotina): editar habito preservando rascunho e identidade`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 8.1 | `feat: persistir edicao autenticada do habito` | Completar request de atualização e PUT no contrato/repositório; testar ID, conferência de dono, opcionais conforme contrato, resposta 200 e falhas, sem expor Editar antes da coordenação completa. |
+| 8.2 | `feat: editar habito preservando rascunho e identidade` | Conectar detalhe/editor e estado de edição/recarga, incluindo recursos e testes de preservação, callbacks tardios e mudanças de dia/horário; executar os cenários visuais previstos. |
 
 ## Etapa 9 — Excluir com confirmação
 
@@ -241,7 +294,12 @@ Erro local fica em TextInputLayout ou aviso associado ao grupo/dia/execução, c
 
 **O que aprender.** Modelar ação destrutiva em duas fases e tratar sucesso sem conteúdo.
 
-**Commit previsto:** `feat(rotina): excluir habito com confirmacao e recarga`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 9.1 | `feat: coordenar exclusao autenticada por alvo` | Acrescentar DELETE ao contrato/repositório e estado/comandos de pedir/cancelar/confirmar no ViewModel; testar dono, alvo, ausência de request ao cancelar, 204, falhas e recarga. |
+| 9.2 | `feat: excluir habito com confirmacao restauravel` | Criar diálogo/layout/recursos e conectar a ação pública somente com confirmação; verificar rotação, cliques repetidos, erro/retry e exclusão do último hábito, ampliando testes se a ligação revelar novos casos. |
 
 ## Protocolo de atualização após as três mutações
 
@@ -293,7 +351,14 @@ Registrar Android, densidade/largura real em dp, escala de fonte, versão do bac
 
 **O que aprender.** Separar evidência de lógica, integração e UI e concluir migração sem ampliar escopo.
 
-**Commit previsto:** `test(rotina): validar fluxos responsividade e aceite`.
+**Commits planejados — mínimo 2:**
+
+| Ordem | Mensagem sugerida | Conteúdo |
+| --- | --- | --- |
+| 10.1 | `test: completar regressao integrada dos fluxos` | Completar instrumentação relevante e retirar exclusivamente código antigo de Rotina comprovadamente sem chamadores; executar checks e incluir correções/testes locais necessários, sem criar testes redundantes para cumprir contagem. |
+| 10.2 | `docs: registrar evidencias de responsividade e aceite` | Criar `acceptance.md` com comandos, ambiente, capturas, matriz visual, resultados reais e pendências; distinguir testes substituídos de integração e não declarar aceite sem evidência. |
+
+Se a instrumentação e a retirada do código antigo já estiverem concluídas antes da etapa 10, o primeiro commit poderá registrar a parte automatizada das evidências em `acceptance.md`, com mensagem `docs: registrar verificacoes automatizadas`; o segundo acrescentará evidências visuais e de integração realmente obtidas. Se faltarem dispositivos/backend, registrar a limitação e manter o aceite correspondente pendente, sem fabricar uma segunda entrega.
 
 ## Verificações previstas
 
