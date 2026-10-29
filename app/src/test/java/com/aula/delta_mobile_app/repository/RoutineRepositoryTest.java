@@ -215,13 +215,15 @@ public class RoutineRepositoryTest {
     }
 
     @Test
-    public void missingIdentityPreventsCollectionRequest() {
+    public void missingIdentityPreventsBothHabitRequests() {
         access.missingProfile = true;
         assertError(load(), 0);
+        assertError(detail(), 0);
         access.missingProfile = false;
         for (Integer user : new Integer[] {null, 0, -1}) {
             access.userId = user;
             assertError(load(), 0);
+            assertError(detail(), 0);
         }
         assertTrue(access.requests.isEmpty());
     }
@@ -230,19 +232,21 @@ public class RoutineRepositoryTest {
     public void profileFailureIsTranslatedWithoutStartingHabitRequests() {
         access.profileFailure = new IOException("internal profile details");
         assertNetwork(load());
+        assertNetwork(detail());
         assertTrue(access.requests.isEmpty());
     }
 
     @Test
-    public void authenticatedGateCanRejectCollectionWithoutResolvingIdentity() {
+    public void authenticatedGateCanRejectBothOperationsWithoutResolvingIdentity() {
         access.blocked = true;
         ScreenState<?> collection = load();
-        for (ScreenState<?> state : new ScreenState<?>[] {collection}) {
+        ScreenState<?> detail = detail();
+        for (ScreenState<?> state : new ScreenState<?>[] {collection, detail}) {
             assertError(state, 401);
             assertEquals("Sessão indisponível.", state.message);
             assertEquals(123, state.retryAt);
         }
-        assertEquals(1, access.resources);
+        assertEquals(2, access.resources);
         assertEquals(0, access.profileReads);
         assertTrue(access.requests.isEmpty());
     }
@@ -277,14 +281,83 @@ public class RoutineRepositoryTest {
     }
 
     @Test
-    public void retryAfterSecondsIsPreservedForCollection() {
+    public void detailUsesRecordIdAndAuthenticatedOwnerWithoutFetchingTheCollection() {
+        access.body = HABIT;
+        Result<RoutineData.Habit> result = new Result<>();
+        repository.detail(105, result);
+        assertTrue(access.requests.isEmpty());
+        assertTrue(result.values.isEmpty());
+        access.run();
+        ScreenState<RoutineData.Habit> state = result.only();
+        assertEquals(ScreenState.Status.SUCCESS, state.status);
+        assertEquals(105, state.data.id);
+        assertEquals(1, state.data.habitId);
+        assertEquals(73, state.data.userId);
+        assertEquals(5, state.data.frequency.intValue());
+        assertTrue(state.data.scheduleComplete);
+        assertEquals(1, access.requests.size());
+        assertRequest(0, "/delta/habits/73/105");
+    }
+
+    @Test
+    public void detailRejectsAnotherOwnerOrAnotherRecordEvenWithMatchingHabitType() {
+        for (String body : new String[] {HABIT.replace("\"userId\":73", "\"userId\":74"), HABIT.replace("\"id\":105", "\"id\":106")}) {
+            access.body = body;
+            assertError(detail(), 0);
+        }
+    }
+
+    @Test
+    public void detailRejectsNullMissingIdentityOrIncompatibleBodies() {
+        for (String body : new String[] {"null", "{}", "[]", "42", HABIT.replace("\"habitId\":1,", ""), HABIT.replace("\"frequency\":5", "\"frequency\":\"invalid\"")}) {
+            access.body = body;
+            assertError(detail(), 0);
+        }
+        access.code = 204;
+        access.body = "";
+        assertError(detail(), 0);
+    }
+
+    @Test
+    public void detailWithoutOptionalMetadataOrSchedulePreservesTheLegacyRecord() {
+        access.body = "{\"id\":105,\"userId\":73,\"habitId\":1}";
+        ScreenState<RoutineData.Habit> state = detail();
+        assertEquals(ScreenState.Status.SUCCESS, state.status);
+        assertEquals(105, state.data.id);
+        assertNull(state.data.name);
+        assertNull(state.data.category);
+        assertNull(state.data.description);
+        assertFalse(state.data.scheduleComplete);
+        assertTrue(state.data.schedule.isEmpty());
+    }
+
+    @Test
+    public void detailHttpErrorsIncludeNotFoundAndPreserveStatus() {
+        for (int code : new int[] {400, 401, 403, 404, 409, 429, 500, 503}) {
+            access.code = code;
+            access.body = "{}";
+            assertError(detail(), code);
+        }
+    }
+
+    @Test
+    public void detailConnectionAndTimeoutFailuresUseSharedNetworkTranslation() {
+        for (IOException failure : new IOException[] {new IOException("internal host details"), new SocketTimeoutException("internal timeout details")}) {
+            access.networkFailure = failure;
+            assertNetwork(detail());
+        }
+    }
+
+    @Test
+    public void retryAfterSecondsIsPreservedForBothReads() {
         access.code = 429;
         access.body = "{}";
         access.retryAfter = "120";
         long before = System.currentTimeMillis();
         ScreenState<?> collection = load();
+        ScreenState<?> detail = detail();
         long after = System.currentTimeMillis();
-        for (ScreenState<?> state : new ScreenState<?>[] {collection}) {
+        for (ScreenState<?> state : new ScreenState<?>[] {collection, detail}) {
             assertError(state, 429);
             assertTrue(state.retryAt >= before + 120000);
             assertTrue(state.retryAt <= after + 120000);
@@ -292,12 +365,13 @@ public class RoutineRepositoryTest {
     }
 
     @Test
-    public void retryAfterHttpDateIsPreservedForCollection() {
+    public void retryAfterHttpDateIsPreservedForBothReads() {
         access.code = 429;
         access.body = "{}";
         ZonedDateTime retry = ZonedDateTime.now(ZoneOffset.UTC).plusMinutes(10).truncatedTo(ChronoUnit.SECONDS);
         access.retryAfter = DateTimeFormatter.RFC_1123_DATE_TIME.format(retry);
         assertEquals(retry.toInstant().toEpochMilli(), load().retryAt);
+        assertEquals(retry.toInstant().toEpochMilli(), detail().retryAt);
     }
 
     @Test
@@ -306,7 +380,7 @@ public class RoutineRepositoryTest {
         access.code = 400;
         assertEquals("Confira o cadastro informado.", load().message);
         access.code = 409;
-        assertEquals("Confira o cadastro informado.", load().message);
+        assertEquals("Confira o cadastro informado.", detail().message);
         access.code = 500;
         assertNotEquals("Confira o cadastro informado.", load().message);
     }
@@ -314,6 +388,13 @@ public class RoutineRepositoryTest {
     private ScreenState<RoutineData> load() {
         Result<RoutineData> result = new Result<>();
         repository.load(result);
+        access.run();
+        return result.only();
+    }
+
+    private ScreenState<RoutineData.Habit> detail() {
+        Result<RoutineData.Habit> result = new Result<>();
+        repository.detail(105, result);
         access.run();
         return result.only();
     }

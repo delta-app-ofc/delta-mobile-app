@@ -7,4 +7,6 @@ import java.util.function.Consumer;
 
 public interface RoutineActions {
     void load(Consumer<ScreenState<RoutineData>> callback);
+
+    void detail(int id, Consumer<ScreenState<RoutineData.Habit>> callback);
 }

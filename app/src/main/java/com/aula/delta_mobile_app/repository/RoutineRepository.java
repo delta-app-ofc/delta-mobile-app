@@ -10,6 +10,7 @@ import com.google.gson.JsonParseException;
 
 import java.io.IOException;
 import java.time.Clock;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -55,6 +56,20 @@ public final class RoutineRepository implements RoutineActions {
             for (UserHabitResponse value : values)
                 if (!owned(value, user)) return invalidBody();
             return ScreenState.success(RoutineData.from(values, clock));
+        }, callback);
+    }
+
+    @Override
+    public void detail(int id, Consumer<ScreenState<RoutineData.Habit>> callback) {
+        read(() -> {
+            Profile profile = access.currentProfile();
+            if (!identified(profile)) return ScreenState.error("Não foi possível identificar sua conta.");
+            int user = profile.id;
+            Response<UserHabitResponse> response = access.api().getUserHabit(user, id).execute();
+            if (!response.isSuccessful()) return ApiErrors.from(response);
+            UserHabitResponse value = response.body();
+            if (!owned(value, user) || !Objects.equals(id, value.id)) return invalidBody();
+            return ScreenState.success(RoutineData.from(Collections.singletonList(value), clock).habits.get(0));
         }, callback);
     }
 
