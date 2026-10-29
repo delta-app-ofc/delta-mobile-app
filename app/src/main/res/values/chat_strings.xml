@@ -1,0 +1,16 @@
+<resources>
+    <string name="chat_title">Monitore cada gota com mais precisão.</string>
+    <string name="chat_hint">Pergunte algo ao gluh..</string>
+    <string name="chat_send">Enviar mensagem</string>
+    <string name="chat_responding">Gluh está respondendo</string>
+    <string name="chat_connecting">Conectando o Gluh à sua conta…</string>
+    <string name="chat_unavailable">O Gluh Helper ainda não está conectado. Tente novamente ou organize seus hábitos na Rotina.</string>
+    <string name="chat_retry">Tentar novamente</string>
+    <string name="chat_routine">Organizar minha rotina</string>
+    <string name="chat_failed">Mensagem não enviada</string>
+    <string name="chat_limit">Use até 2.000 caracteres por mensagem.</string>
+    <color name="chat_background">#1B1D1E</color>
+    <color name="chat_reply_background">#E8EEFF</color>
+    <color name="chat_gradient_end">#809BD2</color>
+    <dimen name="chat_header_top">80dp</dimen>
+</resources>

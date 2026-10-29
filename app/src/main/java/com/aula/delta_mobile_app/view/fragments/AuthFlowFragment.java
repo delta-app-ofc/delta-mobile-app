@@ -22,6 +22,10 @@ public abstract class AuthFlowFragment extends Fragment {
 
     protected void showLoading(boolean loading) {
         loadingRequested = loading;
+        if (getActivity() instanceof com.aula.delta_mobile_app.view.activities.main.MainActivity) {
+            ((com.aula.delta_mobile_app.view.activities.main.MainActivity) getActivity()).setSectionLoading(getView(), loading);
+            return;
+        }
         if (!loading) {
             dismissLoading();
             return;
@@ -63,6 +67,8 @@ public abstract class AuthFlowFragment extends Fragment {
     }
 
     private void dismissLoading() {
+        if (getActivity() instanceof com.aula.delta_mobile_app.view.activities.main.MainActivity)
+            ((com.aula.delta_mobile_app.view.activities.main.MainActivity) getActivity()).setSectionLoading(getView(), false);
         if (loadingDialog != null) {
             loadingDialog.dismiss();
             loadingDialog = null;

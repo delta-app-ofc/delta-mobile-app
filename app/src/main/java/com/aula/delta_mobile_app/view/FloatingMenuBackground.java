@@ -13,7 +13,7 @@ public class FloatingMenuBackground extends View {
 
     public FloatingMenuBackground(Context context, AttributeSet attrs) {
         super(context, attrs);
-        paint.setColor(0xEE363636);
+        paint.setColor(0xB3363636);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
     }
 

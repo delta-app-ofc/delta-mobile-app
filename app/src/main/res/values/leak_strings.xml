@@ -25,7 +25,7 @@
     <string name="leak_hourly_subtitle">Acompanhe as medições do evento selecionado</string>
     <string name="leak_abnormal_subtitle">Consulte os eventos do imóvel selecionado</string>
     <string name="leak_no_telemetry_description">O monitoramento em tempo real ainda não está conectado. Fluxo, eventos e análises aparecerão quando as medições do seu imóvel estiverem disponíveis.</string>
-    <string name="leak_no_meter">Nenhum medidor ativo está vinculado a este imóvel.</string>
+    <string name="leak_no_meter">Nenhum hidrômetro vinculado.</string>
     <string name="leak_missing_property">Selecione um imóvel da sua conta para acompanhar o monitoramento.</string>
     <string name="leak_unauthorized_property">Este imóvel não está associado à sua conta.</string>
     <string name="leak_alerts_unavailable">A configuração de alertas ainda não está disponível. Nenhum alerta foi desativado.</string>
@@ -40,6 +40,5 @@
     <string name="leak_event_a11y">%1$s. Fluxo atual: %2$s. Toque para selecionar o evento.</string>
     <string name="leak_selected_event">Evento selecionado</string>
     <string name="leak_chart_unit">L/min</string>
-    <string name="leak_link_meter">Vincular medidor</string>
     <string name="leak_no_events_description">Nenhum evento de vazamento foi registrado para o período selecionado.</string>
 </resources>

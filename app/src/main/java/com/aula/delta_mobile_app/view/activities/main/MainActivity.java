@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean keyboardVisible;
     private boolean detailScreen;
     private boolean homeLoading = true;
+    private View sectionLoadingOwner;
     private com.aula.delta_mobile_app.view.LoadingView homeLoader;
 
     @Override
@@ -36,7 +37,8 @@ public class MainActivity extends AppCompatActivity {
         homeLoader.setVisibility(homeLoading ? View.VISIBLE : View.GONE);
         homeLoader.setClickable(true);
         homeLoader.setFocusable(true);
-        ((android.widget.FrameLayout) findViewById(R.id.main_shell)).addView(homeLoader, new android.widget.FrameLayout.LayoutParams(-1, -1));
+        android.widget.FrameLayout shell = findViewById(R.id.main_shell);
+        shell.addView(homeLoader, shell.indexOfChild(findViewById(R.id.main_menu)), new android.widget.FrameLayout.LayoutParams(-1, -1));
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main_shell), (view, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
@@ -58,19 +60,25 @@ public class MainActivity extends AppCompatActivity {
             findViewById(buttons[i]).setOnClickListener(v -> {
                 if (nav.getCurrentDestination() != null && nav.getCurrentDestination().getId() == destination)
                     return;
-                nav.navigate(destination, null, new NavOptions.Builder().setPopUpTo(R.id.homeFragment, false, true).setRestoreState(
+                Runnable navigate = () -> nav.navigate(destination, null, new NavOptions.Builder().setPopUpTo(R.id.homeFragment, false, true).setRestoreState(
                     destination != R.id.leakDetectionFragment).setLaunchSingleTop(true).build());
+                androidx.fragment.app.Fragment current = host.getChildFragmentManager().getPrimaryNavigationFragment();
+                if (current instanceof com.aula.delta_mobile_app.view.fragments.ProfileNavigationGuard)
+                    ((com.aula.delta_mobile_app.view.fragments.ProfileNavigationGuard) current).leaveProfile(navigate);
+                else navigate.run();
             });
         }
         nav.addOnDestinationChangedListener((controller, destination, args) -> {
+            sectionLoadingOwner = null;
             if (destination.getId() != R.id.homeFragment) setHomeLoading(false);
             detailScreen = destination.getId() == R.id.qrScanFragment || destination.getId() == R.id.qrSuccessFragment || destination.getId() == R.id.accountConfigFragment;
             updateMenu();
+            updateLoading();
             for (int i = 0; i < buttons.length; i++) {
                 View button = findViewById(buttons[i]);
                 boolean leakScreen = destination.getId() == R.id.consumptionFragment || destination.getId() == R.id.leakDetectionFragment
                     || destination.getId() == R.id.leakHourlyFragment || destination.getId() == R.id.leakAbnormalFragment;
-                boolean selected = destination.getId() == screens[i] || (i == 0 && leakScreen) || (i == 1 && destination.getId() == R.id.costsHistoryFragment);
+                boolean selected = destination.getId() == screens[i] || (i == 0 && leakScreen);
                 button.setSelected(selected);
                 button.setAlpha(selected ? 1f : .55f);
             }
@@ -128,10 +136,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateLoading() {
         if (homeLoader != null)
-            homeLoader.setVisibility(restoringSession || homeLoading ? View.VISIBLE : View.GONE);
+            homeLoader.setVisibility(restoringSession || homeLoading || sectionLoadingOwner != null ? View.VISIBLE : View.GONE);
+    }
+
+    public void setSectionLoading(View owner, boolean loading) {
+        if (owner == null) return;
+        if (loading) sectionLoadingOwner = owner;
+        else if (sectionLoadingOwner == owner) sectionLoadingOwner = null;
+        updateLoading();
     }
 
     private void updateMenu() {
-        findViewById(R.id.main_menu).setVisibility(keyboardVisible || detailScreen || restoringSession || homeLoading ? View.GONE : View.VISIBLE);
+        findViewById(R.id.main_menu).setVisibility(keyboardVisible || detailScreen || restoringSession ? View.GONE : View.VISIBLE);
     }
 }

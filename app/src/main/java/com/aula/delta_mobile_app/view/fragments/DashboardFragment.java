@@ -59,7 +59,7 @@ public class DashboardFragment extends AuthFlowFragment {
         TextView apiStatus = view.findViewById(R.id.home_api_status);
         apiStatus.setText("");
 
-        view.findViewById(R.id.dash_cost_card).setOnClickListener(v -> navigate(R.id.costsHistoryFragment));
+        view.findViewById(R.id.dash_cost_card).setOnClickListener(v -> navigate(R.id.accountConfigFragment));
         view.findViewById(R.id.dash_diagnosis).setOnClickListener(v -> navigate(R.id.leakDetectionFragment));
         view.findViewById(R.id.dash_leak_alert).setOnClickListener(v -> navigate(R.id.leakDetectionFragment));
         view.findViewById(R.id.dash_abnormal_alert).setOnClickListener(v -> navigate(R.id.leakAbnormalFragment));
@@ -119,21 +119,7 @@ public class DashboardFragment extends AuthFlowFragment {
         });
         view.findViewById(R.id.home_goal).setOnClickListener(v -> navigate(R.id.monthlyGoalsFragment));
         view.findViewById(R.id.home_notifications).setOnClickListener(v -> ((android.widget.ScrollView) view).smoothScrollTo(0, view.findViewById(R.id.dash_leak_alert).getTop()));
-        view.findViewById(R.id.home_settings).setOnClickListener(v -> new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.home_account_title).setItems(new String[] {
-            getString(R.string.home_select_property), getString(R.string.auth_home_meter), getString(R.string.auth_logout)
-        }, (dialog, item) -> {
-            if (item == 0)
-                selectProperty(view, water, home);
-            else if (item == 1 && selectedProperty != null)
-                navigate(R.id.qrScanFragment);
-            else if (item == 1)
-                Toast.makeText(requireContext(), R.string.home_no_properties, Toast.LENGTH_SHORT).show();
-            else {
-                registration().reset();
-                water.reset();
-                new ViewModelProvider(requireActivity()).get(LoginViewModel.class).logout();
-            }
-        }).show());
+        view.findViewById(R.id.home_settings).setOnClickListener(v -> navigate(R.id.profileSettingsFragment));
         if (water.properties.getValue().status == ScreenState.Status.IDLE) water.loadProperties();
         home.loadProfile();
 

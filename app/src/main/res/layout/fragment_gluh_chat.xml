@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/chat_background">
+    <com.aula.delta_mobile_app.view.ChatBackdropView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp">
+        <TextView
+            android:id="@+id/chat_title"
+            style="@style/Chat.Body"
+            android:layout_marginTop="@dimen/chat_header_top"
+            android:layout_marginHorizontal="6dp"
+            android:layout_marginBottom="20dp"
+            android:accessibilityHeading="true"
+            android:text="@string/chat_title"
+            android:textSize="26sp" />
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/chat_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:paddingBottom="12dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="bottom"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:id="@+id/chat_messages"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+                <com.aula.delta_mobile_app.view.ChatTypingView
+                    android:id="@+id/chat_typing"
+                    android:layout_width="48dp"
+                    android:layout_height="28dp"
+                    android:layout_marginStart="10dp"
+                    android:accessibilityLiveRegion="polite"
+                    android:contentDescription="@string/chat_responding"
+                    android:visibility="gone" />
+                <TextView
+                    android:id="@+id/chat_notice"
+                    style="@style/Chat.Body"
+                    android:layout_marginHorizontal="6dp"
+                    android:accessibilityLiveRegion="polite"
+                    android:textColor="#CED6E6"
+                    android:visibility="gone"
+                    tools:text="@string/chat_unavailable"
+                    tools:visibility="visible" />
+                <Button
+                    android:id="@+id/chat_retry"
+                    style="@style/Chat.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/chat_retry"
+                    android:visibility="gone" />
+                <Button
+                    android:id="@+id/chat_routine"
+                    style="@style/Chat.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/chat_routine"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:background="@drawable/chat_composer"
+            android:gravity="bottom"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/chat_input"
+                style="@style/Chat.Body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="48dp"
+                android:maxLines="4"
+                android:background="@null"
+                android:gravity="top|start"
+                android:hint="@string/chat_hint"
+                android:imeOptions="actionSend"
+                android:inputType="textCapSentences|textMultiLine"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="13dp"
+                android:saveEnabled="false"
+                android:textColorHint="#AEB5BF" />
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp">
+                <View
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/chat_send_background"
+                    android:importantForAccessibility="no" />
+                <ImageButton
+                    android:id="@+id/chat_send"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/chat_send"
+                    android:enabled="false"
+                    android:padding="12dp"
+                    android:src="@drawable/chat_icon_send" />
+            </FrameLayout>
+        </LinearLayout>
+        <Space
+            android:id="@+id/chat_menu_space"
+            android:layout_width="match_parent"
+            android:layout_height="116dp" />
+    </LinearLayout>
+</FrameLayout>

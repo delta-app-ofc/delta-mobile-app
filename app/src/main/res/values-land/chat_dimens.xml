@@ -1,0 +1,3 @@
+<resources>
+    <dimen name="chat_header_top">12dp</dimen>
+</resources>

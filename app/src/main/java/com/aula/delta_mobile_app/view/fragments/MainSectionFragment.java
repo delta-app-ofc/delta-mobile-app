@@ -51,10 +51,10 @@ public class MainSectionFragment extends AuthFlowFragment {
         TextView subtitle = view.findViewById(R.id.section_subtitle);
         Spinner property = view.findViewById(R.id.section_property);
         View retry = view.findViewById(R.id.section_retry);
-        boolean readings = screen.equals("consumption") || screen.equals("costs");
+        boolean readings = screen.equals("consumption");
         property.setVisibility(readings ? View.VISIBLE : View.GONE);
         if (readings) {
-            subtitle.setText(screen.equals("costs") ? "Custo previsto e histórico de contas" : "Acompanhe as leituras do seu imóvel");
+            subtitle.setText("Acompanhe as leituras do seu imóvel");
             water.properties.observe(getViewLifecycleOwner(), value -> {
                 property.setEnabled(value.status == ScreenState.Status.SUCCESS && !value.data.isEmpty());
                 if (value.status != ScreenState.Status.SUCCESS) {
@@ -95,20 +95,12 @@ public class MainSectionFragment extends AuthFlowFragment {
             });
             if (water.propertyId != null) home.selectProperty(water.propertyId);
             water.consumption.observe(getViewLifecycleOwner(), this::renderReadings);
-            home.cost.observe(getViewLifecycleOwner(), value -> {
-                if (screen.equals("costs")) renderCosts();
-            });
-            sections.bills.observe(getViewLifecycleOwner(), value -> {
-                if (screen.equals("costs")) renderCosts();
-            });
             retry.setOnClickListener(v -> {
                 if (water.propertyId != null) water.select(water.propertyId);
                 else water.loadProperties();
-                if (screen.equals("costs")) sections.loadBills();
             });
             if (water.properties.getValue().status == ScreenState.Status.IDLE)
                 water.loadProperties();
-            if (screen.equals("costs")) sections.loadBills();
         } else if (screen.equals("ranking")) {
             subtitle.setText("Compare a eficiência das suas unidades");
             sections.rankings.observe(getViewLifecycleOwner(), value -> {
@@ -145,10 +137,6 @@ public class MainSectionFragment extends AuthFlowFragment {
     private void renderReadings(ScreenState<List<ConsumptionDailyResponse>> value) {
         if (value.status == ScreenState.Status.SUCCESS) home.update(value.data);
         else if (value.status != ScreenState.Status.IDLE) home.clearReadings();
-        if (screen.equals("costs")) {
-            renderCosts();
-            return;
-        }
         cards.removeAllViews();
         show(value.displayMessage());
         if (value.status != ScreenState.Status.SUCCESS) {
@@ -184,32 +172,6 @@ public class MainSectionFragment extends AuthFlowFragment {
             args.putInt("propertyId", water.propertyId == null ? 0 : water.propertyId);
             androidx.navigation.fragment.NavHostFragment.findNavController(this).navigate(R.id.leakDetectionFragment, args);
         });
-    }
-
-    private void renderCosts() {
-        if (cards == null) return;
-        cards.removeAllViews();
-        List<String> messages = new ArrayList<>();
-        ScreenState<WaterCostResponse> cost = home.cost.getValue();
-        card("Custo previsto\n" + (cost.status == ScreenState.Status.SUCCESS && Objects.equals(cost.data.propertyId, water.propertyId) ? money(cost.data.estimatedCost) : "—"),
-            true);
-        if (cost.status == ScreenState.Status.SUCCESS)
-            card("Referência: " + date(cost.data.referenceDate) + "\nConsumo tarifado: " + number(cost.data.consumptionM3) + " m³\nTarifa: " + money(cost.data.ratePerM3) + "/m³",
-            false);
-        if (!cost.displayMessage().isEmpty()) messages.add(cost.displayMessage());
-        ScreenState<List<ConsumptionDailyResponse>> readings = water.consumption.getValue();
-        if (readings.status != ScreenState.Status.SUCCESS && !readings.displayMessage().isEmpty())
-            messages.add(readings.displayMessage());
-        action("Cadastrar conta de água", () -> navigate(R.id.accountConfigFragment));
-        action("Comparar minhas unidades", () -> navigate(R.id.rankingFragment));
-        card("Histórico de contas da sua conta", false);
-        ScreenState<List<LastWaterBillResponse>> bills = sections.bills.getValue();
-        if (bills.status == ScreenState.Status.SUCCESS) {
-            if (bills.data.isEmpty()) card("Nenhuma conta cadastrada.", false);
-            for (LastWaterBillResponse row : bills.data)
-                card(date(row.month) + "\n" + money(row.totalValue) + " · " + number(row.m3Value) + " m³", false);
-        } else if (!bills.displayMessage().isEmpty()) messages.add(bills.displayMessage());
-        show(String.join("\n", messages));
     }
 
     private void renderRoutine(ScreenState<List<UserHabitResponse>> value) {

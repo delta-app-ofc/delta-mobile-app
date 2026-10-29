@@ -44,6 +44,19 @@ public final class RetrofitClient {
         return BrasilApiHolder.SERVICE;
     }
 
+    private static final class ChatHolder {
+        private static final com.aula.delta_mobile_app.services.api.ChatApiService SERVICE = new Retrofit.Builder()
+            .baseUrl("https://delta-artificial-intelligence.onrender.com/")
+            .client(createHttpClient().newBuilder().callTimeout(120, TimeUnit.SECONDS).retryOnConnectionFailure(false)
+                .followRedirects(false).followSslRedirects(false).build())
+            .addConverterFactory(GsonConverterFactory.create(GsonProvider.getInstance()))
+            .build().create(com.aula.delta_mobile_app.services.api.ChatApiService.class);
+    }
+
+    public static com.aula.delta_mobile_app.services.api.ChatApiService getChatService() {
+        return ChatHolder.SERVICE;
+    }
+
     private static OkHttpClient createHttpClient() {
         OkHttpClient.Builder builder = new OkHttpClient.Builder().connectTimeout(NetworkConfig.CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(NetworkConfig.READ_TIMEOUT_SECONDS, TimeUnit.SECONDS).writeTimeout(NetworkConfig.WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS);

@@ -82,6 +82,10 @@ public final class AuthRepository implements AuthActions, SignupActions {
         return store.hasSession();
     }
 
+    public long sessionGeneration() {
+        return store.generation();
+    }
+
     public boolean rememberMe() {
         return loginPreferences.getBoolean("remember_me", false);
     }

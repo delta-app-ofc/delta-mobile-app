@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/profile_background"
+    android:fillViewport="true"
+    android:clipToPadding="false">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="28dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="136dp">
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginBottom="12dp">
+            <ImageButton
+                android:id="@+id/profile_back"
+                style="@style/Profile.IconButton"
+                android:layout_marginStart="-12dp"
+                android:src="@drawable/profile_back"
+                android:contentDescription="@string/profile_back" />
+            <ImageButton
+                android:id="@+id/profile_edit"
+                style="@style/Profile.IconButton"
+                android:layout_gravity="end"
+                android:src="@drawable/profile_edit"
+                android:contentDescription="@string/profile_edit_residential" />
+        </FrameLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="14dp"
+                android:padding="9dp"
+                android:src="@drawable/main_icon_home"
+                android:tint="@color/white"
+                android:background="@drawable/profile_blue_icon"
+                android:importantForAccessibility="no" />
+            <TextView
+                style="@style/Profile.Title"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:accessibilityHeading="true"
+                android:text="@string/profile_residential_title" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/profile_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </LinearLayout>
+</ScrollView>

@@ -58,16 +58,11 @@ public final class LeakDetectionFragment extends AuthFlowFragment {
                 retry.setOnClickListener(v -> monitoring.load(propertyId, true));
             } else if (data.availability == LeakMonitoringData.Availability.NO_PROPERTY || data.availability == LeakMonitoringData.Availability.NO_METER) {
                 notice.setText(LeakHelper.notice(data));
-                retry.setVisibility(View.VISIBLE);
-                boolean link = data.availability == LeakMonitoringData.Availability.NO_METER;
-                retry.setText(link ? R.string.leak_link_meter : R.string.leak_retry);
-                retry.setOnClickListener(v -> {
-                    if (link) {
-                        if (!java.util.Objects.equals(water.propertyId, data.propertyId))
-                            water.select(data.propertyId);
-                        navigate(R.id.qrScanFragment);
-                    } else monitoring.load(propertyId, true);
-                });
+                if (data.availability == LeakMonitoringData.Availability.NO_PROPERTY) {
+                    retry.setVisibility(View.VISIBLE);
+                    retry.setText(R.string.leak_retry);
+                    retry.setOnClickListener(v -> monitoring.load(propertyId, true));
+                }
             }
             if (data == null || data.events.isEmpty()) {
                 View card = LeakHelper.eventCard(getLayoutInflater(), cards, null, data == null ? LeakMonitoringData.Availability.UNAVAILABLE : data.availability);
