@@ -52,4 +52,21 @@
     <string name="routine_habit_car">Lavar carro</string>
     <string name="routine_habit_dishes">Lavar louça</string>
     <string name="routine_incomplete_habit">• %1$s</string>
+    <string name="routine_details_title">Detalhes do hábito</string>
+    <string name="routine_details_close">Fechar</string>
+    <string name="routine_details_context">Selecionado na agenda: %1$s às %2$s</string>
+    <string name="routine_details_category">Categoria: %1$s</string>
+    <string name="routine_details_count">Execuções no dia: %1$s</string>
+    <string name="routine_details_times_title">Horários do hábito neste dia</string>
+    <string name="routine_details_time">• %1$s</string>
+    <string name="routine_details_no_executions">Nenhuma execução programada para este dia na resposta recebida.</string>
+    <string name="routine_details_unknown_schedule">Execuções e horários indisponíveis.</string>
+    <string name="routine_details_daily_estimate">Estimativa do hábito neste dia</string>
+    <string name="routine_details_incomplete">A agenda recebida está incompleta. Não é possível confirmar as execuções nem a estimativa diária deste hábito.</string>
+    <string name="routine_details_changed">O horário selecionado não aparece na distribuição recebida. Atualize a rotina para conferir a agenda atual.</string>
+    <string name="routine_details_missing_estimate">A estimativa de consumo deste tipo de hábito está indisponível.</string>
+    <string name="routine_details_error_general">Não foi possível carregar o detalhe do hábito. Tente novamente.</string>
+    <string name="routine_details_error_not_found">Este hábito não foi encontrado. Tente novamente ou atualize a rotina.</string>
+    <string name="routine_details_loading">Carregando detalhes do hábito</string>
+    <string name="routine_details_refresh">Atualizar rotina</string>
 </resources>

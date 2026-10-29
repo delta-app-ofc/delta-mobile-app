@@ -3,10 +3,14 @@ package com.aula.delta_mobile_app.view.fragments;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.AccessibilityDelegateCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -36,6 +40,7 @@ import java.util.Locale;
 
 public final class RoutineFragment extends AuthFlowFragment {
     private static final String PICKER = "routine_date_picker";
+    private static final String DETAILS = "routine_habit_details";
     private static final LocalDate FIRST = LocalDate.of(1900, 1, 1), LAST = LocalDate.of(2100, 12, 31);
     private RoutineViewModel model;
     private RoutineDayAdapter days;
@@ -67,6 +72,15 @@ public final class RoutineFragment extends AuthFlowFragment {
         habits.setLayoutManager(new LinearLayoutManager(requireContext()));
         habits.setNestedScrollingEnabled(false);
         habits.setAdapter(agenda);
+        habits.addOnChildAttachStateChangeListener(new RecyclerView.OnChildAttachStateChangeListener() {
+            @Override
+            public void onChildViewAttachedToWindow(@NonNull View child) {
+                bindHabitClick(habits, child);
+            }
+
+            @Override
+            public void onChildViewDetachedFromWindow(@NonNull View child) {}
+        });
         view.findViewById(R.id.routine_back).setOnClickListener(button -> back());
         view.findViewById(R.id.routine_previous_month).setOnClickListener(button -> changeMonth(-1));
         view.findViewById(R.id.routine_next_month).setOnClickListener(button -> changeMonth(1));
@@ -83,6 +97,30 @@ public final class RoutineFragment extends AuthFlowFragment {
 
     private void select(LocalDate date) {
         if (!date.isBefore(FIRST) && !date.isAfter(LAST)) model.selectDate(date);
+    }
+
+    private void bindHabitClick(RecyclerView list, View child) {
+        child.setFocusable(true);
+        child.setEnabled(canOpenDetails(model.state().getValue()));
+        ViewCompat.setAccessibilityDelegate(child, new AccessibilityDelegateCompat() {
+            @Override
+            public void onInitializeAccessibilityNodeInfo(@NonNull View host, @NonNull AccessibilityNodeInfoCompat info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                info.setClassName(Button.class.getName());
+            }
+        });
+        child.setOnClickListener(button -> {
+            RoutineUiState state = model.state().getValue();
+            int position = list.getChildAdapterPosition(button);
+            if (!canOpenDetails(state) || position == RecyclerView.NO_POSITION || position >= state.day.executions.size() || getChildFragmentManager().isStateSaved()) return;
+            RoutineData.Execution execution = state.day.executions.get(position);
+            if (model.openDetails(execution.habit.id, execution.startTime) && getChildFragmentManager().findFragmentByTag(DETAILS) == null)
+                new RoutineDetailsDialogFragment().showNow(getChildFragmentManager(), DETAILS);
+        });
+    }
+
+    private boolean canOpenDetails(RoutineUiState state) {
+        return state.reading.status == ScreenState.Status.SUCCESS && state.day != null && !state.stale;
     }
 
     private void changeMonth(int offset) {
@@ -112,6 +150,8 @@ public final class RoutineFragment extends AuthFlowFragment {
         view.findViewById(R.id.routine_agenda).setVisibility(state.day == null ? View.GONE : View.VISIBLE);
         view.findViewById(R.id.routine_empty).setVisibility(state.day != null && state.day.confirmedEmpty() ? View.VISIBLE : View.GONE);
         agenda.submit(state.day);
+        RecyclerView habits = view.findViewById(R.id.routine_habits);
+        for (int i = 0; i < habits.getChildCount(); i++) habits.getChildAt(i).setEnabled(canOpenDetails(state));
         TextView total = view.findViewById(R.id.routine_total);
         total.setText(state.day == null ? getString(R.string.routine_unavailable) : state.day.totalComplete ? RoutineAgendaAdapter.liters(requireContext(), state.day.totalLiters)
             : getString(R.string.routine_incomplete_total));
@@ -161,7 +201,7 @@ public final class RoutineFragment extends AuthFlowFragment {
         return getViewLifecycleOwner().getLifecycle().getCurrentState().isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED);
     }
 
-    private int errorResource(int code) {
+    static int errorResource(int code) {
         switch (code) {
             case 400: return R.string.routine_error_validation;
             case 401: return R.string.routine_error_auth;

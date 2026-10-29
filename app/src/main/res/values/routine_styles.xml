@@ -63,4 +63,12 @@
         <item name="colorOnSurface">@color/routine_text</item>
         <item name="colorOnSurfaceVariant">@color/routine_muted</item>
     </style>
+    <style name="Routine.DetailsDialog" parent="Theme.Material3.DayNight.Dialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/routine_background</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="colorPrimary">@color/routine_metric</item>
+        <item name="colorOnSurface">@color/routine_text</item>
+        <item name="colorSurface">@color/routine_background</item>
+    </style>
 </resources>

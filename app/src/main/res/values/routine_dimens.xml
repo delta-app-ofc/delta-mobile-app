@@ -16,4 +16,7 @@
     <dimen name="routine_selected_stroke">2dp</dimen>
     <dimen name="routine_empty_icon_size">48dp</dimen>
     <dimen name="routine_empty_min_height">240dp</dimen>
+    <dimen name="routine_details_max_width">0dp</dimen>
+    <dimen name="routine_details_window_margin">0dp</dimen>
+    <dimen name="routine_details_loading_height">240dp</dimen>
 </resources>
