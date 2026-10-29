@@ -1,192 +1,383 @@
 # Plano de implementação da Rotina
 
-## Estado e objetivo — 29/10/2026
+## Escopo e fontes — 29/10/2026
 
-Plano documental concluído para orientar a evolução da Rotina existente até o calendário de hábitos com criar, editar, excluir e consumo estimado. Implementação não iniciada nesta etapa. A pessoa usuária pediu para adiar as definições restantes, marcá-las como **INCERTO** e fechar o plano, conforme [D13](decisions.md#d13-adiar-decisões-restantes-e-fechar-o-plano).
+Plano documental para entregas pequenas e verificáveis. Nesta rodada, somente este arquivo será revisado: sem implementação, chamadas à API, dependências, build ou testes Android. As verificações abaixo são futuras, não evidência de execução.
 
-Fontes: [AGENTS.md](../../AGENTS.md), [README](../../README.md), [briefing](briefing.md), [design/](design/), [OpenAPI local](openapi.json), [contrato analisado](api-contract.md) e [decisões](decisions.md). As escolhas técnicas e os nomes de arquivos novos abaixo são **INCERTO — proposta de implementação**; os requisitos aprovados são identificados separadamente. Nada neste plano declara que o contrato ampliado já está implementado ou publicado.
+Fontes: [AGENTS.md](../../AGENTS.md), [briefing](briefing.md), [api-contract.md](api-contract.md), [decisions.md](decisions.md), as quatro exportações em [design/](design/) e os fontes citados neste documento. As decisões aprovadas D03–D12 permanecem válidas. Definições adiadas em D13/P01–P11 continuam **INCERTO**; não precisam ser respondidas para concluir o plano, mas antes da implementação que depender delas.
 
-## Requisitos já definidos
+**INCERTO — proposta técnica:** todos os nomes de arquivos novos, escolhas de componentes e comportamentos sugeridos neste plano são propostas, não políticas já consolidadas. Cada etapa pode ser revisada e validada isoladamente depois dos seus pré-requisitos. Independência não significa ausência de dependências entre modelo, repositório e tela.
 
-| Tema | Definição recebida | Fonte |
+O aceite é o do [briefing](briefing.md): calendário, hoje selecionado, troca de mês/dia, lista/estimativas/total diário, vazio, adicionar/editar/excluir, confirmação, validação por campo, erros/retry, atualização sem reabrir, estado na rotação, textos em recursos, teclado, responsividade e acessibilidade. **Fora do escopo: marcar hábito como concluído.** Não criar ação, checkbox, endpoint ou teste de conclusão.
+
+## Ponto de partida e limites
+
+- O destino `goalsFragment`, com `screen="routine"`, usa [MainSectionFragment][fragment]. O CRUD está em [SectionsViewModel][sections], e os cinco métodos já existem em [ApiService][api]. O GET de coleção não recebe data/mês. Não inventar consultas ou parâmetros. Fontes: [navegação][navigation], [contrato](api-contract.md).
+- [ApiModels][models] ainda não representa categoria, horários e litros do OpenAPI analisado. Distribuição por dia e horários obrigatórios por execução exigem a ampliação aprovada, ainda não especificada/publicada nesta evidência. Não representar quantidades repetindo IDs de dias nem duplicando hábitos. Fontes: D04/D06/D11/D12 em [decisões](decisions.md), [contrato](api-contract.md).
+- Reutilizar `AuthRepository.getInstance(context).api()`, `auth.resource()`, identidade de `currentProfile()` e [ApiErrors][errors]. O callback de `resource()` ocorre no executor de trabalho; publicar estado na main thread. Conferir conta/dono dos registros. Esses endpoints são por usuário: não inventar exigência de imóvel. Fontes: [AuthRepository][auth], [SectionsViewModel][sections], [AGENTS.md](../../AGENTS.md).
+- Preservar cliente, Bearer, refresh, Keystore e timeouts. Não é necessário alterar [RetrofitClient][retrofit], [SessionInterceptor][interceptor] ou [NetworkConfig][network] para esta feature. Fonte: [AGENTS.md](../../AGENTS.md).
+- Reutilizar [ScreenState][state] e [StatusNoticeView][notice]. `displayMessage()` retorna vazio em ERROR; usar o detalhe de erro de maneira explícita, sem alterar o contrato global. `ApiErrors` não fornece mapa de erros por campo. Fontes: [ScreenStateTest][state-test], [contrato](api-contract.md).
+- As imagens mostram faixa semanal/agenda em [habitos.png](design/habitos.png), vazio em [habitosvazio.png](design/habitosvazio.png), alerta em [habitosAlerta.png](design/habitosAlerta.png) e detalhe em [detalhesHabito.png](design/detalhesHabito.png). Não há referência de tablet nem formulário completo. D01 registra ausência de Figma navegável. Não usar datas, litros, nomes ou percentuais das imagens como dados reais. Fontes: [design/](design/), [decisões](decisions.md).
+
+## Ordem das entregas
+
+| Etapa | Entrega | Pré-requisito |
 | --- | --- | --- |
-| Calendário | Hoje selecionado na entrada, seleção de dia, navegação entre meses, lista do dia, litros com unidade, total e estado vazio | [briefing](briefing.md) |
-| Gestão | Criar, editar e excluir com confirmação; atualizar a agenda sem reabrir a tela; erro com nova tentativa sem perder o digitado | [briefing](briefing.md) |
-| Recorrência | Frequência em vezes por semana e seleção dos dias; formulário para distribuir a quantidade entre os dias | D03/D04 em [decisions.md](decisions.md) |
-| API | Considerar ampliação para receber, persistir e devolver a distribuição diária | D06 em [decisions.md](decisions.md) |
-| Horários | Cada execução pode ter horário individual e esse preenchimento é obrigatório | D11/D12 em [decisions.md](decisions.md) |
-| Consumo | Total diário por hábito, calculado com média fixa por execução e tabela inicial aprovada | D07–D10 em [decisions.md](decisions.md) |
-| Qualidade | Rotação preserva dia/formulário; textos em recursos; teclado sem cobrir campos; celular/tablet, retrato/paisagem; acessibilidade e toque mínimo de 48dp | [briefing](briefing.md) |
-| Fora do escopo | Marcar hábito como concluído | [briefing](briefing.md) |
+| 0 | Contrato confirmado do próximo recorte | Usuário/backend |
+| 1 | Modelos e projeção da leitura diária | Contrato de leitura/regras diárias |
+| 2 | Repository de leitura e testes | 1 |
+| 3 | ViewModel de leitura e testes | 2 |
+| 4 | Calendário + lista + total + estados responsivos | 3; proposta visual avaliada |
+| 5 | Detalhes, somente leitura | 4; semântica do detalhe |
+| 6 | Formulário/rascunho/validação, sem gravar | 4; regras do formulário |
+| 7 | Adicionar e atualizar a agenda | 6; contrato de POST |
+| 8 | Editar e atualizar a agenda | 5 e 7; contrato de PUT/escopo |
+| 9 | Excluir com confirmação e atualizar a agenda | 8; alcance do DELETE |
+| 10 | Regressão integrada e evidências de aceite | 4–9; ambiente de teste |
 
-Tabela aprovada de estimativa por execução: banho longo 80 L; lavar quintal 150 L; lavar roupa 100 L; regar plantas 15 L; lavar carro 200 L; lavar louça 20 L. Fonte de produto: D10 em [decisions.md](decisions.md). Fonte dos valores: tabela da IA identificada no registro de decisões. São estimativas, sem usar os valores das imagens como dados da conta.
+A etapa 4 conclui o primeiro marco funcional: leitura completa antes do CRUD. Adicionar, editar e excluir têm commits próprios. Os testes acompanham cada entrega. A substituição da tela na etapa 4 é um marco intermediário de leitura, não uma versão final liberada; não remover o código antigo de mutações antes de concluir suas substituições.
 
-## Ponto de partida e reaproveitamento
+Nas tabelas, caminhos relativos à raiz usam: `J = app/src/main/java/com/aula/delta_mobile_app`, `T = app/src/test/java/com/aula/delta_mobile_app`, `I = app/src/androidTest/java/com/aula/delta_mobile_app` e `R = app/src/main/res`. São abreviações, não novos diretórios. Os comandos VJ/VB/VT/VI são definidos ao final.
 
-O CRUD já existe em [ApiService][api] e é chamado por [SectionsViewModel][sections]. A Rotina atual é renderizada por [MainSectionFragment][generic-fragment], no destino `goalsFragment`, com `screen="routine"`. Seus DTOs ainda não representam categoria, horários e litros do OpenAPI analisado. Fontes: [ApiModels][api-models], [main_navigation.xml][navigation], [contrato](api-contract.md).
+## Etapa 0 — Confirmar o contrato por recorte
 
-Reutilizar o cliente Delta de [AuthRepository][auth]/[RetrofitClient][retrofit], [SessionInterceptor][interceptor], [NetworkConfig][network] e [ApiErrors][errors]. O [README](../../README.md) orienta usar o mesmo service no repositório responsável. Não há necessidade de outro cliente HTTP para o CRUD de Rotina.
+| Arquivos futuros | Responsabilidade |
+| --- | --- |
+| Alterar `docs/rotina/api-contract.md` | Registrar payloads e regras efetivamente confirmados |
+| Alterar `docs/rotina/decisions.md` | Registrar decisões com origem, substituindo apenas as pendências resolvidas |
+| Atualizar `docs/rotina/openapi.json`, somente com fonte oficial | Snapshot entregue pelo backend, sem schema inventado |
 
-Reaproveitar [ScreenState][screen-state], [StatusNoticeView][notice], carregamento de [AuthFlowFragment][auth-flow], componentes Material dos [formulários de hábitos][signup-habits] e coordenação de menu/IME do [MainActivity][main]. A referência para separação repositório/estado é [Consumo anormal][abnormal-repository]; para lista reciclável, há [ChatSessionAdapter][session-adapter]. **INCERTO — proposta:** criar componentes próprios da Rotina usando essas bases, sem copiar limitações do fluxo antigo.
+**Por quê e trade-offs.** Fechar primeiro a parte de P01–P04/P06 necessária à leitura: distribuição recuperável, horários, legado, vigência, cálculo e catálogo. Antes da escrita, fechar validações, PUT, exclusão e P11 conforme operação. Isso permite avançar por recorte sem esperar decisões exclusivas de excluir. Usar apenas os três campos atuais perderia requisitos aprovados; inventar um contrato anteciparia retrabalho. Testes substituídos podem avançar após especificação, mas não provam deploy. Fontes: [contrato](api-contract.md), P01–P11 em [decisões](decisions.md).
 
-Atenção ao contrato existente: `ScreenState.displayMessage()` esconde texto em ERROR, preservando-o em `message`. O editor atual dispara a mutação e fecha o diálogo; não fornece a preservação de formulário exigida pelo novo briefing. Essas limitações precisam ser tratadas no fluxo da feature. Fontes: [ScreenState][screen-state], [MainSectionFragment][generic-fragment], [briefing](briefing.md).
+**Como verificar.** Revisar exemplos de listagem/detalhe com várias execuções no mesmo dia e horários distintos; depois, exemplos de POST/PUT/DELETE e releitura sem perda da distribuição. Distinguir contrato especificado de serviço publicado. Sem build para esse commit documental. Não é necessário resolver tablet para fechar payload.
 
-## Sequência de execução
+**O que aprender.** Converter requisito em contrato e separar decisão de produto, schema e capacidade publicada.
 
-Cada etapa deve ser apresentada e verificada separadamente, conforme [AGENTS.md](../../AGENTS.md). A sequência abaixo é **INCERTO — proposta técnica de execução**; não reabre as decisões de produto já aprovadas. Definições adiadas são retomadas apenas quando necessárias à etapa dependente.
+**Commit previsto:** `docs(rotina): definir contrato confirmado para o recorte inicial`.
 
-| Etapa | Entrega | Dependência principal |
+## Etapa 1 — Modelos de leitura, agenda e total
+
+| Arquivos | Responsabilidade |
+| --- | --- |
+| Alterar `J/model/ApiModels.java` | Completar respostas de hábitos conforme contrato, sem antecipar requests de escrita |
+| Criar `J/model/RoutineData.java` | Projeção do dia, execuções, agrupamento, estimativas e total, separados do DTO |
+| Criar `T/model/RoutineDataTest.java` | Regras de seleção, recorrência, unidade e somatório |
+
+**Por quê e trade-offs.** Usar `java.time` e relógio injetável; formatos no transporte seguem o contrato confirmado. Propor projeção local da coleção completa, pois o GET atual não recebe data. Se o contrato futuro devolver ocorrências expandidas, consumir essa representação sem duplicar o algoritmo no app. Separar DTO/projeção custa mapeamento, mas evita cálculo no Fragment e permite testes JVM. Precedente: [AbnormalConsumptionData][abnormal-data]; lacuna: [contrato](api-contract.md).
+
+**INCERTO — P02:** fórmula proposta: total diário do hábito = média por execução × quantidade naquele dia; total do dia = soma dos totais diários dos hábitos. Se houver linha por execução, mostrar a estimativa da execução nessa linha e não somar várias vezes o total diário do hábito. Se o backend calcular, consumir sua unidade confirmada sem recalcular com outra regra. D07–D10 aprovam total diário, média fixa e tabela, mas não o local/fórmula final.
+
+Tabela inicial aprovada em D10: banho longo 80 L; lavar quintal 150 L; lavar roupa 100 L; regar plantas 15 L; lavar carro 200 L; lavar louça 20 L por execução. São estimativas, não medições. Ausência de distribuição/referência/estimativa não vira zero: **INCERTO — proposta** indicar valor indisponível e total incompleto conforme P02/legado. Coleção válida sem hábitos do dia permite vazio e zero confirmado. Fontes: [decisões](decisions.md), [contrato](api-contract.md), [AGENTS.md](../../AGENTS.md).
+
+**Como verificar.** VJ: fronteiras de mês/ano/semana, fevereiro bissexto, várias execuções por dia, vazio, legado e estimativa ausente. Após aprovação da fórmula, testar duas execuções de banho longo como 80 L cada e 160 L no resumo, sem virar 320 L por duplicação. Fixtures ficam nos testes. Nenhuma tela muda.
+
+**O que aprender.** Separar transporte de domínio, projetar recorrência e preservar unidades no cálculo.
+
+**Commit previsto:** `feat(rotina): modelar agenda e estimativas do dia`.
+
+## Etapa 2 — Repository de leitura autenticada
+
+| Arquivos | Responsabilidade |
+| --- | --- |
+| Criar `J/repository/RoutineActions.java` | Contrato de leitura para ViewModel/substitutos; crescer por operação depois |
+| Criar `J/repository/RoutineRepository.java` | Listar e consultar detalhe, validar conta/dono/corpo e traduzir falhas |
+| Criar `T/repository/RoutineRepositoryTest.java` | Testar a lógica real do Repository com acesso/serviço substituídos |
+
+**Por quê e trade-offs.** Usar métodos existentes de [ApiService][api] por `auth.resource()`, seguindo o [README](../../README.md). Prever pequeno contrato interno injetável de acesso a identidade, serviço e execução autenticada; produção delega a [AuthRepository][auth]. Ele é `final`, com construtor privado: não planejar herança ou mock do singleton. Essa adaptação local custa algum código, mas permite testes sem Context/tokens e evita refatorar autenticação. Contratos de ações têm precedente em [ChatActions][chat-actions].
+
+`[]` é sucesso vazio; body nulo, identidade necessária ausente ou dado de outra conta não significa agenda livre. Consultar detalhe pelo `id` do registro, distinguindo-o do `habitId` do catálogo. Campos opcionais e legado seguem a etapa 0. Fontes: [contrato](api-contract.md), [SectionsViewModel][sections].
+
+**Como verificar.** VJ: lista válida/vazia/nula, dados incompatíveis/de outra conta, detalhe 200/404, rede, 401/403/429/5xx e `code/retryAt`. Verificar identidade e caminho corretos. Usar respostas Retrofit/interceptor OkHttp em memória; [ChatbotNetworkTest][network-test] já demonstra interceptação sem servidor externo. Esses testes não substituem os de Bearer/refresh existentes em [SessionInterceptorTest][session-test]. Nenhuma tela muda.
+
+**O que aprender.** Isolar rede/identidade por composição e distinguir vazio de erro sem chamar produção.
+
+**Commit previsto:** `feat(rotina): adicionar repositorio autenticado de leitura`.
+
+## Etapa 3 — Estado de leitura no ViewModel
+
+| Arquivos | Responsabilidade |
+| --- | --- |
+| Criar `J/model/RoutineUiState.java` | Snapshot de dia, mês exibido, coleção/projeção e estado de leitura |
+| Criar `J/viewmodel/RoutineViewModel.java` | Seleção, mês, carga, retry, invalidação e publicação |
+| Criar `T/viewmodel/RoutineViewModelTest.java` | Testes diretos do ViewModel com relógio/callbacks/executores controlados |
+
+**Por quê e trade-offs.** Propor `ViewModel` com LiveData e construtor recebendo repositório, relógio e despachante da main thread. Uma Factory interna faz a composição manual via ViewModelProvider. O construtor de teste não cria Handler/Looper incondicionalmente. Mais parâmetros substituem dependência nova de DI e tornam concorrência testável. Precedentes: [AbnormalConsumptionViewModel][abnormal-vm], [ChatViewModel][chat-vm], [AGENTS.md](../../AGENTS.md).
+
+Reutilizar `ScreenState<RoutineData>`: vazio é SUCCESS sem itens, não novo status global. Como `loading()` não contém dados, guardar separadamente a última projeção validada durante refresh. Dia/mês ficam no ViewModel. Inicializar hoje uma vez; rotação reaproveita a instância, sem voltar para hoje. Persistência após morte do processo não está prometida. Fuso/reentrada continuam P07/P08.
+
+**INCERTO — P07:** propor que mudar mês selecione o mesmo número de dia limitado ao último dia daquele mês; selecionar data sincroniza o mês exibido. Com coleção completa carregada, trocar dia/mês apenas reprojeta, sem novo GET. Identificar cargas por conta/geração; detalhe também por alvo. Descartar respostas antigas após refresh, mutação, conta alterada ou `onCleared()`. Não invalidar a coleção inteira apenas porque o dia mudou durante a consulta.
+
+**Como verificar.** VJ: hoje com relógio fixo, troca de mês, vazio, erro→retry→sucesso, deduplicação de carga, callbacks fora de ordem, conta alterada e resposta após limpeza. Testar ações e LiveData do ViewModel real, não apenas helper. Proposta sem biblioteca nova: delegado síncrono de `ArchTaskExecutor` transitivo de Lifecycle, restaurado em `@After`; confirmar sua presença no classpath antes de usar. Rotação real será verificada na etapa 4. Se precisar de biblioteca adicional, listar para aprovação.
+
+**O que aprender.** Fonte única de estado, concorrência determinística e diferença entre rotação e morte do processo.
+
+**Commit previsto:** `feat(rotina): manter selecao e carregamento no viewmodel`.
+
+## Etapa 4 — Calendário, lista e total responsivos
+
+| Arquivos | Responsabilidade |
+| --- | --- |
+| Criar `J/view/fragments/RoutineFragment.java` | Observar com `getViewLifecycleOwner()`, renderizar e encaminhar ações |
+| Criar `J/view/RoutineDayAdapter.java`, `J/view/RoutineAgendaAdapter.java` | Faixa de dias e lista, sem consultas/cálculos de domínio |
+| Criar `R/layout/fragment_routine.xml`, `R/layout/item_routine_day.xml`, `R/layout/item_routine_habit.xml` | Composição compacta e itens de altura adaptável |
+| Criar `R/layout-w800dp-h480dp/fragment_routine.xml` | Composição larga proposta, com mesmos IDs |
+| Criar `R/values/routine_strings.xml`, `R/values/routine_styles.xml`, `R/values/routine_dimens.xml`, `R/values-w800dp-h480dp/routine_dimens.xml` | Textos/estilos/medidas locais da feature |
+| Alterar `R/navigation/main_navigation.xml` | Trocar só a classe de `goalsFragment`, preservando ID/menu |
+| Alterar `T/viewmodel/RoutineViewModelTest.java` | Cobrir ações do calendário conectadas à UI |
+
+**Por quê e trade-offs.** Propor faixa semanal própria com RecyclerView, MaterialDatePicker para escolher data/mês e ações explícitas de mês anterior/próximo. Aproxima a exportação, mas exige testes de acessibilidade. CalendarView reduz código e diverge mais visualmente; biblioteca externa exigiria aprovação/manutenção. Material/RecyclerView já estão no [build][build]; [SignupProfileFragment][profile] já usa MaterialDatePicker. Não há nova dependência escolhida.
+
+Exibir seleção sem depender só de cor, lista cronológica, unidade, total, vazio, loading, erro e retry. Usar [LoadingView][loading-view] coordenado pela Rotina, sem depender da prontidão da Home; refresh com dados anteriores deve indicar atualização. Não colocar botão sem ação: Adicionar será ativado na etapa 7. Fontes: [briefing](briefing.md), [design/](design/), [AGENTS.md](../../AGENTS.md).
+
+**INCERTO — proposta responsiva P07/P10, incluída desde esta etapa:**
+
+- Celular/janela estreita: coluna vertical, cards em altura natural e conteúdo rolável, com fim da lista/total acima do menu. Agrupar cronologicamente por horário permite crescer o texto; grade com posições absolutas aproxima pixels, mas pode sobrepor campos e depende de P03.
+- Tablet/janela com pelo menos 800dp de largura e 480dp de altura: calendário/seleção/total à esquerda, aproximadamente 352dp; agenda à direita, largura restante; margens de 24dp e vão de 24dp. Em 800dp sobram aproximadamente 376dp para agenda. Celular em paisagem com pouca altura permanece compacto. Esses valores são ponto inicial, não padrão oficial.
+- Sete alvos de 48dp exigem 336dp. Em 360dp, propor margens de 12dp na faixa e 16dp no resto. Se fonte/conteúdo exigir mais, permitir rolagem horizontal e manter o dia selecionado visível. Não encolher alvos.
+- Usar `sp`, `Start/End`, `wrap_content`, descrições localizadas e estado selecionado acessível. Excluir decoração da leitura. Medidas locais evitam aplicar indiscriminadamente margens globais de tablet. Fontes: [briefing](briefing.md), [AGENTS.md](../../AGENTS.md), [dimens.xml][dimens].
+
+**Como verificar.** VB/VT: hoje, seleção, fronteiras de mês/ano, lista/total e vazio confirmado, falha/retry e rotação sem perder dia/mês ou repetir GET. Conferir ~360dp, ~412dp e tablet ~800dp, nas duas orientações, nomes longos, muitas execuções, fonte ampliada e TalkBack. Comparar capturas às imagens e registrar desvios. Fixtures só por substituição em testes; sem dados fictícios como fallback de produção. Integração requer API compatível.
+
+**O que aprender.** Renderizar estado, adaptar à janela e validar acessibilidade de calendário próprio.
+
+**Commit previsto:** `feat(rotina): exibir calendario agenda e total responsivos`.
+
+## Etapa 5 — Detalhe somente para leitura
+
+| Arquivos | Responsabilidade |
+| --- | --- |
+| Criar `J/view/fragments/RoutineDetailsDialogFragment.java`, `R/layout/dialog_routine_details.xml` | Detalhe restaurável com nome/categoria/dia/execuções/estimativa |
+| Alterar `J/model/RoutineUiState.java`, `J/viewmodel/RoutineViewModel.java`, `J/view/fragments/RoutineFragment.java` | Alvo selecionado, estado do detalhe e abertura por item |
+| Alterar recursos `routine_strings.xml`, `routine_styles.xml`, `routine_dimens.xml` e variante larga | Textos e composição do detalhe |
+| Alterar `T/viewmodel/RoutineViewModelTest.java`, `T/repository/RoutineRepositoryTest.java` | Dono, falhas e detalhes concorrentes |
+
+**Por quê e trade-offs.** Propor DialogFragment de tela inteira no celular e largura limitada no tablet, como filho de RoutineFragment. Compartilhar seu ViewModel via `ViewModelProvider(requireParentFragment())`: mantém estado sem torná-lo global na Activity. Destinos separados dariam back stack mais explícito, com escopo compartilhado adicional; diálogo simples não gerenciado dificulta restauração. Composição continua P08.
+
+Usar ID real e contexto do dia/execução clicados, GET e retry. Duração só se P03 definir intervalo/regra. Meta ideal, percentual/meta máxima, pico, Ajustar automático e Ignorar dependem de P09: não simular, nem declarar exclusão definitiva do aceite sem decisão. Editar/Excluir só serão ativados em suas etapas. Fontes: [detalhes](design/detalhesHabito.png), [contrato](api-contract.md), [decisões](decisions.md).
+
+**Como verificar.** VB/VT: abrir itens rapidamente sem aceitar detalhe antigo, 404/rede/retry, rotação com detalhe aberto e retorno à seleção preservada. Diferenciar estimativa por execução de resumo diário. Sem escrita.
+
+**O que aprender.** Compartilhar ViewModel no escopo adequado e distinguir registro recorrente de execução.
+
+**Commit previsto:** `feat(rotina): apresentar detalhes do habito selecionado`.
+
+## Etapa 6 — Formulário, rascunho e validação sem gravar
+
+| Arquivos | Responsabilidade |
+| --- | --- |
+| Criar `J/model/RoutineFormState.java` | Modo criar/editar, ID alvo, campos brutos, dias/quantidades/horários, erros e alterações |
+| Criar `J/model/RoutineFormValidator.java` | Validar regras confirmadas e devolver erros identificados por campo/execução |
+| Criar `J/view/fragments/RoutineEditorDialogFragment.java`, `R/layout/dialog_routine_editor.xml`, `R/layout/item_routine_execution_field.xml` | Editor rolável e campos repetidos por execução |
+| Alterar `J/model/RoutineUiState.java`, `J/viewmodel/RoutineViewModel.java` | Rascunho e ações em memória, ainda sem request de escrita |
+| Alterar recursos `routine_strings.xml`, `routine_styles.xml`, `routine_dimens.xml` e variante larga | Rótulos, erros e dimensões do editor |
+| Criar `T/model/RoutineFormValidatorTest.java`; alterar `T/viewmodel/RoutineViewModelTest.java` | Validação e preservação do formulário |
+| Criar `I/RoutineFormInstrumentedTest.java` | Abrir o editor de forma controlada pelo teste, sem CTA de produção, e validar rotação/IME |
+
+**Por quê e trade-offs.** Reutilizar catálogo/componentes Material confirmados, mantendo texto bruto no ViewModel, inclusive vazio/inválido; parsear só para validar/montar payload. Guardar apenas números parseados apagaria a entrada inválida. Listeners atualizam rascunho; renderização não deve resetar entrada/cursor. Erros usam identificadores traduzidos em recursos. Precedentes: [SignupHabitsFragment][signup-habits], [SelectionHelper][selection-helper].
+
+Editor filho compartilha ViewModel como o detalhe. Propor tela inteira compacta e painel central com largura máxima inicial de 600dp no tablet, conteúdo rolável e Salvar alcançável. `adjustResize` da Activity não garante IME da janela de diálogo: configurar/verificar também o DialogFragment, preservando menu/insets de [MainActivity][main]. Fonte: [manifest][manifest], [AGENTS.md](../../AGENTS.md).
+
+**Validações:** tipo obrigatório do catálogo, frequência informada/numérica, seleção de dias e horário obrigatório em cada execução. Frequência positiva já é regra local do app, não limite publicado. **INCERTO — P01/P03/P05:** limites, quantidade por dia, soma igual à frequência semanal, positividade em cada dia selecionado, intervalo/fuso e horários iguais/sobrepostos precisam ser formalizados antes de codificar. Não limitar frequência a sete nem igualá-la ao número de dias. Definir descarte de horários ao reduzir execuções em P08. Fontes: D03/D04/D11/D12, [contrato](api-contract.md).
+
+Erro local fica em TextInputLayout ou aviso associado ao grupo/dia/execução, com foco/rolagem ao primeiro erro e revalidação ao corrigir. Erro remoto só será associado a campo com mapeamento confirmado em P05; 409 sem schema não autoriza adivinhar campo. Erro geral usa StatusNoticeView com ação.
+
+**Como verificar.** VB: obrigatórios/número inválido/distribuição/horários conforme regras aprovadas; rascunho e erros preservados no ViewModel. VT: abertura controlada em teste de UI, vários horários e rotação com IME; conferir último campo e ação acessíveis. Esta etapa não ativa CTA público sem persistência e não instala fluxo de demonstração em produção.
+
+**O que aprender.** Separar texto em edição de valor validado e validar coleções de campos sem perder rascunho.
+
+**Commit previsto:** `feat(rotina): preparar formulario restauravel com validacao`.
+
+## Etapa 7 — Adicionar
+
+| Arquivos | Responsabilidade |
+| --- | --- |
+| Alterar `J/model/ApiModels.java` | Completar CreateUserHabitRequest conforme contrato oficial |
+| Alterar `J/repository/RoutineActions.java`, `J/repository/RoutineRepository.java` | POST autenticado e resposta 201, com rota existente |
+| Alterar `J/model/RoutineUiState.java`, `J/viewmodel/RoutineViewModel.java` | Estado de criação, bloqueio de envio duplicado e recarga |
+| Alterar `J/view/fragments/RoutineFragment.java`, `J/view/fragments/RoutineEditorDialogFragment.java` | Ativar Adicionar no vazio/agenda preenchida e salvar/cancelar/retry |
+| Alterar layouts agenda/editor e `R/values/routine_strings.xml` | Ações e mensagens de criação/atualização |
+| Alterar `T/repository/RoutineRepositoryTest.java`, `T/viewmodel/RoutineViewModelTest.java` | POST, falhas e gravação→recarga |
+
+**Por quê e trade-offs.** Validar antes da rede, enviar uma vez por ação, bloquear duplo toque e fechar editor só em sucesso confirmado. Recarregar coleção após sucesso conforme protocolo abaixo. Atualização otimista seria mais rápida, mas precisaria de rollback e poderia divergir dos IDs/horários/cálculo do serviço. O GET extra custa latência e confirma a leitura no servidor.
+
+**Como verificar.** VB: inválido sem POST; duplo toque gera um POST; 201→GET; 400/409/rede mantêm rascunho; falha de recarga não repete POST. VT: adicionar no vazio e com agenda preenchida, distribuir ocorrências/horários, girar durante envio e ver lista/total sem reabrir. Validar em conta/API de teste; sem contrato publicado, registrar como teste substituído. Fontes: [briefing](briefing.md), D04/D06/D12.
+
+**O que aprender.** Coordenar validação, gravação e leitura sem duplicação nem perda de entrada.
+
+**Commit previsto:** `feat(rotina): adicionar habito e atualizar agenda`.
+
+## Etapa 8 — Editar
+
+| Arquivos | Responsabilidade |
+| --- | --- |
+| Alterar `J/model/ApiModels.java` | Completar UpdateUserHabitRequest e opcionais conforme semântica do PUT |
+| Alterar `J/repository/RoutineActions.java`, `J/repository/RoutineRepository.java` | Conferir dono via detalhe e executar PUT pelo ID do registro |
+| Alterar `J/model/RoutineFormState.java`, `J/viewmodel/RoutineViewModel.java` | Preencher uma vez, coordenar edição e recarga |
+| Alterar `J/view/fragments/RoutineDetailsDialogFragment.java`, `J/view/fragments/RoutineEditorDialogFragment.java` | Ativar Editar e apresentar resultado/erro |
+| Alterar layouts detalhe/editor e `R/values/routine_strings.xml` | Ações e textos de edição |
+| Alterar `T/repository/RoutineRepositoryTest.java`, `T/viewmodel/RoutineViewModelTest.java` | PUT, preservação do rascunho e mudanças de dia/horário |
+
+**Por quê e trade-offs.** Reutilizar formulário com modo/ID explícitos, sem excluir+criar: essa alternativa muda identidade e adiciona ponto de falha. Conferir dono antes do PUT. Preencher ao iniciar edição; GET tardio/refresh não sobrescreve rascunho já modificado. Não assumir que omitir opcional no PUT o preserva. Série/ocorrência e efeito no passado/futuro dependem de P04; não oferecer seletor de escopo sem suporte. Fontes: [contrato](api-contract.md), [SectionsViewModel][sections].
+
+**Como verificar.** VB: ID correto, dono incompatível/falha no detalhe sem PUT, opcionais conforme regra, inválido sem rede, erro preservando rascunho, 200→GET e falha de GET sem repetir PUT. VT: editar horário/distribuição; mover hábito a outro dia e conferir saída/entrada e totais a partir da coleção recarregada; girar/cancelar sem request. Fontes: [briefing](briefing.md), P04/P05/P08.
+
+**O que aprender.** Reusar formulário com identidade estável e separar detalhe recebido de alterações locais.
+
+**Commit previsto:** `feat(rotina): editar habito preservando rascunho e identidade`.
+
+## Etapa 9 — Excluir com confirmação
+
+| Arquivos | Responsabilidade |
+| --- | --- |
+| Criar `J/view/fragments/RoutineDeleteDialogFragment.java` | Confirmação restaurável com alvo e alcance definidos |
+| Alterar `J/repository/RoutineActions.java`, `J/repository/RoutineRepository.java` | Conferir dono, DELETE e sucesso 204 sem body |
+| Alterar `J/model/RoutineUiState.java`, `J/viewmodel/RoutineViewModel.java` | Alvo pendente, cancelamento, exclusão e recarga |
+| Alterar `J/view/fragments/RoutineDetailsDialogFragment.java`, layout detalhe e `R/values/routine_strings.xml` | Ativar Excluir, confirmar, mostrar erro/retry |
+| Alterar `T/repository/RoutineRepositoryTest.java`, `T/viewmodel/RoutineViewModelTest.java` | Cancelamento/confirmar, falhas e atualização |
+
+**Por quê e trade-offs.** Separar pedir exclusão de confirmar; só confirmar chama Repository. Alvo no ViewModel e DialogFragment impedem perder/trocar alvo na rotação. Não excluir por índice da lista. Exclusão imediata com desfazer exigiria restauração não publicada. DELETE atual remove registro, não ocorrência; texto/alcance finais dependem de P04. Fonte: [contrato](api-contract.md).
+
+**Como verificar.** VB: abrir/cancelar sem DELETE; confirmar uma vez; dono errado sem escrita; 204 sem JSON; 404/rede conforme política, sem sucesso presumido; falha de recarga não repete DELETE. VT: cancelar/confirmar, girar com confirmação aberta e durante envio, falhar/retry e excluir último hábito do dia. Vazio/zero só após leitura confirmada; falha mantém alvo/contexto recuperáveis. Fonte: [briefing](briefing.md).
+
+**O que aprender.** Modelar ação destrutiva em duas fases e tratar sucesso sem conteúdo.
+
+**Commit previsto:** `feat(rotina): excluir habito com confirmacao e recarga`.
+
+## Protocolo de atualização após as três mutações
+
+**INCERTO — proposta para P11, a definir antes da etapa 7.** Implementar e testar incrementalmente em cada operação, sem refatoração global antecipada:
+
+1. Validar/capturar conta, alvo e geração da operação. Manter estado de mutação separado da leitura, usando ScreenState e identificador da operação; rascunho permanece no RoutineFormState. Bloquear envio concorrente. Não guardar View/Activity no ViewModel.
+2. Após confirmação do servidor, registrar gravação concluída e encerrar editor/confirmador como consequência do estado. Invalidar GET anterior à mutação e detalhe afetado. Replay de LiveData/recriação de View nunca reenvia mutação.
+3. Fazer um único GET da coleção autenticada. Preservar dia/mês atuais e projetar lista/total do mesmo snapshot. Mudanças em outro dia atualizam a coleção inteira; não forçar hoje nem primeiro item.
+4. Enquanto atualiza, manter projeção anterior explicitamente desatualizada, sem tratá-la como total confirmado; bloquear ações sobre dados antigos. Sucesso substitui coleção/projeção, incluindo vazio confirmado. Detalhe editado recarrega; detalhe excluído fecha.
+5. Gravação confirmada com recarga falha mostra aviso equivalente a “Alteração salva; não foi possível atualizar a agenda”, com retry somente do GET. Não reapresentar a gravação como falha nem habilitar reenvio do mesmo payload. Textos fixos em recursos.
+6. Falha conclusiva da mutação mantém rascunho/alvo e retry explícito, respeitando retryAt. Timeout/resposta perdida pode significar resultado desconhecido: preservar entrada e oferecer reconciliação por leitura. Resposta 2xx com corpo incompatível também exige reconciliação, sem concluir que nada foi salvo. Uma leitura isolada não prova ausência de gravação sem garantia de consistência do backend. Reenvio seguro depende de P11; não inventar idempotency key nem repetir POST automaticamente.
+7. Logout/troca de conta limpa coleção, detalhe, rascunho e alvo de exclusão e invalida callbacks. Remover observers de sessão/callbacks em onCleared. Rotação mantém instância e operação. Reentrada/alterações pelo cadastro ou outro dispositivo dependem de P11; não prometer sincronização em tempo real.
+
+Testar os passos no ViewModel real e códigos/respostas no Repository. Fontes: [briefing](briefing.md), [AuthRepository][auth], geração em [AbnormalConsumptionViewModel][abnormal-vm], P11 em [decisões](decisions.md).
+
+## Etapa 10 — Regressão integrada e aceite
+
+| Arquivos | Responsabilidade |
+| --- | --- |
+| Criar `I/RoutineStateInstrumentedTest.java` | Rotação real de agenda/editor/confirmador com operações controladas |
+| Criar `docs/rotina/acceptance.md` | Ambiente, resultados, capturas, desvios aprovados e limites |
+| Alterar `J/view/fragments/MainSectionFragment.java`, `J/viewmodel/SectionsViewModel.java`, após busca de referências | Retirar exclusivamente ramo/métodos antigos de Rotina sem chamadores |
+| Alterar arquivos/testes da Rotina somente se a regressão mostrar falhas | Correções localizadas com causa e nova evidência |
+
+**Por quê e trade-offs.** Serviço substituído dá estados determinísticos; passagem separada com backend compatível confirma integração. Uma cobertura não substitui a outra. Remover ramo antigo no final mantém migração isolada, ao custo de código sem uso temporário. Buscar chamadores e preservar cadastro/demais seções; sem refatorar contas, ranking, metas ou consumo. Fontes: [SectionsViewModel][sections], [MainSectionFragment][fragment], [SignupHabitsFragment][signup-habits].
+
+**Como verificar.** VB/VI e matriz abaixo. Instrumentação usa ActivityScenario se disponível no classpath existente, com respostas controladas e montagem restrita à Rotina. Testes de autenticação existentes podem limpar sessão do app de teste: consultar [AUTH_MOBILE.md][auth-doc]. Não usar produção como fixture.
+
+| Critério do briefing | Entregue em | Evidência esperada |
 | --- | --- | --- |
-| 0 | Especificação do contrato ampliado e regras que afetam os dados | P01–P06/P11, conforme o recorte abaixo |
-| 1 | DTOs e modelo de recorrência/agenda/estimativa | Representação e regras definidas na etapa 0 |
-| 2 | Repositório usando sessão, service e erros existentes | Contrato e DTOs; serviço substituído para testes |
-| 3 | Estado da tela e rascunho de formulário no ViewModel | Modelo e repositório |
-| 4 | Calendário, agenda do dia, totais e estados responsivos | Estado de leitura; P07/P09/P10 |
-| 5 | Detalhes e formulários com criar/editar/excluir | Estado de mutação; P03–P06/P08/P11 |
-| 6 | Integração real e verificação do briefing | API ampliada disponível e etapas anteriores |
+| Calendário, hoje, seleção de dia/mês | 1, 3, 4 | Capturas/interação em fronteiras de mês/ano/bissexto |
+| Lista, litros com unidade, total e vazio | 1–4 | Várias execuções, lacunas e vazio confirmado; total sem duplicação |
+| Adicionar | 6, 7 | POST e releitura com dados preservados |
+| Editar | 5, 6, 8 | PUT e releitura de distribuição/horário |
+| Excluir com confirmação | 9 | Cancelar sem escrita; confirmar e reler |
+| Validação por campo | 6–8 | Obrigatório/inválido e foco no erro; remoto só com contrato |
+| Atualização sem reabrir | 7–9 | Lista/total do mesmo snapshot; falha de recarga repete só GET |
+| Loading/erro/retry sem perder entrada | 2–9 | Falhas de leitura/detalhe e de cada mutação, retryAt e timeout conforme P11 |
+| Dia/formulário preservados na rotação | 3–10 | Rotação real em repouso, com IME e durante requests; mês/rascunho/erros preservados |
+| Textos em recursos | 4–9 | Revisão Java/XML: texto fixo, erro, rótulo e descrição em routine_strings.xml |
+| Celular/tablet e orientações | 4–10 | ~360dp/~412dp/tablet 10"/~800dp, retrato/paisagem, fonte ampliada e capturas |
+| Teclado não cobre formulário | 6–10 | Último campo/campos dinâmicos/Salvar alcançáveis; menu conforme shell |
+| Acessibilidade/toque 48dp | 4–10 | TalkBack, foco, seleção sem depender só de cor e medição de alvos |
+| Testes unitários Repository/ViewModel | 2, 3, 5–9 | Relatórios JVM com falhas, callbacks fora de ordem e conta alterada |
 
-### Etapa 0 — Especificar a ampliação sem inventar o contrato
+Todo texto fixo novo fica em recursos; mensagens dinâmicas de negócio exigem contrato/filtragem. [ApiErrors][errors] compartilhado já contém textos literais: não declarar a base toda sem hardcode nem alterar globalmente seu parser. Mapear mensagens fixas apresentadas pela Rotina para recursos, preservando code/retryAt e filtragem; evitar displayMessage() em ERROR. Se P05 confirmar schema específico de erros por campo, prever condicionalmente `J/services/network/RoutineErrors.java` e `T/services/network/RoutineErrorsTest.java` no commit dependente, sem presumir o formato agora.
 
-**Entrega:** atualizar [api-contract.md](api-contract.md) e, quando houver especificação oficial disponível, conferir a nova versão de [openapi.json](openapi.json). O contrato precisa representar distribuição por dia e horários de cada execução, mantendo distinção entre conta, tipo de hábito e registro/ocorrência. A ampliação foi aprovada; o formato dos dados continua **INCERTO**. Fontes: D04/D06/D11/D12 e P01 em [decisions.md](decisions.md).
+Registrar Android, densidade/largura real em dp, escala de fonte, versão do backend e resultados. **INCERTO — escala proposta:** começar com 1,3×/2,0×, sem inventar matriz oficial. Build não prova aparência/instalação; teste substituído não prova integração. Não marcar critérios aceitos sem evidência. P09 precisa ser resolvido antes do aceite visual dos elementos sem contrato.
 
-Definições a resolver no momento desta etapa, sem exigir respostas agora:
+**O que aprender.** Separar evidência de lógica, integração e UI e concluir migração sem ampliar escopo.
 
-- **INCERTO — P01/P03:** estrutura, formato e precisão dos horários; somente início ou início/fim; associação entre dia, quantidade e execuções; compatibilidade dos registros antigos sem horário.
-- **INCERTO — P02:** responsabilidade pelo cálculo (mobile ou backend), regra diária e representação dos totais. A tabela por execução está aprovada; a proposta de multiplicá-la pela quantidade diária está registrada como dedução em D09.
-- **INCERTO — P04:** vigência, exceções e alcance de edição/exclusão sobre série ou ocorrência; projeção de meses passados/futuros.
-- **INCERTO — P05/P06:** catálogo válido, limites, duplicidade, omissão no PUT e erros por campo.
-- **INCERTO — P11:** confirmação de mutações, timeout e compatibilidade com atualizações externas.
+**Commit previsto:** `test(rotina): validar fluxos responsividade e aceite`.
 
-Fonte de todos os itens: [pendências P01–P11](decisions.md) e [lacunas do contrato](api-contract.md). Essas definições podem ser fechadas por recorte antes de cada etapa dependente; não é necessário resolver aparência de tablet para especificar o payload.
+## Verificações previstas
 
-**Critério de saída:** exemplos revisáveis de criar/listar/detalhar/editar/excluir, com correspondência dos horários e da distribuição ao retornar o registro; regras e compatibilidade descritas. Distinguir contrato especificado de serviço publicado. A implementação do backend é dependência externa a este plano Android; não estão disponíveis aqui fontes Java do serviço Delta para indicar arquivos ou migrações. Fonte do serviço analisado: [OpenAPI](openapi.json).
+Executar pelo Wrapper na raiz, conforme [AGENTS.md](../../AGENTS.md). São comandos futuros; não foram executados nesta revisão documental. Cada etapa roda a verificação indicada e repete o afetado após correção.
 
-### Etapa 1 — Modelos e regras da agenda
+**VJ — modelos/Repository/ViewModel:**
 
-**INCERTO — arquivos propostos:** adaptar `model/ApiModels.java` e criar um modelo próprio, como `model/RoutineData.java`. Os caminhos Java são relativos a `app/src/main/java/com/aula/delta_mobile_app/`. São nomes de planejamento, não arquivos já criados. Precedentes: [ApiModels][api-models], [AbnormalConsumptionData][abnormal-data].
+```powershell
+.\gradlew.bat :app:testDebugUnitTest
+```
 
-Separar o DTO recebido da API da projeção da agenda selecionada. Preservar IDs reais e dados da conta; representar quantidades por dia e horários individuais segundo a etapa 0. Não usar repetição de IDs em `daysOfWeek` ou registros duplicados como codificação presumida. Fontes: [contrato](api-contract.md), D04/D06/D11/D12 em [decisions.md](decisions.md).
-
-**INCERTO — proposta de cálculo:** `total diário do hábito = média por execução × quantidade naquele dia`; total da agenda como soma dos totais diários dos hábitos. Se a agenda mostrar uma linha por execução, diferenciar estimativa da execução e resumo diário para não somar o total diário várias vezes. A regra, precisão e valores ausentes dependem de P02; o local do cálculo permanece em aberto. Fontes: D07–D10/P02 em [decisions.md](decisions.md).
-
-**Verificação proposta:** testes JVM de seleção em fronteiras de mês/ano, mais de uma execução no mesmo dia, distribuição semanal preservada, agrupamento diário e não duplicação de totais; incluir ausência de referência e registros incompatíveis conforme regras fechadas. Testar a regra aprovada, não a reprodução dos números das imagens. Fontes das necessidades: [briefing](briefing.md), [contrato](api-contract.md).
-
-### Etapa 2 — Repositório autenticado
-
-**INCERTO — arquivo proposto:** `repository/RoutineRepository.java`, recebendo `AuthRepository` por construtor. Manter os métodos existentes de [ApiService][api]; mudar assinaturas ou acrescentar consultas somente quando o contrato ampliado exigir. Molde: [AbnormalConsumptionRepository][abnormal-repository]; origem da composição: [README](../../README.md).
-
-Executar HTTP por `auth.resource()`, obter a identidade real, conferir vínculo com a conta e mapear falhas com [ApiErrors][errors]. Uma resposta `[]` confirmada deve ser distinta de corpo ausente ou falha. Não alterar Bearer/refresh, timeouts ou armazenamento de tokens para implementar a Rotina. Fontes: [AuthRepository][auth], [SectionsViewModel][sections], [SessionInterceptor][interceptor], [NetworkConfig][network].
-
-**Verificação proposta:** serviço substituído para listar, detalhe, criação, edição e exclusão; falha de rede, códigos de negócio confirmados, body inesperado e dados de outra conta. Verificar o comportamento de DELETE sem body. Reusar a cobertura de sessão existente; só ampliar os testes de sessão se alguma mudança atingir esse contrato. Fontes: [ApiService][api], [SessionInterceptorTest][session-tests], [contrato](api-contract.md).
-
-### Etapa 3 — Estado de tela e formulário
-
-**INCERTO — arquivo proposto:** `viewmodel/RoutineViewModel.java`. Manter dia e mês selecionados, dados carregados e rascunho do editor fora das Views; separar estado de leitura e de mutação para preservar a agenda durante um salvamento. Referências: [AbnormalConsumptionViewModel][abnormal-vm], [SectionsViewModel][sections], [SignupViewModel][signup-vm].
-
-Planejar seleção sem reaproveitar resposta antiga de outro dia/conta, evitar chamadas equivalentes em andamento e observar com o ciclo de vida da View. Após sucesso de mutação, atualizar a projeção/lista e o total sem exigir reentrada na tela. Após falha, preservar o rascunho e permitir nova tentativa conforme política de P11. Fontes: [briefing](briefing.md), [AGENTS.md](../../AGENTS.md), [AbnormalConsumptionFragment][abnormal-fragment].
-
-**INCERTO — P07/P08/P11:** comportamento de reentrada na aba versus rotação, descarte do rascunho, saída durante mutação e resultado sem confirmação. A exigência aprovada é preservar dia/formulário na rotação; persistência após morte do processo não foi definida. Fontes: [briefing](briefing.md), [decisions.md](decisions.md).
-
-**Verificação proposta:** troca rápida de seleção com respostas fora de ordem, mutações concorrentes, resposta após encerramento do ViewModel, alteração de sessão e preservação de rascunho após erro. Rotação real será exercitada também na instrumentação. Fontes: modelo de geração em [AbnormalConsumptionViewModel][abnormal-vm] e requisitos do [briefing](briefing.md).
-
-### Etapa 4 — Calendário, agenda e estados
-
-**INCERTO — arquivos propostos:** `view/fragments/RoutineFragment.java`, layout `fragment_routine.xml`, layout de item de execução, adapter da agenda e recursos `routine_strings.xml`, `routine_styles.xml`, `routine_dimens.xml`. Reutilizar a entrada `goalsFragment`; uma troca da classe desse destino deve preservar o acesso pelo menu existente. Fontes: [main_navigation.xml][navigation], [MainActivity][main], [MainSectionFragment][generic-fragment].
-
-Construir a partir da faixa semanal e agenda das [imagens](design/), sem tratar pixels como dp. Implementar hoje selecionado na entrada, troca de dia, navegação entre meses, lista e total do dia, vazio, carregando, erro e tentar novamente. Textos fixos em recursos. Fontes: [briefing](briefing.md), [agenda](design/habitos.png), [vazio](design/habitosvazio.png).
-
-**INCERTO — P07/P10:** faixa própria com Views/RecyclerView e seletor Material, calendário Android ou biblioteca externa; interação do mês/semanas e composição de tablet/paisagem. Há [MaterialDatePicker no app][profile] e [RecyclerView declarado][build], mas nenhuma dependência nova foi escolhida. Proposta de coluna limitada ou duas áreas nas telas largas continua INCERTO. Fonte: seção de opções em [decisions.md](decisions.md).
-
-Prever rolagem, texto ampliado, alvos de 48dp e fim da agenda acima do menu desde esta etapa. As sete células não podem ser comprimidas indiscriminadamente: sete alvos de 48dp precisam de 336dp úteis. Respeitar as áreas seguras e o teclado coordenados pelo shell. Fontes: [briefing](briefing.md), [MainActivity][main], opções e cálculo geométrico em [decisions.md](decisions.md).
-
-**INCERTO — P09:** alertas de pico, ajuste automático, ignorar, metas e percentual não têm contrato funcional fechado. Não simular esses comportamentos nem assumir sua remoção definitiva. O recorte de implementação/aceite visual correspondente será decidido na etapa que os envolver. Fontes: [alerta](design/habitosAlerta.png), [detalhes](design/detalhesHabito.png), [OpenAPI](openapi.json).
-
-**Verificação proposta:** renderização com agenda vazia, vários horários do mesmo hábito, nomes longos e falha de leitura; conferir seleção, total diário e acesso às ações em telas pequenas/largas. Comparação visual deve registrar diferenças e escolhas ainda INCERTO, sem declarar equivalência apenas por compilar. Fontes: [briefing](briefing.md), [AGENTS.md](../../AGENTS.md).
-
-### Etapa 5 — Detalhes, formulário e mutações
-
-**INCERTO — arquivos propostos:** Fragment/layout de detalhes, Fragment/layout do editor ou diálogo com estado restaurável; nomes e container dependem de P08. O molde de componentes é [SignupHabitsFragment][signup-habits]/[SelectionHelper][selection-helper], e o detalhe visual é [detalhesHabito.png](design/detalhesHabito.png). A implementação antiga do editor em [MainSectionFragment][generic-fragment] serve como referência de operações, não como garantia de preservação do rascunho.
-
-O formulário deve selecionar o tipo, frequência semanal, dias, divisão das ocorrências e horário obrigatório de cada execução, além de mostrar a estimativa calculada conforme regras fechadas. **INCERTO — validações derivadas a definir:** soma das quantidades igual à frequência semanal e quantidade de horários coerente com as execuções; limites, início/fim, sobreposição e duplicidade dependem de P01/P03/P05. Fontes: D03/D04/D09–D12 e [briefing](briefing.md).
-
-Criar/editar só devem apresentar confirmação de sucesso quando houver confirmação do serviço; o formulário precisa continuar recuperável após falha. Excluir exige confirmação e atualização da lista/total. **INCERTO — P04/P11:** escopo da exclusão, idempotência/reconciliação e nova tentativa após timeout. Não repetir automaticamente uma gravação ambígua como regra presumida. Fontes: [briefing](briefing.md), [contrato](api-contract.md), [SectionsViewModel][sections].
-
-**Verificação proposta:** preenchimento/distribuição, erro no campo obrigatório, salvar duas vezes, falha com rascunho preservado, editar dados existentes, cancelar/confirmar exclusão e atualização da agenda. Rotacionar com editor aberto e com teclado, verificando dados e acessibilidade. Fontes: [briefing](briefing.md), [decisions.md](decisions.md).
-
-**INCERTO — migração da UI:** ao conectar o novo fluxo, retirar somente o ramo antigo de Rotina em `MainSectionFragment`/`SectionsViewModel` que deixar de ser utilizado. Não refatorar os fluxos de contas, ranking, consumo ou cadastro nesta tarefa. A mudança deve preservar o CRUD do cadastro. Fontes da responsabilidade compartilhada: [MainSectionFragment][generic-fragment], [SectionsViewModel][sections], [SignupHabitsFragment][signup-habits].
-
-### Etapa 6 — Integração e aceite
-
-Executar build, testes JVM e lint pelo Wrapper, conforme [AGENTS.md](../../AGENTS.md):
+**VB — entregas funcionais/visuais e regressão:**
 
 ```powershell
 .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-Executar instrumentação com aparelho/emulador de teste:
+**VT — tela:** instalar/abrir debug em aparelho/emulador de teste e executar cenários da etapa, com capturas/limites registrados. Preview auxilia, mas não substitui rotação/IME/interação/backend.
+
+**VI — instrumentação com dispositivo disponível:**
 
 ```powershell
 .\gradlew.bat :app:connectedDebugAndroidTest
 ```
 
-Instrumentação exige ambiente de teste apropriado. Consultar os testes envolvidos antes de executar: testes de autenticação existentes manipulam a sessão do app de teste. Fontes: [AGENTS.md](../../AGENTS.md), [AUTH_MOBILE.md][auth-doc]. Os comandos são planejamento; não foram executados nesta etapa documental.
+Proposta de testes sem novas bibliotecas: JUnit existente, doubles manuais de RoutineActions/acesso autenticado, respostas Retrofit/OkHttp em memória, relógio fixo, executores/callbacks controlados e delegado de LiveData restaurado após teste. Testar as classes reais do Repository e ViewModel. Rotação real pertence à instrumentação/manual. Confirmar ArchTaskExecutor/ActivityScenario no classpath resolvido antes de usar; dependência adicional exige aprovação. Fontes: [build][build], [network-test][network-test], [AGENTS.md](../../AGENTS.md).
 
-| Verificação | Evidência esperada |
-| --- | --- |
-| CRUD real com API ampliada | Criar, reler, editar e excluir hábito em conta/ambiente de teste acordados; confirmar distribuição e horários após recarga, sem dados de demonstração na produção |
-| Isolamento | Identidade real, conta correta e tratamento de sessão alterada; não apresentar dados de outra conta |
-| Agenda e cálculo | Dia/mês correto, mais de uma execução, estimativas identificadas e totais sem duplicação |
-| Resiliência | Falhas de leitura/salvamento/exclusão, tentativas conforme política definida, rascunho preservado e nenhum loading infinito |
-| Rotação/IME | Dia e formulário preservados, campos/ações alcançáveis com teclado aberto, menu conforme shell |
-| Layout | ~360dp, ~412dp e ~800dp, retrato/paisagem e fonte normal/ampliada; capturas e limites reais registrados |
-| Acessibilidade | Descrições, ordem de leitura, seleção perceptível sem depender só da cor, alvos mínimos e revisão com TalkBack |
+## Pendências do usuário e do backend
 
-Fonte dos requisitos: [briefing](briefing.md), [AGENTS.md](../../AGENTS.md), [contrato](api-contract.md). **INCERTO — especificação de execução:** Androids do aparelho/emulador, escala ampliada exata e confirmação de perfil em dp versus diagonal física do tablet serão registrados no aceite, sem inventar matriz oficial além do briefing.
+Todas continuam **INCERTO — definição adiada**, conforme D13. A coluna final identifica o trecho bloqueado; não exige resolver tudo de uma vez. Origem: P01–P11 em [decisions.md](decisions.md), [api-contract.md](api-contract.md).
 
-**Entrega proposta:** relatório de aceite documental com resultados, capturas e limites; assinalar os critérios do briefing somente quando houver evidência. **INCERTO — nome proposto:** `docs/rotina/acceptance.md`, a criar na etapa de validação, não nesta documentação. Testes com serviço substituído não comprovam integração; build não comprova aparência ou instalação. Fontes: [AGENTS.md](../../AGENTS.md), precedente de evidências em [aceite do chatbot](../chatbot/acceptance.md).
+| ID | Responsável | Decisão/entrega necessária | Antes de |
+| --- | --- | --- | --- |
+| P01 | Backend + usuário | Distribuição/execuções: estrutura, validações, persistência/retorno, compatibilidade/legado e OpenAPI atualizado | 1–2 leitura; 6–8 escrita |
+| P02 | Usuário + backend | Fórmula/local do cálculo, unidade execução/resumo, total diário, precisão/ausência e representação; tabela D10 já aprovada | 1 e total na 4 |
+| P03 | Usuário + backend | Início ou intervalo, formato/fuso/precisão, meia-noite/sobreposição e legado sem horário; obrigatoriedade já aprovada | 1/4/5 representação; 6–8 validação |
+| P04 | Usuário + backend | Vigência/histórico/passado/futuro e série versus ocorrência na edição/exclusão | 1 projeção; 8–9 mutações |
+| P05 | Backend + usuário para UX | Schema/exemplos reais de erros por campo, limites, duplicidade, nulos/omissão PUT e comportamento DELETE 404 | 6–9 conforme operação |
+| P06 | Backend + usuário | Catálogo/IDs válidos; só tipos existentes ou tipo livre, que não tem criação publicada na API atual | 1–2 mapeamento; 6–8 seleção |
+| P07 | Usuário | Faixa/semanas, limites/mês, marcações, fuso de hoje e acesso a Adicionar na agenda preenchida; avaliar propostas | 3–4; CTA na 7 |
+| P08 | Usuário | Avaliar editor/detalhe, descarte/retorno/reentrada, redução de execuções e saída durante envio | 5–8 |
+| P09 | Usuário + backend | Fonte/escopo de Meta ideal, percentual/meta máxima, pico, Ajustar automático/Ignorar: inclusão com contrato ou exclusão explícita do aceite correspondente | Trecho visual na 4/5 e aceite |
+| P10 | Usuário | Avaliar duas áreas tablet, ponto de troca/medidas e calendário sem nova biblioteca | 4 |
+| P11 | Backend + usuário | Resultado desconhecido, idempotência/consistência/retry, refresh na reentrada e após alterações externas; avaliar protocolo | 7–9 e entrega final |
+| Ambiente | Backend + usuário | API ampliada disponível/versionada, conta/catálogo de teste e autorização de CRUD nesses dados | Integração de cada operação/10 |
+| Dispositivos | Usuário/ambiente | Aparelho/emulador para celular/tablet, orientações e instrumentação; registrar indisponibilidades reais | VT/VI/aceite |
 
-## Rastreabilidade e definições adiadas
+Não foram disponibilizados fontes internos/migrações do backend Delta para nomeá-los neste plano. Implementar o serviço é dependência externa, não trabalho Android implicitamente autorizado. Aprovar a ampliação não comprova deploy.
 
-| Requisito ou decisão | Etapas | Definições INCERTO que afetam a entrega |
-| --- | --- | --- |
-| Calendário, dia atual e troca de mês | 1, 3, 4, 6 | P04/P07/P10 |
-| Distribuição semanal por dia | 0, 1, 3, 5, 6 | P01/P05/P06 |
-| Horário obrigatório por execução | 0, 1, 3, 5, 6 | P01/P03/P08 |
-| Média fixa e total diário | 0, 1, 4, 5, 6 | P02; tabela já aprovada |
-| Detalhar/criar/editar/excluir | 0, 2, 3, 5, 6 | P04/P05/P06/P08/P11 |
-| Erros, nova tentativa e preservar rascunho | 2, 3, 4, 5, 6 | P05/P08/P11 |
-| Rotação, teclado, responsividade e acessibilidade | 3, 4, 5, 6 | P07/P08/P10 |
-| Metas e alertas das imagens | 0 ou etapa visual correspondente, 6 | P09; inclusão/exclusão funcional ainda não decidida |
+## Dependências e aprovação
 
-Fontes: [briefing](briefing.md), decisões D03–D12 e pendências P01–P11 em [decisions.md](decisions.md). A definição entre apenas início e intervalo início/fim fica explicitamente **INCERTO**, conforme D13; não impede encerrar este plano e deve ser retomada antes de fixar contrato, validação e representação visual dependentes.
+**Proposta principal: nenhuma dependência nova.** Usar Java/XML, Lifecycle, Navigation, Material, RecyclerView, Retrofit/Gson, OkHttp e JUnit declarados no [build][build]. Propor findViewById como escolha local próxima aos exemplos; ViewBinding habilitado não exige migração. Não acrescentar Kotlin/Compose, framework de DI ou calendário externo.
 
-## Resultado desta etapa documental
+**Pendência condicional para aprovação:** se surgir necessidade de biblioteca de calendário, `androidx.arch.core:core-testing`, AndroidX Test adicional, Mockito, MockWebServer, Robolectric ou outra biblioteca, listar primeiro pacote/versão, finalidade, alternativa sem acréscimo, compatibilidade/licença e impacto. Nenhuma está escolhida/autorizada aqui. Confirmar o classpath existente; não alterar `app/build.gradle.kts`/`gradle/libs.versions.toml` para acrescentar dependência sem aprovação. Origem: instrução explícita do usuário nesta solicitação.
 
-Criado este plano e atualizados [decisions.md](decisions.md) e [api-contract.md](api-contract.md) para registrar D13 e o adiamento das definições restantes como **INCERTO**. Sem mudanças no código, dependências, backend ou OpenAPI; sem build, testes ou chamadas à API nesta etapa. Origem do escopo: pedido da pessoa usuária registrado em D13.
+## Resultado desta revisão documental
 
-[api]: ../../app/src/main/java/com/aula/delta_mobile_app/services/api/ApiService.java
-[api-models]: ../../app/src/main/java/com/aula/delta_mobile_app/model/ApiModels.java
+Somente `docs/rotina/plan.md` foi revisado. Leitura vem antes do CRUD; cada operação tem etapa própria, com arquivos/responsabilidades, trade-offs, verificação, aprendizado e commit previsto. Briefing, decisões, contrato, OpenAPI, dependências e código permanecem sem alterações nesta rodada. Nenhum build/teste/chamada à API foi executado e nenhum critério é declarado aceito.
+
+[fragment]: ../../app/src/main/java/com/aula/delta_mobile_app/view/fragments/MainSectionFragment.java
 [sections]: ../../app/src/main/java/com/aula/delta_mobile_app/viewmodel/SectionsViewModel.java
-[generic-fragment]: ../../app/src/main/java/com/aula/delta_mobile_app/view/fragments/MainSectionFragment.java
+[api]: ../../app/src/main/java/com/aula/delta_mobile_app/services/api/ApiService.java
+[models]: ../../app/src/main/java/com/aula/delta_mobile_app/model/ApiModels.java
 [navigation]: ../../app/src/main/res/navigation/main_navigation.xml
 [auth]: ../../app/src/main/java/com/aula/delta_mobile_app/repository/AuthRepository.java
+[errors]: ../../app/src/main/java/com/aula/delta_mobile_app/services/network/ApiErrors.java
 [retrofit]: ../../app/src/main/java/com/aula/delta_mobile_app/services/network/RetrofitClient.java
 [interceptor]: ../../app/src/main/java/com/aula/delta_mobile_app/services/network/SessionInterceptor.java
 [network]: ../../app/src/main/java/com/aula/delta_mobile_app/services/network/NetworkConfig.java
-[errors]: ../../app/src/main/java/com/aula/delta_mobile_app/services/network/ApiErrors.java
-[screen-state]: ../../app/src/main/java/com/aula/delta_mobile_app/model/ScreenState.java
+[state]: ../../app/src/main/java/com/aula/delta_mobile_app/model/ScreenState.java
+[state-test]: ../../app/src/test/java/com/aula/delta_mobile_app/model/ScreenStateTest.java
 [notice]: ../../app/src/main/java/com/aula/delta_mobile_app/view/StatusNoticeView.java
-[auth-flow]: ../../app/src/main/java/com/aula/delta_mobile_app/view/fragments/AuthFlowFragment.java
+[abnormal-data]: ../../app/src/main/java/com/aula/delta_mobile_app/model/AbnormalConsumptionData.java
+[abnormal-vm]: ../../app/src/main/java/com/aula/delta_mobile_app/viewmodel/AbnormalConsumptionViewModel.java
+[chat-actions]: ../../app/src/main/java/com/aula/delta_mobile_app/repository/ChatActions.java
+[chat-vm]: ../../app/src/main/java/com/aula/delta_mobile_app/viewmodel/ChatViewModel.java
+[profile]: ../../app/src/main/java/com/aula/delta_mobile_app/view/fragments/SignupProfileFragment.java
 [signup-habits]: ../../app/src/main/java/com/aula/delta_mobile_app/view/fragments/SignupHabitsFragment.java
 [selection-helper]: ../../app/src/main/java/com/aula/delta_mobile_app/view/fragments/SelectionHelper.java
 [main]: ../../app/src/main/java/com/aula/delta_mobile_app/view/activities/main/MainActivity.java
-[abnormal-repository]: ../../app/src/main/java/com/aula/delta_mobile_app/repository/AbnormalConsumptionRepository.java
-[abnormal-data]: ../../app/src/main/java/com/aula/delta_mobile_app/model/AbnormalConsumptionData.java
-[abnormal-vm]: ../../app/src/main/java/com/aula/delta_mobile_app/viewmodel/AbnormalConsumptionViewModel.java
-[abnormal-fragment]: ../../app/src/main/java/com/aula/delta_mobile_app/view/fragments/AbnormalConsumptionFragment.java
-[session-adapter]: ../../app/src/main/java/com/aula/delta_mobile_app/view/ChatSessionAdapter.java
-[signup-vm]: ../../app/src/main/java/com/aula/delta_mobile_app/viewmodel/SignupViewModel.java
-[session-tests]: ../../app/src/test/java/com/aula/delta_mobile_app/services/network/SessionInterceptorTest.java
-[profile]: ../../app/src/main/java/com/aula/delta_mobile_app/view/fragments/SignupProfileFragment.java
+[loading-view]: ../../app/src/main/java/com/aula/delta_mobile_app/view/LoadingView.java
+[manifest]: ../../app/src/main/AndroidManifest.xml
+[dimens]: ../../app/src/main/res/values/dimens.xml
 [build]: ../../app/build.gradle.kts
+[network-test]: ../../app/src/test/java/com/aula/delta_mobile_app/services/network/ChatbotNetworkTest.java
+[session-test]: ../../app/src/test/java/com/aula/delta_mobile_app/services/network/SessionInterceptorTest.java
 [auth-doc]: ../../devdocs/fluxodavi/AUTH_MOBILE.md
