@@ -19,6 +19,7 @@ import com.aula.delta_mobile_app.repository.RoutineRepository;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
@@ -54,8 +55,12 @@ public final class RoutineViewModel extends ViewModel {
     private LocalDate selectedDate;
     private RoutineData data;
     private ScreenState<RoutineData> reading = ScreenState.idle();
+    private RoutineUiState.DetailTarget detailTarget;
+    private ScreenState<RoutineData.Habit> detail = ScreenState.idle();
     private long generation;
+    private long detailGeneration;
     private boolean signedIn, loading;
+    private boolean detailLoading;
     private volatile boolean cleared;
 
     public RoutineViewModel(RoutineActions repository, Clock clock, Consumer<Runnable> dispatch, LiveData<Boolean> session, BooleanSupplier authenticated) {
@@ -86,6 +91,7 @@ public final class RoutineViewModel extends ViewModel {
     public void selectDate(LocalDate date) {
         if (cleared || Objects.equals(selectedDate, date)) return;
         selectedDate = Objects.requireNonNull(date);
+        resetDetail();
         publish();
     }
 
@@ -116,12 +122,78 @@ public final class RoutineViewModel extends ViewModel {
         loading = false;
         data = null;
         reading = ScreenState.idle();
+        resetDetail();
+        publish();
+    }
+
+    public boolean openDetails(int id, LocalTime startTime) {
+        if (cleared || !ensureSession() || loading || reading.status != ScreenState.Status.SUCCESS || data == null || startTime == null) return false;
+        RoutineData.Habit habit = null;
+        for (RoutineData.Habit value : data.habits)
+            if (value.id == id) habit = value;
+        if (habit == null || !habit.scheduleComplete || !habit.schedule.getOrDefault(selectedDate.getDayOfWeek(), java.util.Collections.emptyList()).contains(startTime)) return false;
+        boolean same = detailTarget != null && detailTarget.id == id && detailTarget.userId == habit.userId && detailTarget.date.equals(selectedDate)
+            && detailTarget.startTime.equals(startTime);
+        if (same && (detailLoading || detail.status == ScreenState.Status.SUCCESS)) return true;
+        if (!same) {
+            resetDetail();
+            detailTarget = new RoutineUiState.DetailTarget(id, habit.userId, selectedDate, startTime);
+        }
+        loadDetail();
+        return detailTarget != null;
+    }
+
+    public void retryDetail() {
+        if (!cleared && detailTarget != null && detail.status == ScreenState.Status.ERROR) loadDetail();
+    }
+
+    public void closeDetails() {
+        if (cleared || detailTarget == null) return;
+        resetDetail();
+        publish();
+    }
+
+    private void resetDetail() {
+        detailGeneration++;
+        detailLoading = false;
+        detailTarget = null;
+        detail = ScreenState.idle();
+    }
+
+    private void loadDetail() {
+        if (cleared || !ensureSession() || detailTarget == null || detailLoading || detail.retryAt > clock.millis()) return;
+        RoutineUiState.DetailTarget target = detailTarget;
+        long request = ++detailGeneration;
+        long account = generation;
+        detailLoading = true;
+        detail = ScreenState.loading();
+        publish();
+        if (cleared || request != detailGeneration || detailTarget != target || !detailLoading) return;
+        repository.detail(target.id, result -> {
+            if (!cleared) dispatch.accept(() -> completeDetail(account, request, target, result));
+        });
+    }
+
+    private void completeDetail(long account, long request, RoutineUiState.DetailTarget target, ScreenState<RoutineData.Habit> result) {
+        if (cleared || account != generation || request != detailGeneration || target != detailTarget || !detailLoading || !ensureSession()) return;
+        detailLoading = false;
+        if (result == null || (result.status != ScreenState.Status.SUCCESS && result.status != ScreenState.Status.ERROR)
+            || (result.status == ScreenState.Status.SUCCESS && (result.data == null || result.data.id != target.id || result.data.userId != target.userId))) {
+            detail = ScreenState.error("Não foi possível carregar o detalhe do hábito.");
+        } else {
+            detail = result;
+            if (result.status == ScreenState.Status.ERROR && (result.code == 401 || result.code == 403)) {
+                data = null;
+                reading = ScreenState.error(result.message, result.code, result.retryAt);
+            }
+        }
         publish();
     }
 
     private void load(boolean refresh) {
         if (cleared || !ensureSession() || loading || (!refresh && reading.status == ScreenState.Status.SUCCESS)) return;
         if (reading.status == ScreenState.Status.ERROR && reading.retryAt > clock.millis()) return;
+        resetDetail();
         long request = ++generation;
         loading = true;
         reading = ScreenState.loading();
@@ -152,12 +224,13 @@ public final class RoutineViewModel extends ViewModel {
         loading = false;
         data = null;
         reading = ScreenState.error("Entre novamente para continuar.", 401, 0);
+        resetDetail();
         publish();
         return false;
     }
 
     private void publish() {
-        state.setValue(new RoutineUiState(selectedDate, reading, data));
+        state.setValue(new RoutineUiState(selectedDate, reading, data, detailTarget, detail));
     }
 
     @Override
@@ -166,6 +239,7 @@ public final class RoutineViewModel extends ViewModel {
         generation++;
         loading = false;
         data = null;
+        resetDetail();
         session.removeObserver(sessionObserver);
         clearDispatch.run();
     }

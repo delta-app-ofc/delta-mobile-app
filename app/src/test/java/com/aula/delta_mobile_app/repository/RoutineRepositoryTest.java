@@ -385,6 +385,48 @@ public class RoutineRepositoryTest {
         assertNotEquals("Confira o cadastro informado.", load().message);
     }
 
+    @Test
+    public void detailRequestsKeepTheirOwnTargetWhenAuthenticatedWorkRunsOutOfOrder() {
+        Result<RoutineData.Habit> first = new Result<>();
+        Result<RoutineData.Habit> second = new Result<>();
+        repository.detail(105, first);
+        repository.detail(106, second);
+        access.body = HABIT.replace("\"id\":105", "\"id\":106");
+        access.work.remove(1).run();
+        assertEquals(106, second.only().data.id);
+        assertTrue(first.values.isEmpty());
+        access.body = HABIT;
+        access.run();
+        assertEquals(105, first.only().data.id);
+        assertRequest(0, "/delta/habits/73/106");
+        assertRequest(1, "/delta/habits/73/105");
+    }
+
+    @Test
+    public void detailResolvesTheAccountAtExecutionAndRejectsThePreviousOwnersBody() {
+        access.body = HABIT;
+        Result<RoutineData.Habit> result = new Result<>();
+        repository.detail(105, result);
+        access.userId = 94;
+        access.run();
+        assertError(result.only(), 0);
+        assertRequest(0, "/delta/habits/94/105");
+        access.body = HABIT.replace("\"userId\":73", "\"userId\":94");
+        ScreenState<RoutineData.Habit> current = detail();
+        assertEquals(ScreenState.Status.SUCCESS, current.status);
+        assertEquals(94, current.data.userId);
+    }
+
+    @Test
+    public void detailInconsistentScheduleRemainsIncompleteWithoutDiscardingItsIdentity() {
+        access.body = HABIT.replace("\"frequency\":5", "\"frequency\":6");
+        ScreenState<RoutineData.Habit> state = detail();
+        assertEquals(ScreenState.Status.SUCCESS, state.status);
+        assertEquals(105, state.data.id);
+        assertFalse(state.data.scheduleComplete);
+        assertTrue(state.data.schedule.isEmpty());
+    }
+
     private ScreenState<RoutineData> load() {
         Result<RoutineData> result = new Result<>();
         repository.load(result);

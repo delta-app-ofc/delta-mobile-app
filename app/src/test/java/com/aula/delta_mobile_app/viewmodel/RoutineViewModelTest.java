@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -50,6 +51,8 @@ public class RoutineViewModelTest {
 
     private static final class Gateway implements RoutineActions {
         final List<Consumer<ScreenState<RoutineData>>> callbacks = new ArrayList<>();
+        final List<Integer> detailIds = new ArrayList<>();
+        final List<Consumer<ScreenState<RoutineData.Habit>>> details = new ArrayList<>();
 
         @Override
         public void load(Consumer<ScreenState<RoutineData>> callback) {
@@ -58,7 +61,8 @@ public class RoutineViewModelTest {
 
         @Override
         public void detail(int id, Consumer<ScreenState<RoutineData.Habit>> callback) {
-            throw new AssertionError("Detail belongs to a later stage");
+            detailIds.add(id);
+            details.add(callback);
         }
     }
 
@@ -523,22 +527,318 @@ public class RoutineViewModelTest {
         assertEquals(1, repository.callbacks.size());
     }
 
+    @Test
+    public void openingDetailsCapturesRecordOwnerDayAndExecutionWithoutReloadingCollection() {
+        RoutineData collection = data(73, 1);
+        load(collection);
+        assertTrue(viewModel.openDetails(105, LocalTime.of(7, 0)));
+        assertEquals(105, state().detailTarget.id);
+        assertEquals(73, state().detailTarget.userId);
+        assertEquals(INITIAL, state().detailTarget.date);
+        assertEquals(LocalTime.of(7, 0), state().detailTarget.startTime);
+        assertEquals(ScreenState.Status.LOADING, state().detail.status);
+        assertNull(state().details);
+        assertSame(collection, state().data);
+        assertEquals(ScreenState.Status.SUCCESS, state().reading.status);
+        assertEquals(Collections.singletonList(105), repository.detailIds);
+        assertEquals(1, repository.callbacks.size());
+    }
+
+    @Test
+    public void duplicateDetailOpeningAndRetryOutsideErrorDoNotStartEquivalentRequests() {
+        load(data(73, 1));
+        viewModel.retryDetail();
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        viewModel.retryDetail();
+        assertEquals(1, repository.details.size());
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        viewModel.retryDetail();
+        assertEquals(1, repository.details.size());
+    }
+
+    @Test
+    public void staleUnknownOrUnscheduledItemsCannotBeOpened() {
+        assertFalse(viewModel.openDetails(105, LocalTime.of(7, 0)));
+        load(data(73, 1));
+        assertFalse(viewModel.openDetails(106, LocalTime.of(7, 0)));
+        assertFalse(viewModel.openDetails(105, LocalTime.of(8, 0)));
+        assertFalse(viewModel.openDetails(105, null));
+        viewModel.refresh();
+        assertFalse(viewModel.openDetails(105, LocalTime.of(7, 0)));
+        reply(1, ScreenState.error("Sem conexão."));
+        assertFalse(viewModel.openDetails(105, LocalTime.of(7, 0)));
+        assertTrue(repository.details.isEmpty());
+    }
+
+    @Test
+    public void selectingAnotherRecordClearsOldContentAndRejectsItsLateResponse() {
+        load(RoutineData.from(Arrays.asList(response(105, 73, 1, "07:00"), response(106, 73, 4, "07:00")), clock));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertEquals(105, state().details.habit.id);
+        viewModel.openDetails(106, LocalTime.of(7, 0));
+        assertNull(state().details);
+        assertEquals(106, state().detailTarget.id);
+        replyDetail(1, ScreenState.success(habit(106, 73, 4, "07:00")));
+        RoutineUiState current = state();
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertSame(current, state());
+        assertEquals(106, state().details.habit.id);
+        assertEquals(new BigDecimal("15"), state().details.dailyLiters);
+    }
+
+    @Test
+    public void selectingAnotherExecutionOfTheSameHabitUsesANewContextAndSingleDailyTotal() {
+        UserHabitResponse value = response(105, 73, 1, "07:00", "20:00");
+        RoutineData collection = RoutineData.from(Collections.singletonList(value), clock);
+        load(collection);
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        viewModel.openDetails(105, LocalTime.of(20, 0));
+        replyDetail(0, ScreenState.success(collection.habits.get(0)));
+        assertEquals(ScreenState.Status.LOADING, state().detail.status);
+        replyDetail(1, ScreenState.success(collection.habits.get(0)));
+        assertEquals(LocalTime.of(20, 0), state().detailTarget.startTime);
+        assertTrue(state().details.selectedExecutionPresent);
+        assertEquals(Integer.valueOf(2), state().details.executionCount);
+        assertEquals(new BigDecimal("80"), state().details.executionLiters);
+        assertEquals(new BigDecimal("160"), state().details.dailyLiters);
+        assertEquals(state().day.totalLiters, state().details.dailyLiters);
+        assertEquals(Arrays.asList(105, 105), repository.detailIds);
+    }
+
+    @Test
+    public void detailReportsChangedSchedulesWithoutInventingTheSelectedExecution() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "20:00")));
+        assertEquals(ScreenState.Status.SUCCESS, state().detail.status);
+        assertFalse(state().details.selectedExecutionPresent);
+        assertEquals(Collections.singletonList(LocalTime.of(20, 0)), state().details.times);
+        assertEquals(new BigDecimal("80"), state().details.dailyLiters);
+        UserHabitResponse changedDay = response(105, 73, 1, "07:00");
+        changedDay.daysOfWeek = Collections.singletonList(1);
+        changedDay.schedule.get(0).dayOfWeek = 1;
+        viewModel.closeDetails();
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(1, ScreenState.success(RoutineData.from(Collections.singletonList(changedDay), clock).habits.get(0)));
+        assertEquals(Integer.valueOf(0), state().details.executionCount);
+        assertEquals(BigDecimal.ZERO, state().details.dailyLiters);
+        assertFalse(state().details.selectedExecutionPresent);
+    }
+
+    @Test
+    public void legacyDetailAndUnknownEstimateNeverProduceAnInventedDailyValue() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        UserHabitResponse legacy = response(105, 73, 1, "07:00");
+        legacy.schedule = null;
+        replyDetail(0, ScreenState.success(RoutineData.from(Collections.singletonList(legacy), clock).habits.get(0)));
+        assertFalse(state().details.scheduleComplete);
+        assertNull(state().details.executionCount);
+        assertNull(state().details.dailyLiters);
+        assertFalse(state().details.selectedExecutionPresent);
+        viewModel.closeDetails();
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(1, ScreenState.success(habit(105, 73, 99, "07:00")));
+        assertTrue(state().details.selectedExecutionPresent);
+        assertNull(state().details.executionLiters);
+        assertNull(state().details.dailyLiters);
+    }
+
+    @Test
+    public void detailErrorsPreserveContextAndRetryIndependentlyFromTheCollection() {
+        RoutineData collection = data(73, 1);
+        load(collection);
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        RoutineUiState.DetailTarget target = state().detailTarget;
+        replyDetail(0, ScreenState.error("Não encontrado.", 404, 0));
+        assertSame(target, state().detailTarget);
+        assertEquals(404, state().detail.code);
+        assertEquals("Não encontrado.", state().detail.message);
+        assertNull(state().details);
+        assertSame(collection, state().data);
+        viewModel.retryDetail();
+        replyDetail(1, ScreenState.error("Sem conexão."));
+        viewModel.retryDetail();
+        replyDetail(2, ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertEquals(ScreenState.Status.SUCCESS, state().detail.status);
+        assertSame(target, state().detailTarget);
+        assertEquals(Arrays.asList(105, 105, 105), repository.detailIds);
+        assertEquals(1, repository.callbacks.size());
+    }
+
+    @Test
+    public void detailRetryRespectsRetryAfterWithoutBlockingCalendarData() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        long retryAt = clock.millis() + 60000;
+        replyDetail(0, ScreenState.error("Aguarde.", 429, retryAt));
+        viewModel.retryDetail();
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        assertEquals(1, repository.details.size());
+        assertEquals(retryAt, state().detail.retryAt);
+        assertEquals(ScreenState.Status.SUCCESS, state().reading.status);
+        clock.now = Instant.ofEpochMilli(retryAt);
+        viewModel.retryDetail();
+        assertEquals(2, repository.details.size());
+    }
+
+    @Test
+    public void closingDetailsPreservesCalendarAndRejectsRepliesAfterReopening() {
+        RoutineData collection = data(73, 1);
+        load(collection);
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        viewModel.closeDetails();
+        assertNull(state().detailTarget);
+        assertNull(state().details);
+        assertSame(collection, state().data);
+        assertEquals(INITIAL, state().selectedDate);
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(0, ScreenState.success(habit(105, 73, 4, "07:00")));
+        assertEquals(ScreenState.Status.LOADING, state().detail.status);
+        replyDetail(1, ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertEquals(1, state().details.habit.habitId);
+    }
+
+    @Test
+    public void changingDayOrRefreshingInvalidatesPendingDetails() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        viewModel.selectDate(LocalDate.of(2026, 2, 7));
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertNull(state().detailTarget);
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        viewModel.refresh();
+        replyDetail(1, ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertNull(state().details);
+        assertNull(state().detailTarget);
+        assertEquals(ScreenState.Status.LOADING, state().reading.status);
+        assertEquals(LocalDate.of(2026, 2, 7), state().selectedDate);
+    }
+
+    @Test
+    public void accountChangesInvalidateDetailRequestsEvenForTheSameRecordId() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        session.setValue(true);
+        viewModel.load();
+        reply(1, ScreenState.success(data(94, 4)));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertEquals(ScreenState.Status.LOADING, state().detail.status);
+        replyDetail(1, ScreenState.success(habit(105, 94, 4, "07:00")));
+        assertEquals(94, state().details.habit.userId);
+        assertEquals(94, state().detailTarget.userId);
+    }
+
+    @Test
+    public void detailRejectsInvalidTerminalBodiesOrAnotherOwnerAndRecord() {
+        load(data(73, 1));
+        List<ScreenState<RoutineData.Habit>> invalid = Arrays.asList(null, ScreenState.idle(), ScreenState.loading(), ScreenState.success(null),
+            ScreenState.success(habit(106, 73, 1, "07:00")), ScreenState.success(habit(105, 74, 1, "07:00")));
+        for (ScreenState<RoutineData.Habit> result : invalid) {
+            viewModel.openDetails(105, LocalTime.of(7, 0));
+            replyDetail(repository.details.size() - 1, result);
+            assertEquals(ScreenState.Status.ERROR, state().detail.status);
+            assertNull(state().details);
+            assertFalse(state().detail.busy());
+        }
+    }
+
+    @Test
+    public void detailCallbacksRequireTheMainDispatcherAndAreIgnoredAfterLogoutOrClear() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        repository.details.get(0).accept(ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertEquals(ScreenState.Status.LOADING, state().detail.status);
+        authenticated = false;
+        session.setValue(false);
+        drain();
+        assertNull(state().detailTarget);
+        authenticated = true;
+        session.setValue(true);
+        viewModel.load();
+        reply(1, ScreenState.success(data(73, 1)));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        repository.details.get(1).accept(ScreenState.success(habit(105, 73, 1, "07:00")));
+        RoutineUiState previous = state();
+        store.clear();
+        drain();
+        assertSame(previous, state());
+        repository.details.get(1).accept(ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertTrue(main.isEmpty());
+        assertFalse(viewModel.openDetails(105, LocalTime.of(7, 0)));
+    }
+
+    @Test
+    public void providerRetentionKeepsDetailContextAndDoesNotRepeatItsRequest() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        RoutineUiState.DetailTarget target = state().detailTarget;
+        RoutineViewModel retained = provider.get(RoutineViewModel.class);
+        assertSame(viewModel, retained);
+        assertSame(target, retained.state().getValue().detailTarget);
+        retained.openDetails(105, LocalTime.of(7, 0));
+        assertEquals(1, repository.details.size());
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        retained.closeDetails();
+        assertEquals(INITIAL, retained.state().getValue().selectedDate);
+        assertEquals(1, repository.callbacks.size());
+    }
+
+    @Test
+    public void closingDuringDetailLoadingPublicationPreventsStartingTheInvalidatedGet() {
+        load(data(73, 1));
+        Observer<RoutineUiState> close = value -> {
+            if (value.detail.busy()) viewModel.closeDetails();
+        };
+        viewModel.state().observeForever(close);
+        try {
+            assertFalse(viewModel.openDetails(105, LocalTime.of(7, 0)));
+            assertTrue(repository.details.isEmpty());
+            assertNull(state().detailTarget);
+        } finally {
+            viewModel.state().removeObserver(close);
+        }
+    }
+
+    @Test
+    public void detailAuthorizationFailureRemovesPreviouslyLoadedAccountData() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(0, ScreenState.error("Acesso indisponível.", 403, 0));
+        assertEquals(403, state().detail.code);
+        assertEquals(403, state().reading.code);
+        assertNull(state().data);
+        assertNull(state().details);
+    }
+
     private RoutineUiState state() {
         return viewModel.state().getValue();
     }
 
     private RoutineData data(int user, int type) {
+        return RoutineData.from(Collections.singletonList(response(105, user, type, "07:00")), clock);
+    }
+
+    private RoutineData.Habit habit(int id, int user, int type, String... times) {
+        return RoutineData.from(Collections.singletonList(response(id, user, type, times)), clock).habits.get(0);
+    }
+
+    private UserHabitResponse response(int id, int user, int type, String... times) {
         UserHabitResponse value = new UserHabitResponse();
-        value.id = 105;
+        value.id = id;
         value.userId = user;
         value.habitId = type;
-        value.frequency = 1;
+        value.frequency = times.length;
         value.daysOfWeek = Collections.singletonList(6);
         UserHabitScheduleResponse schedule = new UserHabitScheduleResponse();
         schedule.dayOfWeek = 6;
-        schedule.startTimes = Collections.singletonList("07:00");
+        schedule.startTimes = Arrays.asList(times);
         value.schedule = Collections.singletonList(schedule);
-        return RoutineData.from(Collections.singletonList(value), clock);
+        return value;
     }
 
     private void load(RoutineData data) {
@@ -548,6 +848,11 @@ public class RoutineViewModelTest {
 
     private void reply(int request, ScreenState<RoutineData> result) {
         repository.callbacks.get(request).accept(result);
+        drain();
+    }
+
+    private void replyDetail(int request, ScreenState<RoutineData.Habit> result) {
+        repository.details.get(request).accept(result);
         drain();
     }
 
