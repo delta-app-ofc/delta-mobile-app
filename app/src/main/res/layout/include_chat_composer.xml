@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/chat_composer_spacing">
+
+    <LinearLayout
+        android:id="@+id/chat_composer_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:background="@drawable/home_outline_background"
+        android:paddingHorizontal="@dimen/chat_composer_spacing"
+        android:paddingVertical="@dimen/chat_composer_inner_spacing"
+        android:gravity="bottom"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/chat_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="@dimen/chat_composer_min_height"
+            android:maxLines="4"
+            android:inputType="textMultiLine|textCapSentences"
+            android:imeOptions="actionSend|flagNoExtractUi"
+            android:hint="@string/chat_composer_hint"
+            android:contentDescription="@string/chat_composer_hint"
+            android:fontFamily="sans-serif"
+            android:includeFontPadding="false"
+            android:textSize="@dimen/chat_composer_text_size"
+            android:textColor="@color/white"
+            android:textColorHint="@color/chat_placeholder_text"
+            android:background="@android:color/transparent"
+            android:saveEnabled="false"
+            android:enabled="false"
+            android:importantForAutofill="no"
+            android:scrollbars="vertical" />
+
+        <ImageButton
+            android:id="@+id/chat_send"
+            android:layout_width="@dimen/chat_composer_min_height"
+            android:layout_height="@dimen/chat_composer_min_height"
+            android:layout_marginStart="@dimen/chat_composer_spacing"
+            android:background="@drawable/chat_send_background"
+            android:contentDescription="@string/chat_send"
+            android:enabled="false"
+            android:padding="0dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/chat_send_icon" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/chat_character_count"
+        style="@style/Home.Caption"
+        android:layout_marginTop="@dimen/chat_composer_spacing"
+        android:gravity="end"
+        android:textColor="@color/chat_placeholder_text" />
+</LinearLayout>

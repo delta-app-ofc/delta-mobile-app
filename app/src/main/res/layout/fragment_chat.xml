@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/chat_surface_background">
+
+    <LinearLayout
+        android:id="@+id/chat_content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="@dimen/chat_horizontal_margin"
+        android:layout_marginEnd="@dimen/chat_horizontal_margin"
+        android:layout_marginBottom="@dimen/chat_menu_clearance"
+        android:orientation="vertical"
+        app:layout_constraintWidth_max="@dimen/chat_content_max_width"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:id="@+id/chat_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/chat_section_spacing"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/chat_back"
+                android:layout_width="@dimen/chat_composer_min_height"
+                android:layout_height="@dimen/chat_composer_min_height"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/chat_back_to_start"
+                android:src="@drawable/hourly_icon_back" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chat_new"
+                style="@style/Chat.SubtleAction"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/chat_composer_min_height"
+                android:enabled="false"
+                android:text="@string/chat_new" />
+
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/chat_messages"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingTop="@dimen/chat_top_spacing"
+            android:clipToPadding="false"
+            android:scrollbars="vertical" />
+
+        <include
+            android:id="@+id/chat_composer"
+            layout="@layout/include_chat_composer" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

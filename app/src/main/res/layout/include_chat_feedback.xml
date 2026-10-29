@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/chat_message_spacing">
+
+    <LinearLayout
+        android:id="@+id/chat_waiting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/chat_composer_min_height"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:layout_width="@dimen/chat_progress_size"
+            android:layout_height="@dimen/chat_progress_size"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/auth_blue"
+            android:importantForAccessibility="no" />
+
+        <TextView
+            android:id="@+id/chat_waiting_text"
+            style="@style/Home.Body"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/chat_composer_spacing"
+            android:accessibilityLiveRegion="polite"
+            android:text="@string/chat_waiting" />
+    </LinearLayout>
+
+    <com.aula.delta_mobile_app.view.StatusNoticeView
+        android:id="@+id/chat_notice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/chat_retry"
+        style="@style/Chat.SubtleAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="@string/chat_retry"
+        android:visibility="gone" />
+</LinearLayout>

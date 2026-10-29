@@ -1,6 +1,6 @@
 # Dashboard — referência dash.png
 
-Referência: [dash.png](docs/references/dash.png). Tela independente de Custos, acessada pelo ícone do cifrão. A Home original continua no ícone de casa e como destino inicial; preserva autenticação, seleção de imóvel, consumo, custo e os cinco destinos do menu.
+Referência: [dash.png](../../docs/references/dash.png). Tela independente de Custos, acessada pelo ícone do cifrão. A Home original continua no ícone de casa e como destino inicial; preserva autenticação, seleção de imóvel, consumo, custo e os cinco destinos do menu.
 
 ## Estrutura e aparência
 - [x] Fundo #222222, rolagem, margens laterais de 25 dp e espaço final para o menu flutuante.

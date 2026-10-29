@@ -12,6 +12,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "CHATBOT_API_URL", "\"https://delta-artificial-intelligence.onrender.com/\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -50,6 +51,7 @@ dependencies {
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
+    implementation(libs.recyclerview)
     implementation(libs.core.splashscreen)
     implementation(libs.material)
     implementation(libs.navigation.fragment)
