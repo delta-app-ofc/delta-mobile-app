@@ -1,6 +1,6 @@
 # TO-DO — Detecção de vazamentos
 
-Referência visual: [funcionalidade-vazamento.png](docs/references/funcionalidade-vazamento.png).
+Referência visual: [funcionalidade-vazamento.png](../../docs/references/funcionalidade-vazamento.png).
 
 Escopo: implementar a tela Android da referência e suas integrações, preservando a navegação e o menu existentes. A interface, navegação e estados de indisponibilidade estão implementados. A integração de telemetria e preferências aguarda os endpoints que o usuário confirmou ainda não possuir. Valores da imagem são exemplos visuais, não dados fixos da conta.
 

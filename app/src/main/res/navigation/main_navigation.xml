@@ -38,20 +38,21 @@
         android:name="com.aula.delta_mobile_app.view.fragments.DashboardFragment"
         android:label="Custos" />
     <fragment
-        android:id="@+id/profileSettingsFragment"
-        android:name="com.aula.delta_mobile_app.view.fragments.ProfileSettingsFragment"
-        android:label="@string/profile_settings_title" />
-    <fragment
-        android:id="@+id/personalInformationFragment"
-        android:name="com.aula.delta_mobile_app.view.fragments.PersonalInformationFragment"
-        android:label="@string/profile_personal_title" />
-    <fragment
-        android:id="@+id/residentialInformationFragment"
-        android:name="com.aula.delta_mobile_app.view.fragments.ResidentialInformationFragment"
-        android:label="@string/profile_residential_title" />
+        android:id="@+id/costsHistoryFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:label="Custos">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Custos" />
+        <argument
+            android:name="screen"
+            app:argType="string"
+            android:defaultValue="costs" />
+    </fragment>
     <fragment
         android:id="@+id/tipsFragment"
-        android:name="com.aula.delta_mobile_app.view.fragments.GluhChatFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.ChatFragment"
         android:label="Gluh Helper">
         <argument
             android:name="title"

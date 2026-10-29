@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/chat_composer_min_height"
+    android:paddingTop="@dimen/chat_composer_spacing"
+    android:paddingBottom="@dimen/chat_composer_spacing"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:layout_width="@dimen/chat_composer_min_height"
+        android:layout_height="@dimen/chat_composer_min_height"
+        android:padding="@dimen/chat_bubble_padding"
+        android:src="@drawable/figma_menu_chat"
+        android:scaleType="fitCenter"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/chat_session_title"
+            style="@style/Home.Section"
+            android:importantForAccessibility="no" />
+
+        <TextView
+            android:id="@+id/chat_session_identity"
+            style="@style/Home.Caption"
+            android:textColor="@color/chat_placeholder_text"
+            android:importantForAccessibility="no" />
+    </LinearLayout>
+</LinearLayout>

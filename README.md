@@ -1,7 +1,7 @@
 # delta-app-mobile
 Repositório central de desenvolvimento do aplicativo móvel do delta.
 
-Configuração e detalhes da integração: [Autenticação mobile](AUTH_MOBILE.md).
+Configuração e detalhes da integração: [Autenticação mobile](devdocs/fluxodavi/AUTH_MOBILE.md).
 
 ## Organização do app
 

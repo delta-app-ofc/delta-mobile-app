@@ -2,8 +2,10 @@ package com.aula.delta_mobile_app.services.network;
 
 import android.content.Context;
 
+import com.aula.delta_mobile_app.BuildConfig;
 import com.aula.delta_mobile_app.repository.AuthRepository;
 import com.aula.delta_mobile_app.services.api.ApiService;
+import com.aula.delta_mobile_app.services.api.ChatbotApiService;
 import com.aula.delta_mobile_app.services.session.TokenStore;
 
 import okhttp3.OkHttpClient;
@@ -44,17 +46,21 @@ public final class RetrofitClient {
         return BrasilApiHolder.SERVICE;
     }
 
-    private static final class ChatHolder {
-        private static final com.aula.delta_mobile_app.services.api.ChatApiService SERVICE = new Retrofit.Builder()
-            .baseUrl("https://delta-artificial-intelligence.onrender.com/")
-            .client(createHttpClient().newBuilder().callTimeout(120, TimeUnit.SECONDS).retryOnConnectionFailure(false)
-                .followRedirects(false).followSslRedirects(false).build())
-            .addConverterFactory(GsonConverterFactory.create(GsonProvider.getInstance()))
-            .build().create(com.aula.delta_mobile_app.services.api.ChatApiService.class);
+    private static final class ChatbotHolder {
+        private static final ChatbotApiService SERVICE = createChatbotApiService(BuildConfig.CHATBOT_API_URL, createChatbotHttpClient());
     }
 
-    public static com.aula.delta_mobile_app.services.api.ChatApiService getChatService() {
-        return ChatHolder.SERVICE;
+    public static ChatbotApiService getChatbotService() {
+        return ChatbotHolder.SERVICE;
+    }
+
+    static OkHttpClient createChatbotHttpClient() {
+        return createHttpClient().newBuilder().followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false).build();
+    }
+
+    static ChatbotApiService createChatbotApiService(String baseUrl, OkHttpClient client) {
+        return new Retrofit.Builder().baseUrl(baseUrl).client(client).addConverterFactory(GsonConverterFactory.create(GsonProvider.getInstance())).build()
+            .create(ChatbotApiService.class);
     }
 
     private static OkHttpClient createHttpClient() {

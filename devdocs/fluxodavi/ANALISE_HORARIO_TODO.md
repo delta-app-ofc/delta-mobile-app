@@ -1,6 +1,6 @@
 # TO-DO — Análise por horário
 
-Referência visual: [analise-por-horario.png](docs/references/analise-por-horario.png).
+Referência visual: [analise-por-horario.png](../../docs/references/analise-por-horario.png).
 
 Escopo: criar a tela da imagem no destino do botão “Ver análise por horário”, dentro de Detecção de vazamentos. A interface dedicada está implementada. A integração dos indicadores aguarda os contratos de telemetria ainda inexistentes. Os números, horários e descrições da imagem são exemplos visuais, não dados fixos do usuário.
 

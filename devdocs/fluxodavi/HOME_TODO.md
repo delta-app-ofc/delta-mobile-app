@@ -1,6 +1,6 @@
 # Home — implementação da referência enviada
 
-Referência: [home.png](docs/references/home.png). Os números e o nome da imagem são exemplos visuais; a tela usa a conta autenticada e os dados reais.
+Referência: [home.png](../../docs/references/home.png). Os números e o nome da imagem são exemplos visuais; a tela usa a conta autenticada e os dados reais.
 
 ## Estrutura e aparência
 
