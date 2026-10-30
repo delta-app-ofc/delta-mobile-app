@@ -13,6 +13,8 @@ import androidx.lifecycle.ViewModelStore;
 import com.aula.delta_mobile_app.model.ApiModels.UserHabitResponse;
 import com.aula.delta_mobile_app.model.ApiModels.UserHabitScheduleResponse;
 import com.aula.delta_mobile_app.model.RoutineData;
+import com.aula.delta_mobile_app.model.RoutineFormState;
+import com.aula.delta_mobile_app.model.RoutineFormValidator;
 import com.aula.delta_mobile_app.model.RoutineUiState;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.repository.RoutineActions;
@@ -23,6 +25,7 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -813,6 +816,179 @@ public class RoutineViewModelTest {
         assertEquals(403, state().reading.code);
         assertNull(state().data);
         assertNull(state().details);
+    }
+
+    @Test
+    public void creatingAFormDoesNotStartReadsOrExposeAPersistedResult() {
+        assertTrue(viewModel.beginCreateForm());
+        assertEquals(RoutineFormState.Mode.CREATE, state().form.mode);
+        assertNull(state().form.id);
+        assertFalse(state().form.dirty);
+        assertEquals(INITIAL, state().selectedDate);
+        assertTrue(repository.callbacks.isEmpty());
+        assertTrue(repository.details.isEmpty());
+    }
+
+    @Test
+    public void invalidDraftTextAndErrorsArePreservedAndRevalidatedOnCorrection() {
+        viewModel.beginCreateForm();
+        assertFalse(viewModel.validateForm());
+        assertEquals(RoutineFormValidator.Error.REQUIRED, state().form.errors.get(RoutineFormState.TYPE));
+        fillForm();
+        viewModel.setFormTime(DayOfWeek.MONDAY, 0, "7:");
+        assertEquals("7:", state().form.days.get(DayOfWeek.MONDAY).times.get(0));
+        assertEquals(RoutineFormValidator.Error.INVALID_TIME, state().form.errors.get(RoutineFormState.timeKey(DayOfWeek.MONDAY, 0)));
+        viewModel.setFormTime(DayOfWeek.MONDAY, 0, "07:00");
+        assertTrue(viewModel.validateForm());
+        assertTrue(state().form.valid());
+        assertTrue(repository.callbacks.isEmpty());
+    }
+
+    @Test
+    public void formReductionAndDayDeselectionKeepExcessInputInTheViewModel() {
+        viewModel.beginCreateForm();
+        fillForm();
+        viewModel.setFormQuantity(DayOfWeek.MONDAY, "2");
+        viewModel.setFormTime(DayOfWeek.MONDAY, 1, "20:00");
+        viewModel.setFormQuantity(DayOfWeek.MONDAY, "1");
+        viewModel.selectFormDay(DayOfWeek.MONDAY, false);
+        viewModel.selectFormDay(DayOfWeek.MONDAY, true);
+        viewModel.setFormQuantity(DayOfWeek.MONDAY, "2");
+        assertEquals(Arrays.asList("07:00", "20:00"), state().form.days.get(DayOfWeek.MONDAY).times);
+    }
+
+    @Test
+    public void editFormRequiresAVerifiedDetailAndSeedsItsStableIdentityOnlyOnce() {
+        assertFalse(viewModel.beginEditForm());
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        assertFalse(viewModel.beginEditForm());
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00", "20:00")));
+        assertTrue(viewModel.beginEditForm());
+        assertEquals(RoutineFormState.Mode.EDIT, state().form.mode);
+        assertEquals(Integer.valueOf(105), state().form.id);
+        assertEquals(Integer.valueOf(73), state().form.userId);
+        assertEquals("2", state().form.frequency);
+        assertEquals(Arrays.asList("07:00", "20:00"), state().form.days.get(DayOfWeek.SATURDAY).times);
+        assertNull(state().detailTarget);
+        viewModel.setFormFrequency("003");
+        replyDetail(0, ScreenState.success(habit(105, 73, 4, "08:00")));
+        assertEquals("003", state().form.frequency);
+        assertEquals(Integer.valueOf(1), state().form.habitId);
+        assertEquals(1, repository.details.size());
+    }
+
+    @Test
+    public void unrelatedRefreshAndNetworkErrorsDoNotOverwriteTheDraft() {
+        load(data(73, 1));
+        viewModel.beginCreateForm();
+        fillForm();
+        viewModel.setFormFrequency("0005");
+        RoutineFormState draft = state().form;
+        viewModel.refresh();
+        reply(1, ScreenState.error("Sem conexão."));
+        assertSame(draft, state().form);
+        viewModel.retry();
+        reply(2, ScreenState.success(data(73, 4)));
+        assertSame(draft, state().form);
+        viewModel.selectDate(LocalDate.of(2028, 2, 29));
+        assertSame(draft, state().form);
+    }
+
+    @Test
+    public void closingDirtyFormRequiresExplicitDiscardAndCancelKeepsEveryField() {
+        viewModel.beginCreateForm();
+        fillForm();
+        long token = state().form.token;
+        viewModel.requestFormClose(token);
+        assertTrue(state().form.confirmDiscard);
+        viewModel.cancelFormDiscard(token);
+        assertFalse(state().form.confirmDiscard);
+        assertEquals("07:00", state().form.days.get(DayOfWeek.MONDAY).times.get(0));
+        viewModel.requestFormClose(token);
+        viewModel.discardForm(token);
+        assertNull(state().form);
+        assertEquals(INITIAL, state().selectedDate);
+    }
+
+    @Test
+    public void untouchedFormClosesWithoutConfirmationEvenAfterValidation() {
+        viewModel.beginCreateForm();
+        viewModel.validateForm();
+        assertFalse(state().form.dirty);
+        viewModel.requestFormClose(state().form.token);
+        assertNull(state().form);
+    }
+
+    @Test
+    public void anotherEditorCannotReplaceAnActiveDraftAndOldConfirmationCannotCloseANewOne() {
+        viewModel.beginCreateForm();
+        long previous = state().form.token;
+        fillForm();
+        assertFalse(viewModel.beginCreateForm());
+        assertFalse(viewModel.beginEditForm());
+        viewModel.discardForm(previous);
+        assertTrue(viewModel.beginCreateForm());
+        long current = state().form.token;
+        assertTrue(current > previous);
+        viewModel.requestFormClose(previous);
+        viewModel.cancelFormDiscard(previous);
+        viewModel.discardForm(previous);
+        assertEquals(current, state().form.token);
+        assertFalse(state().form.confirmDiscard);
+    }
+
+    @Test
+    public void providerRetentionPreservesDraftErrorsAndTheDiscardConfirmation() {
+        viewModel.beginCreateForm();
+        fillForm();
+        viewModel.setFormFrequency("invalid");
+        viewModel.validateForm();
+        viewModel.requestFormClose(state().form.token);
+        RoutineFormState draft = state().form;
+        RoutineViewModel retained = provider.get(RoutineViewModel.class);
+        assertSame(viewModel, retained);
+        assertSame(draft, retained.state().getValue().form);
+        assertTrue(draft.confirmDiscard);
+        assertEquals("invalid", draft.frequency);
+        assertEquals(RoutineFormValidator.Error.INVALID_NUMBER, draft.errors.get(RoutineFormState.FREQUENCY));
+    }
+
+    @Test
+    public void sessionChangesAndAuthorizationFailureClearTheDraftWithoutCrossAccountReuse() {
+        viewModel.beginCreateForm();
+        fillForm();
+        session.setValue(true);
+        assertNull(state().form);
+        viewModel.beginCreateForm();
+        viewModel.load();
+        reply(0, ScreenState.error("Sem acesso.", 403, 0));
+        assertNull(state().form);
+        authenticated = false;
+        assertFalse(viewModel.beginCreateForm());
+    }
+
+    @Test
+    public void clearingTheViewModelPreventsNewFormsAndEdits() {
+        viewModel.beginCreateForm();
+        fillForm();
+        RoutineUiState before = state();
+        store.clear();
+        assertFalse(viewModel.beginCreateForm());
+        assertFalse(viewModel.beginEditForm());
+        viewModel.setFormFrequency("9");
+        viewModel.validateForm();
+        viewModel.discardForm(before.form.token);
+        assertSame(before, state());
+        assertTrue(repository.callbacks.isEmpty());
+    }
+
+    private void fillForm() {
+        viewModel.setFormHabit(1);
+        viewModel.setFormFrequency("1");
+        viewModel.selectFormDay(DayOfWeek.MONDAY, true);
+        viewModel.setFormQuantity(DayOfWeek.MONDAY, "1");
+        viewModel.setFormTime(DayOfWeek.MONDAY, 0, "07:00");
     }
 
     private RoutineUiState state() {

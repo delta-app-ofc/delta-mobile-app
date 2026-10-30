@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.aula.delta_mobile_app.model.RoutineData;
+import com.aula.delta_mobile_app.model.RoutineFormState;
 import com.aula.delta_mobile_app.model.RoutineUiState;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.repository.AuthRepository;
@@ -18,12 +19,14 @@ import com.aula.delta_mobile_app.repository.RoutineActions;
 import com.aula.delta_mobile_app.repository.RoutineRepository;
 
 import java.time.Clock;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 public final class RoutineViewModel extends ViewModel {
     public static final class Factory implements ViewModelProvider.Factory {
@@ -57,6 +60,8 @@ public final class RoutineViewModel extends ViewModel {
     private ScreenState<RoutineData> reading = ScreenState.idle();
     private RoutineUiState.DetailTarget detailTarget;
     private ScreenState<RoutineData.Habit> detail = ScreenState.idle();
+    private RoutineFormState form;
+    private long formGeneration;
     private long generation;
     private long detailGeneration;
     private boolean signedIn, loading;
@@ -79,6 +84,7 @@ public final class RoutineViewModel extends ViewModel {
         sessionObserver = value -> {
             if (cleared) return;
             signedIn = Boolean.TRUE.equals(value);
+            form = null;
             invalidate();
         };
         session.observeForever(sessionObserver);
@@ -153,6 +159,75 @@ public final class RoutineViewModel extends ViewModel {
         publish();
     }
 
+    public boolean beginCreateForm() {
+        if (cleared || !ensureSession() || form != null) return false;
+        form = RoutineFormState.create(++formGeneration);
+        publish();
+        return true;
+    }
+
+    public boolean beginEditForm() {
+        if (cleared || !ensureSession() || form != null || detailTarget == null || detail.status != ScreenState.Status.SUCCESS || detail.data == null
+            || detail.data.id != detailTarget.id || detail.data.userId != detailTarget.userId) return false;
+        form = RoutineFormState.edit(++formGeneration, detail.data);
+        resetDetail();
+        publish();
+        return true;
+    }
+
+    public void setFormHabit(Integer value) {
+        editForm(current -> current.withHabit(value));
+    }
+
+    public void setFormFrequency(String value) {
+        editForm(current -> current.withFrequency(value));
+    }
+
+    public void selectFormDay(DayOfWeek day, boolean selected) {
+        editForm(current -> current.selectDay(day, selected));
+    }
+
+    public void setFormQuantity(DayOfWeek day, String value) {
+        editForm(current -> current.withQuantity(day, value));
+    }
+
+    public void setFormTime(DayOfWeek day, int index, String value) {
+        editForm(current -> current.withTime(day, index, value));
+    }
+
+    public boolean validateForm() {
+        if (cleared || !ensureSession() || form == null) return false;
+        form = form.validate();
+        publish();
+        return form != null && form.valid();
+    }
+
+    public void requestFormClose(long token) {
+        if (cleared || form == null || form.token != token) return;
+        form = form.dirty ? form.confirmDiscard(true) : null;
+        publish();
+    }
+
+    public void cancelFormDiscard(long token) {
+        if (cleared || form == null || form.token != token) return;
+        form = form.confirmDiscard(false);
+        publish();
+    }
+
+    public void discardForm(long token) {
+        if (cleared || form == null || form.token != token) return;
+        form = null;
+        publish();
+    }
+
+    private void editForm(UnaryOperator<RoutineFormState> update) {
+        if (cleared || !ensureSession() || form == null) return;
+        RoutineFormState next = update.apply(form);
+        if (next == form) return;
+        form = next;
+        publish();
+    }
+
     private void resetDetail() {
         detailGeneration++;
         detailLoading = false;
@@ -184,6 +259,7 @@ public final class RoutineViewModel extends ViewModel {
             detail = result;
             if (result.status == ScreenState.Status.ERROR && (result.code == 401 || result.code == 403)) {
                 data = null;
+                form = null;
                 reading = ScreenState.error(result.message, result.code, result.retryAt);
             }
         }
@@ -213,7 +289,10 @@ public final class RoutineViewModel extends ViewModel {
         } else {
             reading = result;
             if (result.status == ScreenState.Status.SUCCESS) data = result.data;
-            else if (result.code == 401 || result.code == 403) data = null;
+            else if (result.code == 401 || result.code == 403) {
+                data = null;
+                form = null;
+            }
         }
         publish();
     }
@@ -223,6 +302,7 @@ public final class RoutineViewModel extends ViewModel {
         generation++;
         loading = false;
         data = null;
+        form = null;
         reading = ScreenState.error("Entre novamente para continuar.", 401, 0);
         resetDetail();
         publish();
@@ -230,7 +310,7 @@ public final class RoutineViewModel extends ViewModel {
     }
 
     private void publish() {
-        state.setValue(new RoutineUiState(selectedDate, reading, data, detailTarget, detail));
+        state.setValue(new RoutineUiState(selectedDate, reading, data, detailTarget, detail, form));
     }
 
     @Override
@@ -239,6 +319,7 @@ public final class RoutineViewModel extends ViewModel {
         generation++;
         loading = false;
         data = null;
+        form = null;
         resetDetail();
         session.removeObserver(sessionObserver);
         clearDispatch.run();

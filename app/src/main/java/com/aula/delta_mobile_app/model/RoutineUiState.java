@@ -50,12 +50,17 @@ public final class RoutineUiState {
     public final DetailTarget detailTarget;
     public final ScreenState<RoutineData.Habit> detail;
     public final HabitDetails details;
+    public final RoutineFormState form;
 
     public RoutineUiState(LocalDate selectedDate, ScreenState<RoutineData> reading, RoutineData previous) {
         this(selectedDate, reading, previous, null, ScreenState.idle());
     }
 
     public RoutineUiState(LocalDate selectedDate, ScreenState<RoutineData> reading, RoutineData previous, DetailTarget target, ScreenState<RoutineData.Habit> detail) {
+        this(selectedDate, reading, previous, target, detail, null);
+    }
+
+    public RoutineUiState(LocalDate selectedDate, ScreenState<RoutineData> reading, RoutineData previous, DetailTarget target, ScreenState<RoutineData.Habit> detail, RoutineFormState form) {
         this.selectedDate = Objects.requireNonNull(selectedDate);
         displayedMonth = YearMonth.from(selectedDate);
         this.reading = Objects.requireNonNull(reading);
@@ -65,5 +70,6 @@ public final class RoutineUiState {
         detailTarget = target;
         this.detail = Objects.requireNonNull(detail);
         details = target != null && detail.status == ScreenState.Status.SUCCESS && detail.data != null ? new HabitDetails(target, detail.data) : null;
+        this.form = form;
     }
 }
