@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/routine_item_spacing"
+    app:cardBackgroundColor="@color/routine_card"
+    app:cardCornerRadius="@dimen/routine_card_radius"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/routine_border"
+    app:strokeWidth="1dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/routine_card_padding"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/routine_habit_time"
+            style="@style/Routine.Caption" />
+        <TextView
+            android:id="@+id/routine_habit_name"
+            style="@style/Routine.Body"
+            android:layout_marginTop="4dp"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/routine_habit_category"
+            style="@style/Routine.Caption"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
+        <TextView
+            android:id="@+id/routine_habit_estimate"
+            style="@style/Routine.Caption"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

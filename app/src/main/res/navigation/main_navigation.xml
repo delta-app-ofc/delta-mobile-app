@@ -65,7 +65,7 @@
     </fragment>
     <fragment
         android:id="@+id/goalsFragment"
-        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.RoutineFragment"
         android:label="Rotina">
         <argument
             android:name="title"
