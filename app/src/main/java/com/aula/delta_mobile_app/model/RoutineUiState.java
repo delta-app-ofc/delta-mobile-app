@@ -41,6 +41,18 @@ public final class RoutineUiState {
         }
     }
 
+    public static final class DeleteTarget {
+        public final int id, userId, habitId;
+        public final String name;
+
+        public DeleteTarget(RoutineData.Habit habit) {
+            id = habit.id;
+            userId = habit.userId;
+            habitId = habit.habitId;
+            name = habit.name;
+        }
+    }
+
     public final LocalDate selectedDate;
     public final YearMonth displayedMonth;
     public final ScreenState<RoutineData> reading;
@@ -53,6 +65,9 @@ public final class RoutineUiState {
     public final RoutineFormState form;
     public final ScreenState<RoutineData.Habit> creation;
     public final boolean uncertainCreation, checkedCreation, confirmResend, savedAwaitingReload;
+    public final DeleteTarget deleteTarget;
+    public final ScreenState<Void> deletion;
+    public final boolean uncertainDeletion, checkedDeletion;
 
     public RoutineUiState(LocalDate selectedDate, ScreenState<RoutineData> reading, RoutineData previous) {
         this(selectedDate, reading, previous, null, ScreenState.idle());
@@ -68,6 +83,13 @@ public final class RoutineUiState {
 
     public RoutineUiState(LocalDate selectedDate, ScreenState<RoutineData> reading, RoutineData previous, DetailTarget target, ScreenState<RoutineData.Habit> detail,
         RoutineFormState form, ScreenState<RoutineData.Habit> creation, boolean uncertainCreation, boolean checkedCreation, boolean confirmResend, boolean savedAwaitingReload) {
+        this(selectedDate, reading, previous, target, detail, form, creation, uncertainCreation, checkedCreation, confirmResend, savedAwaitingReload,
+            null, ScreenState.idle(), false, false);
+    }
+
+    public RoutineUiState(LocalDate selectedDate, ScreenState<RoutineData> reading, RoutineData previous, DetailTarget target, ScreenState<RoutineData.Habit> detail,
+        RoutineFormState form, ScreenState<RoutineData.Habit> creation, boolean uncertainCreation, boolean checkedCreation, boolean confirmResend, boolean savedAwaitingReload,
+        DeleteTarget deleteTarget, ScreenState<Void> deletion, boolean uncertainDeletion, boolean checkedDeletion) {
         this.creation = Objects.requireNonNull(creation);
         this.uncertainCreation = uncertainCreation;
         this.checkedCreation = checkedCreation;
@@ -83,5 +105,9 @@ public final class RoutineUiState {
         this.detail = Objects.requireNonNull(detail);
         details = target != null && detail.status == ScreenState.Status.SUCCESS && detail.data != null ? new HabitDetails(target, detail.data) : null;
         this.form = form;
+        this.deleteTarget = deleteTarget;
+        this.deletion = Objects.requireNonNull(deletion);
+        this.uncertainDeletion = uncertainDeletion;
+        this.checkedDeletion = checkedDeletion;
     }
 }

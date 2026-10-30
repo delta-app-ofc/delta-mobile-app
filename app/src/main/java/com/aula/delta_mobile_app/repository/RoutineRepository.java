@@ -118,6 +118,36 @@ public final class RoutineRepository implements RoutineActions {
         }, callback);
     }
 
+    @Override
+    public void delete(int id, int userId, Consumer<ScreenState<Void>> callback) {
+        if (id <= 0 || userId <= 0) {
+            callback.accept(ScreenState.error("Não foi possível identificar o hábito.", 400, 0));
+            return;
+        }
+        access.resource(() -> {
+            boolean started = false;
+            try {
+                Profile profile = access.currentProfile();
+                if (!identified(profile)) return ScreenState.error("Não foi possível identificar sua conta.");
+                if (!Objects.equals(profile.id, userId)) return ScreenState.error("Este hábito não pertence à conta atual.", 403, 0);
+                Response<UserHabitResponse> current = access.api().getUserHabit(profile.id, id).execute();
+                if (!current.isSuccessful()) return ApiErrors.from(current);
+                if (!owned(current.body(), profile.id) || !Objects.equals(id, current.body().id))
+                    return ScreenState.error("Não foi possível confirmar o vínculo deste hábito.", 403, 0);
+                Call<Void> call = access.api().deleteUserHabit(profile.id, id);
+                started = true;
+                Response<Void> response = call.execute();
+                if (response.code() >= 500) return uncertain();
+                if (!response.isSuccessful()) return ApiErrors.from(response);
+                return response.code() == 204 ? ScreenState.success(null) : uncertain();
+            } catch (IOException unavailable) {
+                return started ? uncertain() : ApiErrors.network();
+            } catch (JsonParseException | IllegalArgumentException | IllegalStateException invalid) {
+                return started ? uncertain() : invalidBody();
+            }
+        }, callback);
+    }
+
     private static <T> ScreenState<T> uncertain() {
         return ScreenState.error("Não foi possível confirmar o resultado da alteração.", UNCERTAIN, 0);
     }

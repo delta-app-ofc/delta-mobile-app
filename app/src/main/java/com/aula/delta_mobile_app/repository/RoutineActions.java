@@ -14,6 +14,10 @@ public interface RoutineActions {
         callback.accept(ScreenState.error("Edição indisponível nesta fonte.", 405, 0));
     }
 
+    default void delete(int id, int userId, Consumer<ScreenState<Void>> callback) {
+        callback.accept(ScreenState.error("Exclusão indisponível nesta fonte.", 405, 0));
+    }
+
     void load(Consumer<ScreenState<RoutineData>> callback);
 
     void detail(int id, Consumer<ScreenState<RoutineData.Habit>> callback);

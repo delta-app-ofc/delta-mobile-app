@@ -65,12 +65,24 @@ public final class RoutineViewModel extends ViewModel {
     private ScreenState<RoutineData.Habit> creation = ScreenState.idle();
     private boolean uncertainCreation, checkedCreation, confirmResend, savedAwaitingReload;
     private long creationGeneration, checkGeneration = -1;
+    private RoutineUiState.DeleteTarget deleteTarget, deleteCheckTarget;
+    private ScreenState<Void> deletion = ScreenState.idle();
+    private boolean uncertainDeletion, checkedDeletion;
+    private long deletionGeneration, deleteCheckGeneration = -1;
 
     private void resetCreation() {
         creationGeneration++;
         creation = ScreenState.idle();
         uncertainCreation = checkedCreation = confirmResend = savedAwaitingReload = false;
         checkGeneration = -1;
+    }
+
+    private void resetDeletion() {
+        deletionGeneration++;
+        deleteTarget = deleteCheckTarget = null;
+        deletion = ScreenState.idle();
+        uncertainDeletion = checkedDeletion = false;
+        deleteCheckGeneration = -1;
     }
 
     public void saveForm() {
@@ -134,6 +146,73 @@ public final class RoutineViewModel extends ViewModel {
         creation = ScreenState.idle();
         saveForm();
     }
+
+    public boolean requestDelete() {
+        if (cleared || !ensureSession() || form != null || deleteTarget != null || detailTarget == null || detail.status != ScreenState.Status.SUCCESS
+            || detail.data == null || detail.data.id != detailTarget.id || detail.data.userId != detailTarget.userId) return false;
+        deleteTarget = new RoutineUiState.DeleteTarget(detail.data);
+        deletion = ScreenState.idle();
+        uncertainDeletion = checkedDeletion = false;
+        deleteCheckGeneration = -1;
+        deleteCheckTarget = null;
+        resetDetail();
+        publish();
+        return true;
+    }
+
+    public void cancelDelete() {
+        if (cleared || deleteTarget == null || deletion.busy()) return;
+        resetDeletion();
+        publish();
+    }
+
+    public void confirmDelete() {
+        if (cleared || !ensureSession() || deleteTarget == null || deletion.busy() || deletion.retryAt > clock.millis()
+            || (uncertainDeletion && !checkedDeletion)) return;
+        if (uncertainDeletion) {
+            uncertainDeletion = checkedDeletion = false;
+            deletion = ScreenState.idle();
+        }
+        RoutineUiState.DeleteTarget submitted = deleteTarget;
+        long operation = ++deletionGeneration;
+        deletion = ScreenState.loading();
+        publish();
+        if (cleared || deleteTarget != submitted || operation != deletionGeneration) return;
+        repository.delete(submitted.id, submitted.userId, result -> {
+            if (!cleared) dispatch.accept(() -> {
+                if (cleared || operation != deletionGeneration || deleteTarget != submitted || !deletion.busy() || !ensureSession()) return;
+                deletion = result == null || (result.status != ScreenState.Status.SUCCESS && result.status != ScreenState.Status.ERROR)
+                    ? ScreenState.error("Não foi possível confirmar o resultado da exclusão.", RoutineRepository.UNCERTAIN, 0) : result;
+                if (deletion.status == ScreenState.Status.SUCCESS) {
+                    deleteTarget = null;
+                    uncertainDeletion = checkedDeletion = false;
+                    savedAwaitingReload = true;
+                    generation++;
+                    loading = false;
+                    reading = ScreenState.idle();
+                    load(true);
+                } else if (deletion.code == 401 || deletion.code == 403) {
+                    data = null;
+                    resetDeletion();
+                    reading = ScreenState.error(result.message, result.code, result.retryAt);
+                    publish();
+                } else {
+                    uncertainDeletion = deletion.code == RoutineRepository.UNCERTAIN || deletion.code >= 500;
+                    checkedDeletion = false;
+                    publish();
+                }
+            });
+        });
+    }
+
+    public void checkDeletion() {
+        if (cleared || !ensureSession() || deleteTarget == null || !uncertainDeletion || deletion.busy() || loading
+            || reading.retryAt > clock.millis()) return;
+        checkedDeletion = false;
+        deleteCheckTarget = deleteTarget;
+        deleteCheckGeneration = generation + 1;
+        load(true);
+    }
     private long generation;
     private long detailGeneration;
     private boolean signedIn, loading;
@@ -158,6 +237,7 @@ public final class RoutineViewModel extends ViewModel {
             signedIn = Boolean.TRUE.equals(value);
             form = null;
             resetCreation();
+            resetDeletion();
             invalidate();
         };
         session.observeForever(sessionObserver);
@@ -201,12 +281,13 @@ public final class RoutineViewModel extends ViewModel {
         loading = false;
         data = null;
         reading = ScreenState.idle();
+        resetDeletion();
         resetDetail();
         publish();
     }
 
     public boolean openDetails(int id, LocalTime startTime) {
-        if (cleared || !ensureSession() || loading || reading.status != ScreenState.Status.SUCCESS || data == null || startTime == null) return false;
+        if (cleared || !ensureSession() || loading || deleteTarget != null || reading.status != ScreenState.Status.SUCCESS || data == null || startTime == null) return false;
         RoutineData.Habit habit = null;
         for (RoutineData.Habit value : data.habits)
             if (value.id == id) habit = value;
@@ -233,7 +314,7 @@ public final class RoutineViewModel extends ViewModel {
     }
 
     public boolean beginCreateForm() {
-        if (cleared || !ensureSession() || form != null) return false;
+        if (cleared || !ensureSession() || form != null || deleteTarget != null) return false;
         form = RoutineFormState.create(++formGeneration);
         resetCreation();
         publish();
@@ -241,7 +322,7 @@ public final class RoutineViewModel extends ViewModel {
     }
 
     public boolean beginEditForm() {
-        if (cleared || !ensureSession() || form != null || detailTarget == null || detail.status != ScreenState.Status.SUCCESS || detail.data == null
+        if (cleared || !ensureSession() || form != null || deleteTarget != null || detailTarget == null || detail.status != ScreenState.Status.SUCCESS || detail.data == null
             || detail.data.id != detailTarget.id || detail.data.userId != detailTarget.userId) return false;
         form = RoutineFormState.edit(++formGeneration, detail.data, selectedDate);
         resetCreation();
@@ -346,6 +427,7 @@ public final class RoutineViewModel extends ViewModel {
         if (cleared || !ensureSession() || loading || (!refresh && reading.status == ScreenState.Status.SUCCESS)) return;
         if (reading.status == ScreenState.Status.ERROR && reading.retryAt > clock.millis()) return;
         if (uncertainCreation) checkedCreation = false;
+        if (uncertainDeletion) checkedDeletion = false;
         resetDetail();
         long request = ++generation;
         loading = true;
@@ -364,6 +446,11 @@ public final class RoutineViewModel extends ViewModel {
             checkedCreation = result != null && result.status == ScreenState.Status.SUCCESS && result.data != null;
             checkGeneration = -1;
         }
+        RoutineUiState.DeleteTarget checkedTarget = request == deleteCheckGeneration ? deleteCheckTarget : null;
+        if (request == deleteCheckGeneration) {
+            deleteCheckGeneration = -1;
+            deleteCheckTarget = null;
+        }
         if (result != null && result.status == ScreenState.Status.SUCCESS && result.data != null) savedAwaitingReload = false;
         if (result == null || (result.status != ScreenState.Status.SUCCESS && result.status != ScreenState.Status.ERROR)
             || (result.status == ScreenState.Status.SUCCESS && result.data == null)) {
@@ -374,7 +461,20 @@ public final class RoutineViewModel extends ViewModel {
             else if (result.code == 401 || result.code == 403) {
                 data = null;
                 form = null;
+                resetDeletion();
             }
+        }
+        if (checkedTarget != null && checkedTarget == deleteTarget && uncertainDeletion) {
+            if (reading.status == ScreenState.Status.SUCCESS && data != null) {
+                boolean present = false;
+                for (RoutineData.Habit habit : data.habits) if (habit.id == checkedTarget.id && habit.userId == checkedTarget.userId) present = true;
+                if (present) checkedDeletion = true;
+                else {
+                    deleteTarget = null;
+                    uncertainDeletion = checkedDeletion = false;
+                    deletion = ScreenState.success(null);
+                }
+            } else checkedDeletion = false;
         }
         publish();
     }
@@ -386,6 +486,7 @@ public final class RoutineViewModel extends ViewModel {
         data = null;
         form = null;
         resetCreation();
+        resetDeletion();
         reading = ScreenState.error("Entre novamente para continuar.", 401, 0);
         resetDetail();
         publish();
@@ -393,7 +494,8 @@ public final class RoutineViewModel extends ViewModel {
     }
 
     private void publish() {
-        state.setValue(new RoutineUiState(selectedDate, reading, data, detailTarget, detail, form, creation, uncertainCreation, checkedCreation, confirmResend, savedAwaitingReload));
+        state.setValue(new RoutineUiState(selectedDate, reading, data, detailTarget, detail, form, creation, uncertainCreation, checkedCreation, confirmResend,
+            savedAwaitingReload, deleteTarget, deletion, uncertainDeletion, checkedDeletion));
     }
 
     @Override
@@ -403,6 +505,7 @@ public final class RoutineViewModel extends ViewModel {
         loading = false;
         data = null;
         form = null;
+        resetDeletion();
         resetDetail();
         session.removeObserver(sessionObserver);
         clearDispatch.run();

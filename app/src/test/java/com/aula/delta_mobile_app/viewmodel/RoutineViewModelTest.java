@@ -56,6 +56,8 @@ public class RoutineViewModelTest {
         final List<Consumer<ScreenState<RoutineData.Habit>>> posts = new ArrayList<>();
         final List<RoutineFormState> updateForms = new ArrayList<>();
         final List<Consumer<ScreenState<RoutineData.Habit>>> updates = new ArrayList<>();
+        final List<int[]> deleteTargets = new ArrayList<>();
+        final List<Consumer<ScreenState<Void>>> deletions = new ArrayList<>();
 
         @Override
         public void create(RoutineFormState form, Consumer<ScreenState<RoutineData.Habit>> callback) {
@@ -68,6 +70,12 @@ public class RoutineViewModelTest {
             assertTrue(form.valid());
             updateForms.add(form);
             updates.add(callback);
+        }
+
+        @Override
+        public void delete(int id, int userId, Consumer<ScreenState<Void>> callback) {
+            deleteTargets.add(new int[] {id, userId});
+            deletions.add(callback);
         }
         final List<Consumer<ScreenState<RoutineData>>> callbacks = new ArrayList<>();
         final List<Integer> detailIds = new ArrayList<>();
@@ -1257,8 +1265,195 @@ public class RoutineViewModelTest {
         assertTrue(main.isEmpty());
     }
 
+    @Test
+    public void requestingAndCancellingDeleteKeepsStableIdentityWithoutCallingRepository() {
+        openDelete();
+        RoutineUiState.DeleteTarget target = state().deleteTarget;
+        assertEquals(105, target.id);
+        assertEquals(73, target.userId);
+        assertEquals(1, target.habitId);
+        assertSame(viewModel, provider.get(RoutineViewModel.class));
+        assertSame(target, provider.get(RoutineViewModel.class).state().getValue().deleteTarget);
+        assertTrue(repository.deletions.isEmpty());
+        viewModel.cancelDelete();
+        assertNull(state().deleteTarget);
+        assertTrue(repository.deletions.isEmpty());
+    }
+
+    @Test
+    public void lateDetailCannotReplaceDeleteTargetOrOpenAnotherMutation() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        Consumer<ScreenState<RoutineData.Habit>> old = repository.details.get(0);
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertTrue(viewModel.requestDelete());
+        RoutineUiState.DeleteTarget target = state().deleteTarget;
+        old.accept(ScreenState.success(habit(106, 73, 2, "08:00")));
+        drain();
+        assertSame(target, state().deleteTarget);
+        assertFalse(viewModel.beginCreateForm());
+        assertFalse(viewModel.beginEditForm());
+        assertNull(state().detailTarget);
+    }
+
+    @Test
+    public void deleteConfirmationSendsExactlyOnceAndCannotBeCancelledWhileBusy() {
+        openDelete();
+        RoutineUiState.DeleteTarget target = state().deleteTarget;
+        viewModel.confirmDelete();
+        viewModel.confirmDelete();
+        viewModel.cancelDelete();
+        assertSame(target, state().deleteTarget);
+        assertTrue(state().deletion.busy());
+        assertSame(viewModel, provider.get(RoutineViewModel.class));
+        assertTrue(provider.get(RoutineViewModel.class).state().getValue().deletion.busy());
+        assertEquals(1, repository.deletions.size());
+        assertArrayEquals(new int[] {105, 73}, repository.deleteTargets.get(0));
+    }
+
+    @Test
+    public void successfulDeleteClosesConfirmationAndReloadsAnEmptyDay() {
+        openDelete();
+        viewModel.confirmDelete();
+        repository.deletions.get(0).accept(ScreenState.success(null));
+        drain();
+        assertNull(state().deleteTarget);
+        assertTrue(state().savedAwaitingReload);
+        assertTrue(state().reading.busy());
+        assertEquals(2, repository.callbacks.size());
+        reply(1, ScreenState.success(RoutineData.from(Collections.emptyList(), clock)));
+        assertFalse(state().savedAwaitingReload);
+        assertTrue(state().day.confirmedEmpty());
+        assertEquals(INITIAL, state().selectedDate);
+        assertEquals(1, repository.deletions.size());
+    }
+
+    @Test
+    public void failedReloadAfterDeleteRetriesOnlyTheCollection() {
+        openDelete();
+        viewModel.confirmDelete();
+        repository.deletions.get(0).accept(ScreenState.success(null));
+        drain();
+        reply(1, ScreenState.error("Sem conexão"));
+        assertTrue(state().savedAwaitingReload);
+        viewModel.retry();
+        assertEquals(3, repository.callbacks.size());
+        assertEquals(1, repository.deletions.size());
+        reply(2, ScreenState.success(RoutineData.from(Collections.emptyList(), clock)));
+        assertFalse(state().savedAwaitingReload);
+    }
+
+    @Test
+    public void confirmedDeleteFailurePreservesTargetAndAllowsExplicitRetry() {
+        openDelete();
+        viewModel.confirmDelete();
+        repository.deletions.get(0).accept(ScreenState.error("Não encontrado", 404, 0));
+        drain();
+        RoutineUiState.DeleteTarget target = state().deleteTarget;
+        assertSame(target, state().deleteTarget);
+        assertFalse(state().uncertainDeletion);
+        viewModel.confirmDelete();
+        assertEquals(2, repository.deletions.size());
+        assertSame(target, state().deleteTarget);
+    }
+
+    @Test
+    public void deleteRateLimitAndAuthorizationErrorsKeepTheirDistinctPolicies() {
+        openDelete();
+        viewModel.confirmDelete();
+        repository.deletions.get(0).accept(ScreenState.error("Aguarde", 429, clock.millis() + 60000));
+        drain();
+        viewModel.confirmDelete();
+        assertEquals(1, repository.deletions.size());
+        clock.now = clock.now.plusSeconds(61);
+        viewModel.confirmDelete();
+        assertEquals(2, repository.deletions.size());
+        repository.deletions.get(1).accept(ScreenState.error("Sem acesso", 403, 0));
+        drain();
+        assertNull(state().deleteTarget);
+        assertNull(state().data);
+        assertEquals(403, state().reading.code);
+    }
+
+    @Test
+    public void uncertainDeleteRequiresCheckBeforeAnExplicitRetry() {
+        openDelete();
+        viewModel.confirmDelete();
+        repository.deletions.get(0).accept(ScreenState.error("Incerto", -7, 0));
+        drain();
+        RoutineUiState.DeleteTarget target = state().deleteTarget;
+        assertTrue(state().uncertainDeletion);
+        viewModel.confirmDelete();
+        assertEquals(1, repository.deletions.size());
+        viewModel.checkDeletion();
+        assertTrue(state().reading.busy());
+        reply(1, ScreenState.success(data(73, 1)));
+        assertSame(target, state().deleteTarget);
+        assertTrue(state().checkedDeletion);
+        viewModel.confirmDelete();
+        viewModel.confirmDelete();
+        assertEquals(2, repository.deletions.size());
+    }
+
+    @Test
+    public void reconciliationConfirmsDeletionOnlyWhenTheTargetIsAbsent() {
+        openDelete();
+        viewModel.confirmDelete();
+        repository.deletions.get(0).accept(ScreenState.error("Incerto", -7, 0));
+        drain();
+        viewModel.checkDeletion();
+        reply(1, ScreenState.success(RoutineData.from(Collections.emptyList(), clock)));
+        assertNull(state().deleteTarget);
+        assertFalse(state().uncertainDeletion);
+        assertEquals(ScreenState.Status.SUCCESS, state().deletion.status);
+        assertEquals(1, repository.deletions.size());
+    }
+
+    @Test
+    public void failedReconciliationKeepsTargetAndDoesNotAuthorizeDeleteRetry() {
+        openDelete();
+        viewModel.confirmDelete();
+        repository.deletions.get(0).accept(ScreenState.error("Incerto", -7, 0));
+        drain();
+        RoutineUiState.DeleteTarget target = state().deleteTarget;
+        viewModel.checkDeletion();
+        reply(1, ScreenState.error("Sem conexão"));
+        assertSame(target, state().deleteTarget);
+        assertTrue(state().uncertainDeletion);
+        assertFalse(state().checkedDeletion);
+        viewModel.confirmDelete();
+        assertEquals(1, repository.deletions.size());
+    }
+
+    @Test
+    public void logoutAndClearDiscardDeleteTargetAndLateReplies() {
+        openDelete();
+        viewModel.confirmDelete();
+        session.setValue(false);
+        repository.deletions.get(0).accept(ScreenState.success(null));
+        drain();
+        assertNull(state().deleteTarget);
+        assertEquals(1, repository.callbacks.size());
+        session.setValue(true);
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(1, ScreenState.success(habit(105, 73, 1, "07:00")));
+        viewModel.requestDelete();
+        viewModel.confirmDelete();
+        store.clear();
+        repository.deletions.get(1).accept(ScreenState.success(null));
+        assertTrue(main.isEmpty());
+    }
+
     private RoutineUiState state() {
         return viewModel.state().getValue();
+    }
+
+    private void openDelete() {
+        load(data(73, 1));
+        assertTrue(viewModel.openDetails(105, LocalTime.of(7, 0)));
+        replyDetail(repository.details.size() - 1, ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertTrue(viewModel.requestDelete());
     }
 
     private RoutineData data(int user, int type) {

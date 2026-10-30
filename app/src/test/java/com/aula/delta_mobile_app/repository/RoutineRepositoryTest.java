@@ -231,6 +231,112 @@ public class RoutineRepositoryTest {
         assertTrue(access.requests.isEmpty());
     }
 
+    @Test
+    public void deleteRejectsInvalidIdentityBeforeAuthenticatedWork() {
+        for (int[] target : new int[][] {{0, 73}, {-1, 73}, {105, 0}, {105, -1}}) {
+            Result<Void> result = new Result<>();
+            repository.delete(target[0], target[1], result);
+            assertError(result.only(), 400);
+        }
+        assertEquals(0, access.resources);
+        assertTrue(access.requests.isEmpty());
+    }
+
+    @Test
+    public void deleteConfirmsCurrentAccountAndOwnerBeforeWriting() {
+        Result<Void> otherAccount = new Result<>();
+        repository.delete(105, 74, otherAccount);
+        access.run();
+        assertError(otherAccount.only(), 403);
+        assertTrue(access.requests.isEmpty());
+        access.body = HABIT.replace("\"userId\":73", "\"userId\":74");
+        Result<Void> otherOwner = new Result<>();
+        repository.delete(105, 73, otherOwner);
+        access.run();
+        assertError(otherOwner.only(), 403);
+        assertEquals(1, access.requests.size());
+        assertRequest(0, "/delta/habits/73/105");
+        access.body = HABIT.replace("\"id\":105", "\"id\":106");
+        Result<Void> otherRecord = new Result<>();
+        repository.delete(105, 73, otherRecord);
+        access.run();
+        assertError(otherRecord.only(), 403);
+        assertEquals(2, access.requests.size());
+        assertRequest(1, "/delta/habits/73/105");
+    }
+
+    @Test
+    public void detailFailurePreventsDeleteRequest() {
+        for (int code : new int[] {400, 401, 403, 404, 409, 429, 500, 503}) {
+            access.code = code;
+            access.body = "{}";
+            Result<Void> result = new Result<>();
+            repository.delete(105, 73, result);
+            access.run();
+            assertError(result.only(), code);
+            assertEquals("GET", access.requests.get(access.requests.size() - 1).method());
+        }
+        assertEquals(8, access.requests.size());
+    }
+
+    @Test
+    public void deleteUsesRecordIdAndAcceptsOnlyNoContentSuccess() {
+        access.queue(200, HABIT);
+        access.queue(204, "");
+        Result<Void> result = new Result<>();
+        repository.delete(105, 73, result);
+        access.run();
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertNull(result.only().data);
+        assertEquals(2, access.requests.size());
+        assertRequest(0, "/delta/habits/73/105");
+        assertRequest(1, "DELETE", "/delta/habits/73/105");
+    }
+
+    @Test
+    public void confirmedDeleteErrorsPreserveTheirStatus() {
+        for (int code : new int[] {400, 401, 403, 404, 409, 429}) {
+            access.queue(200, HABIT);
+            access.queue(code, "{}");
+            Result<Void> result = new Result<>();
+            repository.delete(105, 73, result);
+            access.run();
+            assertError(result.only(), code);
+            assertEquals("DELETE", access.requests.get(access.requests.size() - 1).method());
+        }
+    }
+
+    @Test
+    public void unexpectedDeleteSuccessServerFailureAndTimeoutAreUncertain() {
+        for (int code : new int[] {200, 202, 500, 503}) {
+            access.queue(200, HABIT);
+            access.queue(code, "{}");
+            Result<Void> result = new Result<>();
+            repository.delete(105, 73, result);
+            access.run();
+            assertEquals(RoutineRepository.UNCERTAIN, result.only().code);
+        }
+        access.queue(200, HABIT);
+        access.networkFailure = new SocketTimeoutException();
+        access.failureAtRequest = access.requests.size() + 1;
+        Result<Void> timeout = new Result<>();
+        repository.delete(105, 73, timeout);
+        access.run();
+        assertEquals(RoutineRepository.UNCERTAIN, timeout.only().code);
+    }
+
+    @Test
+    public void failureBeforeDeleteDoesNotBecomeAnUncertainMutation() {
+        access.networkFailure = new SocketTimeoutException();
+        access.failureAtRequest = access.requests.size();
+        Result<Void> result = new Result<>();
+        repository.delete(105, 73, result);
+        access.run();
+        assertNotEquals(RoutineRepository.UNCERTAIN, result.only().code);
+        assertEquals(ApiErrors.network().message, result.only().message);
+        assertEquals(1, access.requests.size());
+    }
+
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-29T12:00:00Z"), ZoneOffset.UTC);
     private static final String HABIT = "{\"id\":105,\"userId\":73,\"habitId\":1,\"habitName\":\"Banho longo\","
         + "\"habitCategory\":\"Higiene\",\"frequency\":5,\"daysOfWeek\":[1,3],"
@@ -264,13 +370,14 @@ public class RoutineRepositoryTest {
         int code = 200, profileReads, resources;
         String body = "[]", retryAfter;
         IOException networkFailure, profileFailure;
+        int failureAtRequest = -1;
         boolean missingProfile, blocked, running;
 
         Access() {
             OkHttpClient client = new OkHttpClient.Builder().retryOnConnectionFailure(false).addInterceptor(chain -> {
                 assertTrue(running);
                 requests.add(chain.request());
-                if (networkFailure != null) throw networkFailure;
+                if (networkFailure != null && (failureAtRequest < 0 || failureAtRequest == requests.size() - 1)) throw networkFailure;
                 int nextCode = responseCodes.isEmpty() ? code : responseCodes.remove(0);
                 String nextBody = responseBodies.isEmpty() ? body : responseBodies.remove(0);
                 okhttp3.Response.Builder response = new okhttp3.Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(nextCode).message("test")
@@ -649,8 +756,12 @@ public class RoutineRepositoryTest {
     }
 
     private void assertRequest(int index, String path) {
+        assertRequest(index, "GET", path);
+    }
+
+    private void assertRequest(int index, String method, String path) {
         Request request = access.requests.get(index);
-        assertEquals("GET", request.method());
+        assertEquals(method, request.method());
         assertEquals("delta.test", request.url().host());
         assertEquals(path, request.url().encodedPath());
         assertNull(request.url().query());
