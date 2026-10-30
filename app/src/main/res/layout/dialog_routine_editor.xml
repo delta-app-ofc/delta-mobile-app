@@ -27,6 +27,11 @@
             style="@style/Routine.Caption"
             android:layout_marginTop="8dp"
             android:text="@string/routine_form_no_save" />
+        <TextView
+            android:id="@+id/routine_form_effective_from"
+            style="@style/Routine.Caption"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
         <com.aula.delta_mobile_app.view.StatusNoticeView
             android:id="@+id/routine_form_notice"
             android:layout_width="match_parent"

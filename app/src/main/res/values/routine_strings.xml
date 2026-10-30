@@ -79,9 +79,14 @@
     <string name="routine_form_quantity">%1$s: execuções</string>
     <string name="routine_form_time">%1$s: horário da execução %2$d</string>
     <string name="routine_form_validate">Validar formulário</string>
-    <string name="routine_form_no_save">Distribua as execuções pelos dias e informe seus horários. Toque em Salvar para cadastrar o hábito.</string>
+    <string name="routine_form_no_save">Distribua as execuções pelos dias, informe os horários e revise os dados antes de salvar.</string>
     <string name="routine_add">Adicionar hábito</string>
     <string name="routine_form_save">Salvar</string>
+    <string name="routine_form_update">Salvar nova versão</string>
+    <string name="routine_form_edit_help">Altere a rotina semanal. A nova versão valerá a partir da data indicada e o histórico anterior será preservado.</string>
+    <string name="routine_form_effective_from">Válida a partir de %1$s, inclusive</string>
+    <string name="routine_form_edit_context">%1$s\n%2$s</string>
+    <string name="routine_details_edit">Editar a partir desta data</string>
     <string name="routine_form_check">Conferir agenda</string>
     <string name="routine_form_resend">Enviar novamente</string>
     <string name="routine_form_sending">Salvando hábito… Aguarde a confirmação.</string>

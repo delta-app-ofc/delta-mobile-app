@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.WindowCompat;
 import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -62,6 +63,12 @@ public final class RoutineDetailsDialogFragment extends DialogFragment {
         view.findViewById(R.id.routine_details_close).setOnClickListener(button -> model.closeDetails());
         view.findViewById(R.id.routine_details_retry).setOnClickListener(button -> model.retryDetail());
         view.findViewById(R.id.routine_details_refresh).setOnClickListener(button -> model.refresh());
+        view.findViewById(R.id.routine_details_edit).setOnClickListener(button -> {
+            Fragment parent = getParentFragment();
+            if (parent == null || parent.getChildFragmentManager().isStateSaved() || !model.beginEditForm()) return;
+            dismissAllowingStateLoss();
+            new RoutineEditorDialogFragment().showNow(parent.getChildFragmentManager(), "routine_editor");
+        });
         model.state().observe(getViewLifecycleOwner(), state -> render(view, state));
     }
 
@@ -108,6 +115,8 @@ public final class RoutineDetailsDialogFragment extends DialogFragment {
         ((StatusNoticeView) view.findViewById(R.id.routine_details_notice)).setText(message);
         boolean refresh = state.detail.code == 404 || (details != null && (!details.scheduleComplete || !details.selectedExecutionPresent));
         view.findViewById(R.id.routine_details_refresh).setVisibility(refresh ? View.VISIBLE : View.GONE);
+        view.findViewById(R.id.routine_details_edit).setVisibility(details != null && state.detail.status == ScreenState.Status.SUCCESS ? View.VISIBLE : View.GONE);
+        view.findViewById(R.id.routine_details_edit).setEnabled(!state.reading.busy());
         renderRetry(view, state, locale);
     }
 

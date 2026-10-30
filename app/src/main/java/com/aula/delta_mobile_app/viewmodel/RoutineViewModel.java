@@ -74,19 +74,19 @@ public final class RoutineViewModel extends ViewModel {
     }
 
     public void saveForm() {
-        if (cleared || !ensureSession() || form == null || form.mode != RoutineFormState.Mode.CREATE || creation.busy() || uncertainCreation
+        if (cleared || !ensureSession() || form == null || creation.busy() || uncertainCreation
             || creation.retryAt > clock.millis() || !validateForm()) return;
         RoutineFormState submitted = form;
         long operation = ++creationGeneration;
         creation = ScreenState.loading();
         publish();
         if (cleared || form != submitted || operation != creationGeneration) return;
-        repository.create(submitted, result -> {
+        Consumer<ScreenState<RoutineData.Habit>> callback = result -> {
             if (!cleared) dispatch.accept(() -> {
                 if (cleared || operation != creationGeneration || form != submitted || !creation.busy() || !ensureSession()) return;
                 creation = result == null || (result.status != ScreenState.Status.SUCCESS && result.status != ScreenState.Status.ERROR)
                     || (result.status == ScreenState.Status.SUCCESS && result.data == null)
-                    ? ScreenState.error("Não foi possível confirmar o resultado da criação.", RoutineRepository.UNCERTAIN, 0) : result;
+                    ? ScreenState.error("Não foi possível confirmar o resultado da alteração.", RoutineRepository.UNCERTAIN, 0) : result;
                 if (creation.status == ScreenState.Status.SUCCESS) {
                     form = null;
                     savedAwaitingReload = true;
@@ -105,7 +105,9 @@ public final class RoutineViewModel extends ViewModel {
                     publish();
                 }
             });
-        });
+        };
+        if (submitted.mode == RoutineFormState.Mode.CREATE) repository.create(submitted, callback);
+        else repository.update(submitted, callback);
     }
 
     public void checkCreation() {
@@ -241,7 +243,8 @@ public final class RoutineViewModel extends ViewModel {
     public boolean beginEditForm() {
         if (cleared || !ensureSession() || form != null || detailTarget == null || detail.status != ScreenState.Status.SUCCESS || detail.data == null
             || detail.data.id != detailTarget.id || detail.data.userId != detailTarget.userId) return false;
-        form = RoutineFormState.edit(++formGeneration, detail.data);
+        form = RoutineFormState.edit(++formGeneration, detail.data, selectedDate);
+        resetCreation();
         resetDetail();
         publish();
         return true;

@@ -46,6 +46,14 @@
             android:layout_marginTop="8dp"
             android:text="@string/routine_details_refresh"
             android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/routine_details_edit"
+            style="@style/Routine.Action"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/routine_details_edit"
+            android:visibility="gone" />
         <FrameLayout
             android:id="@+id/routine_details_loading"
             android:layout_width="match_parent"

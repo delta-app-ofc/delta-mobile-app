@@ -31,8 +31,8 @@ public final class RoutineUiState {
 
         private HabitDetails(DetailTarget target, RoutineData.Habit habit) {
             this.habit = habit;
-            scheduleComplete = habit.scheduleComplete;
-            times = habit.schedule.getOrDefault(target.date.getDayOfWeek(), Collections.emptyList());
+            scheduleComplete = habit.scheduleCompleteAt(target.date);
+            times = habit.scheduleAt(target.date).getOrDefault(target.date.getDayOfWeek(), Collections.emptyList());
             executionCount = scheduleComplete ? times.size() : null;
             selectedExecutionPresent = scheduleComplete && times.contains(target.startTime);
             executionLiters = habit.litersPerExecution;

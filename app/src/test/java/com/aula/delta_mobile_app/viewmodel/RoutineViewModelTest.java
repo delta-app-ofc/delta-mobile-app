@@ -54,11 +54,20 @@ public class RoutineViewModelTest {
 
     private static final class Gateway implements RoutineActions {
         final List<Consumer<ScreenState<RoutineData.Habit>>> posts = new ArrayList<>();
+        final List<RoutineFormState> updateForms = new ArrayList<>();
+        final List<Consumer<ScreenState<RoutineData.Habit>>> updates = new ArrayList<>();
 
         @Override
         public void create(RoutineFormState form, Consumer<ScreenState<RoutineData.Habit>> callback) {
             assertTrue(form.valid());
             posts.add(callback);
+        }
+
+        @Override
+        public void update(RoutineFormState form, Consumer<ScreenState<RoutineData.Habit>> callback) {
+            assertTrue(form.valid());
+            updateForms.add(form);
+            updates.add(callback);
         }
         final List<Consumer<ScreenState<RoutineData>>> callbacks = new ArrayList<>();
         final List<Integer> detailIds = new ArrayList<>();
@@ -999,6 +1008,109 @@ public class RoutineViewModelTest {
     }
 
     @Test
+    public void editUsesSelectedDateStableIdentityAndOnlyOnePutForRepeatedSave() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertTrue(viewModel.beginEditForm());
+        assertEquals(INITIAL, state().form.effectiveFrom);
+        viewModel.selectFormDay(DayOfWeek.SATURDAY, false);
+        viewModel.selectFormDay(DayOfWeek.MONDAY, true);
+        viewModel.setFormQuantity(DayOfWeek.MONDAY, "1");
+        viewModel.setFormTime(DayOfWeek.MONDAY, 0, "08:30");
+        viewModel.saveForm();
+        viewModel.saveForm();
+        assertEquals(1, repository.updates.size());
+        assertTrue(repository.posts.isEmpty());
+        RoutineFormState sent = repository.updateForms.get(0);
+        assertEquals(Integer.valueOf(105), sent.id);
+        assertEquals(Integer.valueOf(73), sent.userId);
+        assertEquals(INITIAL, sent.effectiveFrom);
+        assertEquals("08:30", sent.days.get(DayOfWeek.MONDAY).times.get(0));
+        assertFalse(sent.days.get(DayOfWeek.SATURDAY).selected);
+    }
+
+    @Test
+    public void successfulEditClosesFormAndReloadsMovedScheduleWithoutRepeatingPut() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        viewModel.beginEditForm();
+        viewModel.selectFormDay(DayOfWeek.SATURDAY, false);
+        viewModel.selectFormDay(DayOfWeek.MONDAY, true);
+        viewModel.setFormQuantity(DayOfWeek.MONDAY, "1");
+        viewModel.setFormTime(DayOfWeek.MONDAY, 0, "08:30");
+        viewModel.saveForm();
+        repository.updates.get(0).accept(ScreenState.success(habitOn(105, 73, 1, 1, "08:30")));
+        drain();
+        assertNull(state().form);
+        assertTrue(state().reading.busy());
+        assertEquals(2, repository.callbacks.size());
+        reply(1, ScreenState.success(dataOn(105, 73, 1, 1, "08:30")));
+        assertEquals(INITIAL, state().selectedDate);
+        assertTrue(state().day.confirmedEmpty());
+        assertEquals(1, repository.updates.size());
+    }
+
+    @Test
+    public void failedReloadAfterEditRetriesOnlyCollectionAndKeepsSelectedDate() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        viewModel.beginEditForm();
+        viewModel.saveForm();
+        repository.updates.get(0).accept(ScreenState.success(habit(105, 73, 1, "07:00")));
+        drain();
+        reply(1, ScreenState.error("Sem conexão"));
+        assertTrue(state().savedAwaitingReload);
+        viewModel.retry();
+        reply(2, ScreenState.success(data(73, 1)));
+        assertFalse(state().savedAwaitingReload);
+        assertEquals(INITIAL, state().selectedDate);
+        assertEquals(1, repository.updates.size());
+    }
+
+    @Test
+    public void editFailureAndUncertainResultPreserveDraftAndNeverFallBackToCreate() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        viewModel.beginEditForm();
+        viewModel.setFormFrequency("2");
+        viewModel.setFormQuantity(DayOfWeek.SATURDAY, "2");
+        viewModel.setFormTime(DayOfWeek.SATURDAY, 1, "20:00");
+        viewModel.saveForm();
+        RoutineFormState draft = state().form;
+        repository.updates.get(0).accept(ScreenState.error("Conflito", 409, 0));
+        drain();
+        assertSame(draft, state().form);
+        assertFalse(state().uncertainCreation);
+        viewModel.saveForm();
+        repository.updates.get(1).accept(ScreenState.error("Incerto", -7, 0));
+        drain();
+        assertSame(draft, state().form);
+        assertTrue(state().uncertainCreation);
+        assertTrue(repository.posts.isEmpty());
+    }
+
+    @Test
+    public void providerRetentionKeepsEditDraftAndLateDetailCannotOverwriteIt() {
+        load(data(73, 1));
+        viewModel.openDetails(105, LocalTime.of(7, 0));
+        Consumer<ScreenState<RoutineData.Habit>> old = repository.details.get(0);
+        replyDetail(0, ScreenState.success(habit(105, 73, 1, "07:00")));
+        viewModel.beginEditForm();
+        viewModel.setFormFrequency("2");
+        RoutineFormState draft = state().form;
+        assertSame(viewModel, provider.get(RoutineViewModel.class));
+        assertSame(draft, provider.get(RoutineViewModel.class).state().getValue().form);
+        old.accept(ScreenState.success(habit(105, 73, 4, "20:00")));
+        drain();
+        assertSame(draft, state().form);
+        assertEquals(Integer.valueOf(1), state().form.habitId);
+    }
+
+    @Test
     public void authorizationFailureEndsTheDraftWithoutReloadOrResend() {
         for (int code : new int[]{401, 403}) {
             viewModel.beginCreateForm();
@@ -1155,6 +1267,21 @@ public class RoutineViewModelTest {
 
     private RoutineData.Habit habit(int id, int user, int type, String... times) {
         return RoutineData.from(Collections.singletonList(response(id, user, type, times)), clock).habits.get(0);
+    }
+
+    private RoutineData dataOn(int id, int user, int type, int day, String... times) {
+        return RoutineData.from(Collections.singletonList(responseOn(id, user, type, day, times)), clock);
+    }
+
+    private RoutineData.Habit habitOn(int id, int user, int type, int day, String... times) {
+        return dataOn(id, user, type, day, times).habits.get(0);
+    }
+
+    private UserHabitResponse responseOn(int id, int user, int type, int day, String... times) {
+        UserHabitResponse value = response(id, user, type, times);
+        value.daysOfWeek = Collections.singletonList(day);
+        value.schedule.get(0).dayOfWeek = day;
+        return value;
     }
 
     private UserHabitResponse response(int id, int user, int type, String... times) {

@@ -203,7 +203,8 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
             root.postDelayed(retryUpdate, wait);
         }
         Button save = root.findViewById(R.id.routine_form_save);
-        save.setText(state.uncertainCreation ? R.string.routine_form_resend : R.string.routine_form_save);
+        save.setText(state.uncertainCreation ? R.string.routine_form_resend
+            : form.mode == RoutineFormState.Mode.EDIT ? R.string.routine_form_update : R.string.routine_form_save);
         save.setEnabled(!busy && wait == 0 && (!state.uncertainCreation || state.checkedCreation) && !state.reading.busy());
         View check = root.findViewById(R.id.routine_form_check);
         check.setVisibility(state.uncertainCreation ? View.VISIBLE : View.GONE);
@@ -245,6 +246,12 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
     private void bindHeader(RoutineFormState form) {
         binding = true;
         ((TextView) header.findViewById(R.id.routine_form_title)).setText(form.mode == RoutineFormState.Mode.CREATE ? R.string.routine_form_create : R.string.routine_form_edit);
+        TextView help = header.findViewById(R.id.routine_form_effective_from);
+        boolean editing = form.mode == RoutineFormState.Mode.EDIT && form.effectiveFrom != null;
+        help.setVisibility(editing ? View.VISIBLE : View.GONE);
+        if (editing) help.setText(getString(R.string.routine_form_edit_context, getString(R.string.routine_form_edit_help),
+            getString(R.string.routine_form_effective_from,
+                form.effectiveFrom.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.LONG).withLocale(locale())))));
         String[] labels = getResources().getStringArray(R.array.routine_form_types);
         String label = form.habitId == null ? "" : form.habitId >= 1 && form.habitId <= labels.length ? labels[form.habitId - 1] : getString(R.string.routine_form_unknown_type);
         if (!type.getText().toString().equals(label)) type.setText(label, false);
