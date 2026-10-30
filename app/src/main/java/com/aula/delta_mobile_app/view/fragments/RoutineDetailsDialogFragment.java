@@ -69,6 +69,12 @@ public final class RoutineDetailsDialogFragment extends DialogFragment {
             dismissAllowingStateLoss();
             new RoutineEditorDialogFragment().showNow(parent.getChildFragmentManager(), "routine_editor");
         });
+        view.findViewById(R.id.routine_details_delete).setOnClickListener(button -> {
+            Fragment parent = getParentFragment();
+            if (parent == null || parent.getChildFragmentManager().isStateSaved() || !model.requestDelete()) return;
+            dismissAllowingStateLoss();
+            new RoutineDeleteDialogFragment().showNow(parent.getChildFragmentManager(), "routine_delete");
+        });
         model.state().observe(getViewLifecycleOwner(), state -> render(view, state));
     }
 
@@ -117,6 +123,8 @@ public final class RoutineDetailsDialogFragment extends DialogFragment {
         view.findViewById(R.id.routine_details_refresh).setVisibility(refresh ? View.VISIBLE : View.GONE);
         view.findViewById(R.id.routine_details_edit).setVisibility(details != null && state.detail.status == ScreenState.Status.SUCCESS ? View.VISIBLE : View.GONE);
         view.findViewById(R.id.routine_details_edit).setEnabled(!state.reading.busy());
+        view.findViewById(R.id.routine_details_delete).setVisibility(details != null && state.detail.status == ScreenState.Status.SUCCESS ? View.VISIBLE : View.GONE);
+        view.findViewById(R.id.routine_details_delete).setEnabled(!state.reading.busy());
         renderRetry(view, state, locale);
     }
 
