@@ -1,0 +1,30 @@
+name: CI técnico
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-tecnico-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar arquivos essenciais
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for name in ("README.md", "AGENTS.md", "LICENSE"):
+              content = Path(name).read_text(encoding="utf-8")
+              if not content.strip():
+                  raise SystemExit(f"Arquivo vazio: {name}")
+              print(f"OK: {name}")
+          PY
