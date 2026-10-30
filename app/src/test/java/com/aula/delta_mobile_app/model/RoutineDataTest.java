@@ -6,6 +6,7 @@ import com.aula.delta_mobile_app.model.ApiModels.CreateUserHabitRequest;
 import com.aula.delta_mobile_app.model.ApiModels.UpdateUserHabitRequest;
 import com.aula.delta_mobile_app.model.ApiModels.UserHabitResponse;
 import com.aula.delta_mobile_app.model.ApiModels.UserHabitScheduleResponse;
+import com.aula.delta_mobile_app.model.ApiModels.UserHabitScheduleVersionResponse;
 import com.google.gson.Gson;
 
 import org.junit.Test;
@@ -278,6 +279,67 @@ public class RoutineDataTest {
     }
 
     @Test
+    public void scheduleVersionsSelectTheInclusiveRangeWithoutRewritingPastDates() {
+        UserHabitResponse habit = singleDay(105, 1, 1, "23:00");
+        habit.frequency = null;
+        habit.daysOfWeek = null;
+        habit.schedule = null;
+        habit.scheduleVersions = Arrays.asList(version("2026-01-01", "2026-10-28", 1, "07:00"),
+            version("2026-10-29", null, 4, "20:00", "21:00"));
+        RoutineData routine = data(habit);
+        assertEquals(LocalTime.of(7, 0), routine.day(LocalDate.of(2026, 10, 26)).executions.get(0).startTime);
+        assertTrue(routine.day(LocalDate.of(2026, 10, 27)).confirmedEmpty());
+        assertEquals(Arrays.asList(LocalTime.of(20, 0), LocalTime.of(21, 0)), Arrays.asList(
+            routine.day(LocalDate.of(2026, 10, 29)).executions.get(0).startTime,
+            routine.day(LocalDate.of(2026, 10, 29)).executions.get(1).startTime));
+        assertTrue(routine.day(LocalDate.of(2026, 11, 2)).confirmedEmpty());
+        assertTrue(routine.day(LocalDate.of(2025, 12, 29)).confirmedEmpty());
+        assertEquals(Integer.valueOf(1), routine.habits.get(0).frequencyAt(LocalDate.of(2026, 10, 26)));
+        assertEquals(Integer.valueOf(1), routine.habits.get(0).frequencyAt(LocalDate.of(2026, 10, 28)));
+        assertEquals(Integer.valueOf(2), routine.habits.get(0).frequencyAt(LocalDate.of(2026, 10, 29)));
+    }
+
+    @Test
+    public void editorSeedsTheVersionActiveOnTheSelectedDate() {
+        UserHabitResponse habit = singleDay(105, 1, 1, "23:00");
+        habit.scheduleVersions = Arrays.asList(version("2026-01-01", "2026-10-28", 1, "07:00"),
+            version("2026-10-29", null, 4, "20:00", "21:00"));
+        RoutineData.Habit parsed = data(habit).habits.get(0);
+        RoutineFormState old = RoutineFormState.edit(1, parsed, LocalDate.of(2026, 10, 26));
+        RoutineFormState current = RoutineFormState.edit(2, parsed, LocalDate.of(2026, 10, 29));
+        assertEquals("07:00", old.days.get(DayOfWeek.MONDAY).times.get(0));
+        assertFalse(old.days.get(DayOfWeek.THURSDAY).selected);
+        assertEquals("20:00", current.days.get(DayOfWeek.THURSDAY).times.get(0));
+        assertEquals("2", current.frequency);
+        assertFalse(current.days.get(DayOfWeek.MONDAY).selected);
+        assertEquals(LocalDate.of(2026, 10, 29), current.effectiveFrom);
+    }
+
+    @Test
+    public void malformedOverlappingOrGappedVersionHistoryStaysIncomplete() {
+        List<Consumer<List<UserHabitScheduleVersionResponse>>> invalid = Arrays.asList(
+            versions -> versions.clear(),
+            versions -> versions.get(0).effectiveFrom = null,
+            versions -> versions.get(0).effectiveFrom = "29/10/2026",
+            versions -> versions.get(0).effectiveUntil = null,
+            versions -> versions.get(0).effectiveUntil = "2025-12-31",
+            versions -> versions.get(0).effectiveUntil = "2026-10-27",
+            versions -> versions.get(1).effectiveFrom = "2026-10-28",
+            versions -> versions.get(1).effectiveUntil = "2027-01-01",
+            versions -> versions.get(1).schedule = null);
+        for (int i = 0; i < invalid.size(); i++) {
+            UserHabitResponse habit = singleDay(105, 1, 1, "23:00");
+            habit.scheduleVersions = new ArrayList<>(Arrays.asList(version("2026-01-01", "2026-10-28", 1, "07:00"),
+                version("2026-10-29", null, 4, "20:00")));
+            invalid.get(i).accept(habit.scheduleVersions);
+            RoutineData.Day day = data(habit).day(LocalDate.of(2026, 10, 29));
+            assertFalse("case " + i, day.agendaComplete);
+            assertEquals("case " + i, 1, day.incompleteHabits.size());
+            assertTrue("case " + i, day.executions.isEmpty());
+        }
+    }
+
+    @Test
     public void projectionIsAnImmutableSnapshotOfMutableTransportObjects() {
         UserHabitResponse habit = singleDay(105, 1, 1, "20:00", "07:00");
         habit.habitName = "Original";
@@ -348,6 +410,16 @@ public class RoutineDataTest {
         UserHabitScheduleResponse value = new UserHabitScheduleResponse();
         value.dayOfWeek = weekday;
         value.startTimes = new ArrayList<>(Arrays.asList(times));
+        return value;
+    }
+
+    private UserHabitScheduleVersionResponse version(String from, String until, int weekday, String... times) {
+        UserHabitScheduleVersionResponse value = new UserHabitScheduleVersionResponse();
+        value.effectiveFrom = from;
+        value.effectiveUntil = until;
+        value.frequency = times.length;
+        value.daysOfWeek = Collections.singletonList(weekday);
+        value.schedule = Collections.singletonList(schedule(weekday, times));
         return value;
     }
 }

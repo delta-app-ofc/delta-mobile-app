@@ -10,6 +10,10 @@ public interface RoutineActions {
         callback.accept(ScreenState.error("Criação indisponível nesta fonte.", 405, 0));
     }
 
+    default void update(RoutineFormState form, Consumer<ScreenState<RoutineData.Habit>> callback) {
+        callback.accept(ScreenState.error("Edição indisponível nesta fonte.", 405, 0));
+    }
+
     void load(Consumer<ScreenState<RoutineData>> callback);
 
     void detail(int id, Consumer<ScreenState<RoutineData.Habit>> callback);

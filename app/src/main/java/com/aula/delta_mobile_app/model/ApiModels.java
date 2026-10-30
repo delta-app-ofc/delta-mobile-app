@@ -75,6 +75,8 @@ public final class ApiModels {
         public Integer habitId;
         public Integer frequency;
         public List<Integer> daysOfWeek;
+        public List<UserHabitScheduleResponse> schedule;
+        public String effectiveFrom;
     }
 
     public static class UserHabitResponse {
@@ -90,11 +92,21 @@ public final class ApiModels {
         public String endTime;
         public BigDecimal estimatedLiters;
         public List<UserHabitScheduleResponse> schedule;
+        public String effectiveFrom;
+        public List<UserHabitScheduleVersionResponse> scheduleVersions;
     }
 
     public static class UserHabitScheduleResponse {
         public Integer dayOfWeek;
         public List<String> startTimes;
+    }
+
+    public static class UserHabitScheduleVersionResponse {
+        public String effectiveFrom;
+        public String effectiveUntil;
+        public Integer frequency;
+        public List<Integer> daysOfWeek;
+        public List<UserHabitScheduleResponse> schedule;
     }
 
     public static class UpdateDeviceRequest {

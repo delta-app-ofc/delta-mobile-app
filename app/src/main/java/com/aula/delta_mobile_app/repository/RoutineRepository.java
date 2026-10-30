@@ -3,6 +3,7 @@ package com.aula.delta_mobile_app.repository;
 import com.aula.delta_mobile_app.model.ApiModels.CreateUserHabitRequest;
 import com.aula.delta_mobile_app.model.ApiModels.UserHabitResponse;
 import com.aula.delta_mobile_app.model.ApiModels.UserHabitScheduleResponse;
+import com.aula.delta_mobile_app.model.ApiModels.UpdateUserHabitRequest;
 import com.aula.delta_mobile_app.model.AuthModels.Profile;
 import com.aula.delta_mobile_app.model.RoutineData;
 import com.aula.delta_mobile_app.model.RoutineFormState;
@@ -20,6 +21,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -76,8 +78,81 @@ public final class RoutineRepository implements RoutineActions {
         }, callback);
     }
 
+    @Override
+    public void update(RoutineFormState form, Consumer<ScreenState<RoutineData.Habit>> callback) {
+        if (form == null || form.mode != RoutineFormState.Mode.EDIT || form.id == null || form.userId == null || form.effectiveFrom == null || !form.validate().valid()) {
+            callback.accept(ScreenState.error("Confira os campos do formulário.", 400, 0));
+            return;
+        }
+        access.resource(() -> {
+            boolean started = false;
+            try {
+                Profile profile = access.currentProfile();
+                if (!identified(profile)) return ScreenState.error("Não foi possível identificar sua conta.");
+                if (!Objects.equals(profile.id, form.userId)) return ScreenState.error("Este hábito não pertence à conta atual.", 403, 0);
+                Response<UserHabitResponse> current = access.api().getUserHabit(profile.id, form.id).execute();
+                if (!current.isSuccessful()) return ApiErrors.from(current);
+                if (!owned(current.body(), profile.id) || !Objects.equals(form.id, current.body().id))
+                    return ScreenState.error("Não foi possível confirmar o vínculo deste hábito.", 403, 0);
+                UpdateUserHabitRequest request = new UpdateUserHabitRequest();
+                request.habitId = form.habitId;
+                request.frequency = Integer.valueOf(form.frequency.trim());
+                request.daysOfWeek = days(form);
+                request.schedule = schedule(form);
+                request.effectiveFrom = form.effectiveFrom.toString();
+                Call<UserHabitResponse> call = access.api().updateUserHabit(profile.id, form.id, request);
+                started = true;
+                Response<UserHabitResponse> response = call.execute();
+                if (response.code() >= 500) return uncertain();
+                if (!response.isSuccessful()) return ApiErrors.from(response);
+                UserHabitResponse value = response.body();
+                if (response.code() != 200 || !owned(value, profile.id) || !Objects.equals(form.id, value.id)
+                    || !Objects.equals(request.effectiveFrom, value.effectiveFrom)) return uncertain();
+                RoutineData.Habit habit = RoutineData.from(Collections.singletonList(value), clock).habits.get(0);
+                return matches(form, habit) ? ScreenState.success(habit) : uncertain();
+            } catch (IOException unavailable) {
+                return started ? uncertain() : ApiErrors.network();
+            } catch (JsonParseException | IllegalArgumentException | IllegalStateException invalid) {
+                return started ? uncertain() : invalidBody();
+            }
+        }, callback);
+    }
+
     private static <T> ScreenState<T> uncertain() {
-        return ScreenState.error("Não foi possível confirmar o resultado da criação.", UNCERTAIN, 0);
+        return ScreenState.error("Não foi possível confirmar o resultado da alteração.", UNCERTAIN, 0);
+    }
+
+    private static List<Integer> days(RoutineFormState form) {
+        List<Integer> values = new ArrayList<>();
+        for (DayOfWeek day : DayOfWeek.values()) if (form.days.get(day).selected) values.add(day.getValue());
+        return values;
+    }
+
+    private static List<UserHabitScheduleResponse> schedule(RoutineFormState form) {
+        List<UserHabitScheduleResponse> values = new ArrayList<>();
+        for (DayOfWeek day : DayOfWeek.values()) {
+            RoutineFormState.DayDraft draft = form.days.get(day);
+            if (!draft.selected) continue;
+            UserHabitScheduleResponse item = new UserHabitScheduleResponse();
+            item.dayOfWeek = day.getValue();
+            item.startTimes = new ArrayList<>(draft.times.subList(0, draft.activeCount()));
+            values.add(item);
+        }
+        return values;
+    }
+
+    private static boolean matches(RoutineFormState form, RoutineData.Habit habit) {
+        boolean complete = form.effectiveFrom == null ? habit.scheduleComplete : habit.scheduleCompleteAt(form.effectiveFrom);
+        Integer frequency = form.effectiveFrom == null ? habit.frequency : habit.frequencyAt(form.effectiveFrom);
+        if (!complete || habit.habitId != form.habitId || !Objects.equals(frequency, Integer.valueOf(form.frequency.trim()))) return false;
+        for (DayOfWeek day : DayOfWeek.values()) {
+            List<LocalTime> expected = new ArrayList<>();
+            RoutineFormState.DayDraft draft = form.days.get(day);
+            for (int i = 0; i < draft.activeCount(); i++) expected.add(LocalTime.parse(draft.times.get(i)));
+            Map<DayOfWeek, List<LocalTime>> schedule = form.effectiveFrom == null ? habit.schedule : habit.scheduleAt(form.effectiveFrom);
+            if (!new HashSet<>(expected).equals(new HashSet<>(schedule.getOrDefault(day, Collections.emptyList())))) return false;
+        }
+        return true;
     }
 
     interface Access {

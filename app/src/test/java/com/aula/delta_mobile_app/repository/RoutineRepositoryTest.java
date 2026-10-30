@@ -35,6 +35,108 @@ import retrofit2.Retrofit;
 import static org.junit.Assert.*;
 
 public class RoutineRepositoryTest {
+    private RoutineFormState editForm() {
+        return RoutineFormState.edit(2, habit(), LocalDate.of(2026, 11, 3));
+    }
+
+    private RoutineData.Habit habit() {
+        return RoutineData.from(java.util.Collections.singletonList(GsonProvider.getInstance().fromJson(HABIT,
+            com.aula.delta_mobile_app.model.ApiModels.UserHabitResponse.class)), CLOCK).habits.get(0);
+    }
+
+    @Test
+    public void updateVerifiesOwnerThenUsesStableIdAndCompleteVersionPayload() throws Exception {
+        access.queue(200, UPDATE_HABIT);
+        access.queue(200, UPDATE_HABIT);
+        Result<RoutineData.Habit> result = new Result<>();
+        repository.update(editForm(), result);
+        access.run();
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertEquals(2, access.requests.size());
+        assertEquals("GET", access.requests.get(0).method());
+        assertEquals("/delta/habits/73/105", access.requests.get(0).url().encodedPath());
+        Request put = access.requests.get(1);
+        assertEquals("PUT", put.method());
+        assertEquals("/delta/habits/73/105", put.url().encodedPath());
+        Buffer buffer = new Buffer();
+        put.body().writeTo(buffer);
+        JsonObject body = JsonParser.parseString(buffer.readUtf8()).getAsJsonObject();
+        assertEquals(5, body.size());
+        assertEquals("2026-11-03", body.get("effectiveFrom").getAsString());
+        assertEquals(5, body.get("frequency").getAsInt());
+        assertEquals(2, body.getAsJsonArray("schedule").size());
+        assertFalse(body.has("startTime"));
+        assertFalse(body.has("endTime"));
+        assertFalse(body.has("estimatedLiters"));
+    }
+
+    @Test
+    public void updateRejectsInvalidIdentityOrDraftWithoutNetwork() {
+        Result<RoutineData.Habit> missingDate = new Result<>();
+        repository.update(RoutineFormState.edit(2, habit()), missingDate);
+        assertEquals(400, missingDate.only().code);
+        Result<RoutineData.Habit> invalid = new Result<>();
+        repository.update(editForm().withFrequency(""), invalid);
+        assertEquals(400, invalid.only().code);
+        assertEquals(0, access.resources);
+        access.userId = 74;
+        Result<RoutineData.Habit> account = new Result<>();
+        repository.update(editForm(), account);
+        access.run();
+        assertEquals(403, account.only().code);
+        assertTrue(access.requests.isEmpty());
+    }
+
+    @Test
+    public void updateNeverPutsWhenDetailFailsOrDoesNotBelongToTheAccount() {
+        access.queue(404, "{}");
+        Result<RoutineData.Habit> missing = new Result<>();
+        repository.update(editForm(), missing);
+        access.run();
+        assertEquals(404, missing.only().code);
+        assertEquals(1, access.requests.size());
+        access.queue(200, UPDATE_HABIT.replace("\"userId\":73", "\"userId\":74"));
+        Result<RoutineData.Habit> owner = new Result<>();
+        repository.update(editForm(), owner);
+        access.run();
+        assertEquals(403, owner.only().code);
+        assertEquals(2, access.requests.size());
+    }
+
+    @Test
+    public void updatePreservesConclusivePutFailuresAfterOwnerCheck() {
+        for (int code : new int[]{400, 404, 409, 429}) {
+            access.queue(200, UPDATE_HABIT);
+            access.queue(code, "{}");
+            access.retryAfter = "60";
+            Result<RoutineData.Habit> result = new Result<>();
+            repository.update(editForm(), result);
+            access.run();
+            assertEquals(code, result.only().code);
+            if (code == 429) assertTrue(result.only().retryAt > 0);
+        }
+    }
+
+    @Test
+    public void updateTreatsServerFailureAndMismatchedSuccessAsUncertain() {
+        String[] invalid = {UPDATE_HABIT.replace("\"id\":105", "\"id\":106"), UPDATE_HABIT.replace("2026-11-03", "2026-11-04"),
+            UPDATE_HABIT.replace("07:00", "07:30")};
+        for (String body : invalid) {
+            access.queue(200, UPDATE_HABIT);
+            access.queue(200, body);
+            Result<RoutineData.Habit> result = new Result<>();
+            repository.update(editForm(), result);
+            access.run();
+            assertEquals(RoutineRepository.UNCERTAIN, result.only().code);
+        }
+        access.queue(200, UPDATE_HABIT);
+        access.queue(503, "{}");
+        Result<RoutineData.Habit> server = new Result<>();
+        repository.update(editForm(), server);
+        access.run();
+        assertEquals(RoutineRepository.UNCERTAIN, server.only().code);
+    }
+
     private RoutineFormState createForm() {
         return RoutineFormState.create(1).withHabit(1).withFrequency("5")
             .selectDay(DayOfWeek.MONDAY, true).withQuantity(DayOfWeek.MONDAY, "2")
@@ -134,6 +236,7 @@ public class RoutineRepositoryTest {
         + "\"habitCategory\":\"Higiene\",\"frequency\":5,\"daysOfWeek\":[1,3],"
         + "\"schedule\":[{\"dayOfWeek\":1,\"startTimes\":[\"07:00\",\"20:00\"]},"
         + "{\"dayOfWeek\":3,\"startTimes\":[\"08:00\",\"14:00\",\"21:00\"]}]}";
+    private static final String UPDATE_HABIT = HABIT.substring(0, HABIT.length() - 1) + ",\"effectiveFrom\":\"2026-11-03\"}";
     private final Access access = new Access();
     private final RoutineActions repository = new RoutineRepository(access, CLOCK);
 
@@ -154,6 +257,8 @@ public class RoutineRepositoryTest {
     private static final class Access implements RoutineRepository.Access {
         final List<Request> requests = new ArrayList<>();
         final List<Runnable> work = new ArrayList<>();
+        final List<Integer> responseCodes = new ArrayList<>();
+        final List<String> responseBodies = new ArrayList<>();
         final ApiService service;
         Integer userId = 73;
         int code = 200, profileReads, resources;
@@ -166,8 +271,10 @@ public class RoutineRepositoryTest {
                 assertTrue(running);
                 requests.add(chain.request());
                 if (networkFailure != null) throw networkFailure;
-                okhttp3.Response.Builder response = new okhttp3.Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(code).message("test")
-                    .body(ResponseBody.create(MediaType.get("application/json"), body));
+                int nextCode = responseCodes.isEmpty() ? code : responseCodes.remove(0);
+                String nextBody = responseBodies.isEmpty() ? body : responseBodies.remove(0);
+                okhttp3.Response.Builder response = new okhttp3.Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(nextCode).message("test")
+                    .body(ResponseBody.create(MediaType.get("application/json"), nextBody));
                 if (retryAfter != null) response.header("Retry-After", retryAfter);
                 return response.build();
             }).build();
@@ -210,6 +317,11 @@ public class RoutineRepositoryTest {
         void run() {
             assertFalse(work.isEmpty());
             work.remove(0).run();
+        }
+
+        void queue(int code, String body) {
+            responseCodes.add(code);
+            responseBodies.add(body);
         }
     }
 
