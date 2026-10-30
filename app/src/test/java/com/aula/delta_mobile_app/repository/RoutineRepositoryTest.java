@@ -1,39 +1,134 @@
 package com.aula.delta_mobile_app.repository;
 
-import static org.junit.Assert.*;
-
 import com.aula.delta_mobile_app.model.AuthModels.Profile;
 import com.aula.delta_mobile_app.model.RoutineData;
+import com.aula.delta_mobile_app.model.RoutineFormState;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.services.api.ApiService;
 import com.aula.delta_mobile_app.services.network.ApiErrors;
 import com.aula.delta_mobile_app.services.network.GsonProvider;
-
-import org.junit.Test;
-
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.time.Clock;
+import java.time.DayOfWeek;
+import java.time.format.DateTimeFormatter;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-
+import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
-import retrofit2.Retrofit;
+import okio.Buffer;
+import org.junit.Test;
 import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.Retrofit;
+import static org.junit.Assert.*;
 
 public class RoutineRepositoryTest {
+    private RoutineFormState createForm() {
+        return RoutineFormState.create(1).withHabit(1).withFrequency("5")
+            .selectDay(DayOfWeek.MONDAY, true).withQuantity(DayOfWeek.MONDAY, "2")
+            .withTime(DayOfWeek.MONDAY, 0, "07:00").withTime(DayOfWeek.MONDAY, 1, "20:00")
+            .selectDay(DayOfWeek.WEDNESDAY, true).withQuantity(DayOfWeek.WEDNESDAY, "3")
+            .withTime(DayOfWeek.WEDNESDAY, 0, "08:00").withTime(DayOfWeek.WEDNESDAY, 1, "14:00")
+            .withTime(DayOfWeek.WEDNESDAY, 2, "21:00");
+    }
+
+    @Test
+    public void createUsesAuthenticatedRouteAndExactPayloadAndRequires201() throws Exception {
+        access.code = 201;
+        access.body = HABIT;
+        Result<RoutineData.Habit> result = new Result<>();
+        repository.create(createForm(), result);
+        assertTrue(access.requests.isEmpty());
+        access.run();
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertEquals(105, result.only().data.id);
+        Request request = access.requests.get(0);
+        assertEquals("POST", request.method());
+        assertEquals("/delta/habits/73", request.url().encodedPath());
+        Buffer buffer = new Buffer();
+        request.body().writeTo(buffer);
+        JsonObject body = JsonParser.parseString(buffer.readUtf8()).getAsJsonObject();
+        assertEquals(4, body.size());
+        assertEquals(5, body.get("frequency").getAsInt());
+        assertEquals(2, body.getAsJsonArray("schedule").size());
+        assertEquals("20:00", body.getAsJsonArray("schedule").get(0).getAsJsonObject().getAsJsonArray("startTimes").get(1).getAsString());
+        assertFalse(body.has("userId"));
+    }
+
+    @Test
+    public void createRejectsInvalidDraftWithoutRequestOrResource() {
+        Result<RoutineData.Habit> result = new Result<>();
+        repository.create(createForm().withFrequency(""), result);
+        assertEquals(400, result.only().code);
+        assertEquals(0, access.resources);
+    }
+
+    @Test
+    public void createPreservesConfirmedHttpErrorsAndRetryAfter() {
+        for (int code : new int[]{400, 409, 401, 403, 429}) {
+            access.code = code;
+            access.body = "{}";
+            access.retryAfter = "60";
+            Result<RoutineData.Habit> result = new Result<>();
+            repository.create(createForm(), result);
+            access.run();
+            assertEquals(code, result.only().code);
+            if (code == 429) assertTrue(result.only().retryAt > 0);
+        }
+    }
+
+    @Test
+    public void createTreatsMismatchedMissingOrMalformedSuccessAsUncertain() {
+        for (String body : new String[]{"", "{}", "null", "broken", HABIT.replace("\"userId\":73", "\"userId\":74"),
+            HABIT.replace("\"habitId\":1", "\"habitId\":2"), HABIT.replace("07:00", "07:30"), HABIT.replace("\"frequency\":5", "\"frequency\":6")}) {
+            access.code = 201;
+            access.body = body;
+            Result<RoutineData.Habit> result = new Result<>();
+            repository.create(createForm(), result);
+            access.run();
+            assertEquals(body, RoutineRepository.UNCERTAIN, result.only().code);
+        }
+    }
+
+    @Test
+    public void createTreatsUnexpectedSuccessServerFailureAndTimeoutAsUncertain() {
+        for (int code : new int[]{200, 202, 500, 503}) {
+            access.code = code;
+            access.body = HABIT;
+            Result<RoutineData.Habit> result = new Result<>();
+            repository.create(createForm(), result);
+            access.run();
+            assertEquals(RoutineRepository.UNCERTAIN, result.only().code);
+        }
+        access.networkFailure = new SocketTimeoutException();
+        Result<RoutineData.Habit> timeout = new Result<>();
+        repository.create(createForm(), timeout);
+        access.run();
+        assertEquals(RoutineRepository.UNCERTAIN, timeout.only().code);
+    }
+
+    @Test
+    public void profileFailureBeforePostDoesNotBecomeAnUncertainMutation() {
+        access.profileFailure = new IOException();
+        Result<RoutineData.Habit> result = new Result<>();
+        repository.create(createForm(), result);
+        access.run();
+        assertNotEquals(RoutineRepository.UNCERTAIN, result.only().code);
+        assertTrue(access.requests.isEmpty());
+    }
+
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-29T12:00:00Z"), ZoneOffset.UTC);
     private static final String HABIT = "{\"id\":105,\"userId\":73,\"habitId\":1,\"habitName\":\"Banho longo\","
         + "\"habitCategory\":\"Higiene\",\"frequency\":5,\"daysOfWeek\":[1,3],"

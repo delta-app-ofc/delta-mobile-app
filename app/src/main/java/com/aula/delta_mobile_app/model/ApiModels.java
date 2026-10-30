@@ -163,6 +163,7 @@ public final class ApiModels {
         public Integer habitId;
         public Integer frequency;
         public List<Integer> daysOfWeek;
+        public List<UserHabitScheduleResponse> schedule;
     }
 
     public static class CreateDeviceRequest {

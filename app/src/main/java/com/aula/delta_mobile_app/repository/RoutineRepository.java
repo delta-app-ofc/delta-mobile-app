@@ -1,24 +1,85 @@
 package com.aula.delta_mobile_app.repository;
 
+import com.aula.delta_mobile_app.model.ApiModels.CreateUserHabitRequest;
 import com.aula.delta_mobile_app.model.ApiModels.UserHabitResponse;
+import com.aula.delta_mobile_app.model.ApiModels.UserHabitScheduleResponse;
 import com.aula.delta_mobile_app.model.AuthModels.Profile;
 import com.aula.delta_mobile_app.model.RoutineData;
+import com.aula.delta_mobile_app.model.RoutineFormState;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.services.api.ApiService;
 import com.aula.delta_mobile_app.services.network.ApiErrors;
 import com.google.gson.JsonParseException;
-
 import java.io.IOException;
 import java.time.Clock;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import retrofit2.Call;
 import retrofit2.Response;
 
 public final class RoutineRepository implements RoutineActions {
+    public static final int UNCERTAIN = -7;
+
+    @Override
+    public void create(RoutineFormState form, Consumer<ScreenState<RoutineData.Habit>> callback) {
+        if (form == null || form.mode != RoutineFormState.Mode.CREATE || !form.validate().valid()) {
+            callback.accept(ScreenState.error("Confira os campos do formulário.", 400, 0));
+            return;
+        }
+        access.resource(() -> {
+            boolean started = false;
+            try {
+                Profile profile = access.currentProfile();
+                if (!identified(profile)) return ScreenState.error("Não foi possível identificar sua conta.");
+                CreateUserHabitRequest request = new CreateUserHabitRequest();
+                request.habitId = form.habitId;
+                request.frequency = Integer.valueOf(form.frequency.trim());
+                request.daysOfWeek = new ArrayList<>();
+                request.schedule = new ArrayList<>();
+                for (DayOfWeek day : DayOfWeek.values()) {
+                    RoutineFormState.DayDraft draft = form.days.get(day);
+                    if (!draft.selected) continue;
+                    request.daysOfWeek.add(day.getValue());
+                    UserHabitScheduleResponse item = new UserHabitScheduleResponse();
+                    item.dayOfWeek = day.getValue();
+                    item.startTimes = new ArrayList<>(draft.times.subList(0, draft.activeCount()));
+                    request.schedule.add(item);
+                }
+                Call<UserHabitResponse> call = access.api().createUserHabit(profile.id, request);
+                started = true;
+                Response<UserHabitResponse> response = call.execute();
+                if (response.code() >= 500) return uncertain();
+                if (!response.isSuccessful()) return ApiErrors.from(response);
+                UserHabitResponse value = response.body();
+                if (response.code() != 201 || !owned(value, profile.id) || value.id <= 0) return uncertain();
+                RoutineData.Habit habit = RoutineData.from(Collections.singletonList(value), clock).habits.get(0);
+                if (!habit.scheduleComplete || habit.habitId != form.habitId || !Objects.equals(habit.frequency, request.frequency)) return uncertain();
+                for (DayOfWeek day : DayOfWeek.values()) {
+                    List<LocalTime> expected = new ArrayList<>();
+                    RoutineFormState.DayDraft draft = form.days.get(day);
+                    for (int i = 0; i < draft.activeCount(); i++) expected.add(LocalTime.parse(draft.times.get(i)));
+                    if (!new HashSet<>(expected).equals(new HashSet<>(habit.schedule.getOrDefault(day, Collections.emptyList())))) return uncertain();
+                }
+                return ScreenState.success(habit);
+            } catch (IOException unavailable) {
+                return started ? uncertain() : ApiErrors.network();
+            } catch (JsonParseException | IllegalArgumentException | IllegalStateException invalid) {
+                return started ? uncertain() : invalidBody();
+            }
+        }, callback);
+    }
+
+    private static <T> ScreenState<T> uncertain() {
+        return ScreenState.error("Não foi possível confirmar o resultado da criação.", UNCERTAIN, 0);
+    }
+
     interface Access {
         ApiService api();
 
