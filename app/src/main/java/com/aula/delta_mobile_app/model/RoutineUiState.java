@@ -51,6 +51,8 @@ public final class RoutineUiState {
     public final ScreenState<RoutineData.Habit> detail;
     public final HabitDetails details;
     public final RoutineFormState form;
+    public final ScreenState<RoutineData.Habit> creation;
+    public final boolean uncertainCreation, checkedCreation, confirmResend, savedAwaitingReload;
 
     public RoutineUiState(LocalDate selectedDate, ScreenState<RoutineData> reading, RoutineData previous) {
         this(selectedDate, reading, previous, null, ScreenState.idle());
@@ -61,6 +63,16 @@ public final class RoutineUiState {
     }
 
     public RoutineUiState(LocalDate selectedDate, ScreenState<RoutineData> reading, RoutineData previous, DetailTarget target, ScreenState<RoutineData.Habit> detail, RoutineFormState form) {
+        this(selectedDate, reading, previous, target, detail, form, ScreenState.idle(), false, false, false, false);
+    }
+
+    public RoutineUiState(LocalDate selectedDate, ScreenState<RoutineData> reading, RoutineData previous, DetailTarget target, ScreenState<RoutineData.Habit> detail,
+        RoutineFormState form, ScreenState<RoutineData.Habit> creation, boolean uncertainCreation, boolean checkedCreation, boolean confirmResend, boolean savedAwaitingReload) {
+        this.creation = Objects.requireNonNull(creation);
+        this.uncertainCreation = uncertainCreation;
+        this.checkedCreation = checkedCreation;
+        this.confirmResend = confirmResend;
+        this.savedAwaitingReload = savedAwaitingReload;
         this.selectedDate = Objects.requireNonNull(selectedDate);
         displayedMonth = YearMonth.from(selectedDate);
         this.reading = Objects.requireNonNull(reading);

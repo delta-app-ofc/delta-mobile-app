@@ -89,6 +89,10 @@ public final class RoutineFragment extends AuthFlowFragment {
         view.findViewById(R.id.routine_refresh).setOnClickListener(button -> model.refresh());
         view.findViewById(R.id.routine_retry).setOnClickListener(button -> model.retry());
         restorePicker();
+        view.findViewById(R.id.routine_add).setOnClickListener(button -> {
+            if (getChildFragmentManager().isStateSaved()) return;
+            if (model.beginCreateForm()) new RoutineEditorDialogFragment().showNow(getChildFragmentManager(), "routine_editor");
+        });
         model.state().observe(getViewLifecycleOwner(), state -> {
             render(view, state);
             if (state.reading.status == ScreenState.Status.IDLE) model.load();
@@ -129,6 +133,7 @@ public final class RoutineFragment extends AuthFlowFragment {
     }
 
     private void render(View view, RoutineUiState state) {
+        view.findViewById(R.id.routine_add).setEnabled(state.form == null && !state.creation.busy() && !state.reading.busy() && !state.savedAwaitingReload);
         Locale locale = getResources().getConfiguration().getLocales().get(0);
         String month = state.displayedMonth.format(DateTimeFormatter.ofPattern("LLLL uuuu", locale));
         MaterialButton monthButton = view.findViewById(R.id.routine_month);
@@ -181,6 +186,7 @@ public final class RoutineFragment extends AuthFlowFragment {
         boolean error = state.reading.status == ScreenState.Status.ERROR;
         String message = error ? getString(errorResource(state.reading.code)) : state.reading.busy() && state.data != null ? getString(R.string.routine_updating) : "";
         if (error && state.stale) message = getString(R.string.routine_error_stale, message, getString(R.string.routine_stale));
+        if (error && state.savedAwaitingReload) message = getString(R.string.routine_saved_reload_error);
         ((StatusNoticeView) view.findViewById(R.id.routine_notice)).setText(message);
         long wait = error ? Math.max(0, state.reading.retryAt - System.currentTimeMillis()) : 0;
         MaterialButton retry = view.findViewById(R.id.routine_retry);

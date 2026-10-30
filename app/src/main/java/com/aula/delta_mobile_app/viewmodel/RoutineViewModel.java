@@ -62,6 +62,76 @@ public final class RoutineViewModel extends ViewModel {
     private ScreenState<RoutineData.Habit> detail = ScreenState.idle();
     private RoutineFormState form;
     private long formGeneration;
+    private ScreenState<RoutineData.Habit> creation = ScreenState.idle();
+    private boolean uncertainCreation, checkedCreation, confirmResend, savedAwaitingReload;
+    private long creationGeneration, checkGeneration = -1;
+
+    private void resetCreation() {
+        creationGeneration++;
+        creation = ScreenState.idle();
+        uncertainCreation = checkedCreation = confirmResend = savedAwaitingReload = false;
+        checkGeneration = -1;
+    }
+
+    public void saveForm() {
+        if (cleared || !ensureSession() || form == null || form.mode != RoutineFormState.Mode.CREATE || creation.busy() || uncertainCreation
+            || creation.retryAt > clock.millis() || !validateForm()) return;
+        RoutineFormState submitted = form;
+        long operation = ++creationGeneration;
+        creation = ScreenState.loading();
+        publish();
+        if (cleared || form != submitted || operation != creationGeneration) return;
+        repository.create(submitted, result -> {
+            if (!cleared) dispatch.accept(() -> {
+                if (cleared || operation != creationGeneration || form != submitted || !creation.busy() || !ensureSession()) return;
+                creation = result == null || (result.status != ScreenState.Status.SUCCESS && result.status != ScreenState.Status.ERROR)
+                    || (result.status == ScreenState.Status.SUCCESS && result.data == null)
+                    ? ScreenState.error("Não foi possível confirmar o resultado da criação.", RoutineRepository.UNCERTAIN, 0) : result;
+                if (creation.status == ScreenState.Status.SUCCESS) {
+                    form = null;
+                    savedAwaitingReload = true;
+                    generation++;
+                    loading = false;
+                    reading = ScreenState.idle();
+                    load(true);
+                } else if (creation.code == 401 || creation.code == 403) {
+                    reading = ScreenState.error(creation.message, creation.code, creation.retryAt);
+                    data = null;
+                    form = null;
+                    publish();
+                } else {
+                    uncertainCreation = creation.code == RoutineRepository.UNCERTAIN || creation.code >= 500;
+                    checkedCreation = false;
+                    publish();
+                }
+            });
+        });
+    }
+
+    public void checkCreation() {
+        if (cleared || !ensureSession() || form == null || !uncertainCreation || creation.busy() || loading || reading.retryAt > clock.millis()) return;
+        checkedCreation = false;
+        checkGeneration = generation + 1;
+        load(true);
+    }
+
+    public void requestResend() {
+        if (cleared || form == null || !uncertainCreation || !checkedCreation || loading) return;
+        confirmResend = true;
+        publish();
+    }
+
+    public void cancelResend() {
+        confirmResend = false;
+        if (!cleared) publish();
+    }
+
+    public void confirmResend() {
+        if (cleared || !ensureSession() || !confirmResend || !checkedCreation || loading || form == null) return;
+        uncertainCreation = checkedCreation = confirmResend = false;
+        creation = ScreenState.idle();
+        saveForm();
+    }
     private long generation;
     private long detailGeneration;
     private boolean signedIn, loading;
@@ -85,6 +155,7 @@ public final class RoutineViewModel extends ViewModel {
             if (cleared) return;
             signedIn = Boolean.TRUE.equals(value);
             form = null;
+            resetCreation();
             invalidate();
         };
         session.observeForever(sessionObserver);
@@ -162,6 +233,7 @@ public final class RoutineViewModel extends ViewModel {
     public boolean beginCreateForm() {
         if (cleared || !ensureSession() || form != null) return false;
         form = RoutineFormState.create(++formGeneration);
+        resetCreation();
         publish();
         return true;
     }
@@ -203,7 +275,7 @@ public final class RoutineViewModel extends ViewModel {
     }
 
     public void requestFormClose(long token) {
-        if (cleared || form == null || form.token != token) return;
+        if (cleared || form == null || form.token != token || creation.busy()) return;
         form = form.dirty ? form.confirmDiscard(true) : null;
         publish();
     }
@@ -215,13 +287,14 @@ public final class RoutineViewModel extends ViewModel {
     }
 
     public void discardForm(long token) {
-        if (cleared || form == null || form.token != token) return;
+        if (cleared || form == null || form.token != token || creation.busy()) return;
         form = null;
+        resetCreation();
         publish();
     }
 
     private void editForm(UnaryOperator<RoutineFormState> update) {
-        if (cleared || !ensureSession() || form == null) return;
+        if (cleared || !ensureSession() || form == null || creation.busy()) return;
         RoutineFormState next = update.apply(form);
         if (next == form) return;
         form = next;
@@ -269,6 +342,7 @@ public final class RoutineViewModel extends ViewModel {
     private void load(boolean refresh) {
         if (cleared || !ensureSession() || loading || (!refresh && reading.status == ScreenState.Status.SUCCESS)) return;
         if (reading.status == ScreenState.Status.ERROR && reading.retryAt > clock.millis()) return;
+        if (uncertainCreation) checkedCreation = false;
         resetDetail();
         long request = ++generation;
         loading = true;
@@ -283,6 +357,11 @@ public final class RoutineViewModel extends ViewModel {
     private void complete(long request, ScreenState<RoutineData> result) {
         if (cleared || request != generation || !loading || !ensureSession()) return;
         loading = false;
+        if (request == checkGeneration) {
+            checkedCreation = result != null && result.status == ScreenState.Status.SUCCESS && result.data != null;
+            checkGeneration = -1;
+        }
+        if (result != null && result.status == ScreenState.Status.SUCCESS && result.data != null) savedAwaitingReload = false;
         if (result == null || (result.status != ScreenState.Status.SUCCESS && result.status != ScreenState.Status.ERROR)
             || (result.status == ScreenState.Status.SUCCESS && result.data == null)) {
             reading = ScreenState.error("Não foi possível carregar a rotina.");
@@ -303,6 +382,7 @@ public final class RoutineViewModel extends ViewModel {
         loading = false;
         data = null;
         form = null;
+        resetCreation();
         reading = ScreenState.error("Entre novamente para continuar.", 401, 0);
         resetDetail();
         publish();
@@ -310,7 +390,7 @@ public final class RoutineViewModel extends ViewModel {
     }
 
     private void publish() {
-        state.setValue(new RoutineUiState(selectedDate, reading, data, detailTarget, detail, form));
+        state.setValue(new RoutineUiState(selectedDate, reading, data, detailTarget, detail, form, creation, uncertainCreation, checkedCreation, confirmResend, savedAwaitingReload));
     }
 
     @Override

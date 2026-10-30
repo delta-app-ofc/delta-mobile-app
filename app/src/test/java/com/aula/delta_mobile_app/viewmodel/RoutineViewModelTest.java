@@ -53,6 +53,13 @@ public class RoutineViewModelTest {
     private int creations;
 
     private static final class Gateway implements RoutineActions {
+        final List<Consumer<ScreenState<RoutineData.Habit>>> posts = new ArrayList<>();
+
+        @Override
+        public void create(RoutineFormState form, Consumer<ScreenState<RoutineData.Habit>> callback) {
+            assertTrue(form.valid());
+            posts.add(callback);
+        }
         final List<Consumer<ScreenState<RoutineData>>> callbacks = new ArrayList<>();
         final List<Integer> detailIds = new ArrayList<>();
         final List<Consumer<ScreenState<RoutineData.Habit>>> details = new ArrayList<>();
@@ -989,6 +996,153 @@ public class RoutineViewModelTest {
         viewModel.selectFormDay(DayOfWeek.MONDAY, true);
         viewModel.setFormQuantity(DayOfWeek.MONDAY, "1");
         viewModel.setFormTime(DayOfWeek.MONDAY, 0, "07:00");
+    }
+
+    @Test
+    public void authorizationFailureEndsTheDraftWithoutReloadOrResend() {
+        for (int code : new int[]{401, 403}) {
+            viewModel.beginCreateForm();
+            fillForm();
+            viewModel.saveForm();
+            repository.posts.get(repository.posts.size() - 1).accept(ScreenState.error("Autorização", code, 0));
+            drain();
+            assertNull(state().form);
+            assertEquals(code, state().reading.code);
+            assertTrue(repository.callbacks.isEmpty());
+        }
+    }
+
+    @Test
+    public void malformedMutationResultIsUncertainAndRefreshDoesNotAuthorizeResend() {
+        viewModel.beginCreateForm();
+        fillForm();
+        viewModel.saveForm();
+        repository.posts.get(0).accept(null);
+        drain();
+        assertTrue(state().uncertainCreation);
+        viewModel.refresh();
+        reply(0, ScreenState.success(data(73, 1)));
+        viewModel.requestResend();
+        assertFalse(state().confirmResend);
+        viewModel.checkCreation();
+        reply(1, ScreenState.success(data(73, 1)));
+        viewModel.refresh();
+        reply(2, ScreenState.error("Sem rede"));
+        assertFalse(state().checkedCreation);
+        viewModel.requestResend();
+        assertFalse(state().confirmResend);
+    }
+
+    @Test
+    public void saveValidatesAndBlocksDoubleClickEditingAndDiscardDuringPost() {
+        viewModel.beginCreateForm();
+        viewModel.saveForm();
+        assertTrue(repository.posts.isEmpty());
+        fillForm();
+        viewModel.saveForm();
+        RoutineFormState submitted = state().form;
+        viewModel.saveForm();
+        viewModel.setFormFrequency("9");
+        viewModel.discardForm(submitted.token);
+        viewModel.requestFormClose(submitted.token);
+        assertSame(submitted, state().form);
+        assertEquals(1, repository.posts.size());
+        assertTrue(state().creation.busy());
+    }
+
+    @Test
+    public void confirmedSaveClosesEditorInvalidatesOldGetAndRetriesOnlyReload() {
+        viewModel.load();
+        viewModel.beginCreateForm();
+        fillForm();
+        viewModel.saveForm();
+        repository.posts.get(0).accept(ScreenState.success(habit(105, 73, 1, "07:00")));
+        drain();
+        assertNull(state().form);
+        assertTrue(state().savedAwaitingReload);
+        assertEquals(2, repository.callbacks.size());
+        reply(0, ScreenState.success(data(74, 2)));
+        assertTrue(state().reading.busy());
+        reply(1, ScreenState.error("Sem rede"));
+        assertTrue(state().savedAwaitingReload);
+        viewModel.saveForm();
+        viewModel.retry();
+        reply(2, ScreenState.success(data(73, 1)));
+        assertFalse(state().savedAwaitingReload);
+        assertEquals(INITIAL, state().selectedDate);
+        assertEquals(1, repository.posts.size());
+        repository.posts.get(0).accept(ScreenState.success(habit(105, 73, 1, "07:00")));
+        drain();
+        assertEquals(3, repository.callbacks.size());
+    }
+
+    @Test
+    public void uncertainSaveNeedsSuccessfulExplicitCheckAndConfirmationBeforeResend() {
+        viewModel.beginCreateForm();
+        fillForm();
+        viewModel.saveForm();
+        repository.posts.get(0).accept(ScreenState.error("Incerto", -7, 0));
+        drain();
+        RoutineFormState draft = state().form;
+        viewModel.saveForm();
+        viewModel.requestResend();
+        assertFalse(state().confirmResend);
+        viewModel.checkCreation();
+        reply(0, ScreenState.error("Sem rede"));
+        viewModel.confirmResend();
+        assertEquals(1, repository.posts.size());
+        viewModel.checkCreation();
+        reply(1, ScreenState.success(data(73, 1)));
+        assertTrue(state().checkedCreation);
+        assertSame(draft, state().form);
+        viewModel.requestResend();
+        assertTrue(state().confirmResend);
+        assertTrue(provider.get(RoutineViewModel.class).state().getValue().confirmResend);
+        viewModel.cancelResend();
+        assertEquals(1, repository.posts.size());
+        viewModel.requestResend();
+        viewModel.confirmResend();
+        viewModel.confirmResend();
+        assertEquals(2, repository.posts.size());
+    }
+
+    @Test
+    public void confirmedErrorsPreserveDraftAndRateLimitBlocksRetryUntilItsDeadline() {
+        viewModel.beginCreateForm();
+        fillForm();
+        for (int code : new int[]{400, 409, 429}) {
+            viewModel.saveForm();
+            RoutineFormState draft = state().form;
+            repository.posts.get(repository.posts.size() - 1).accept(ScreenState.error("Confira", code, code == 429 ? clock.millis() + 60000 : 0));
+            drain();
+            assertSame(draft, state().form);
+            assertFalse(state().uncertainCreation);
+        }
+        int count = repository.posts.size();
+        viewModel.saveForm();
+        assertEquals(count, repository.posts.size());
+        clock.now = clock.now.plusSeconds(61);
+        viewModel.saveForm();
+        assertEquals(count + 1, repository.posts.size());
+    }
+
+    @Test
+    public void logoutAndClearRejectLateCreationReplies() {
+        viewModel.beginCreateForm();
+        fillForm();
+        viewModel.saveForm();
+        session.setValue(false);
+        repository.posts.get(0).accept(ScreenState.success(habit(105, 73, 1, "07:00")));
+        drain();
+        assertNull(state().form);
+        assertTrue(repository.callbacks.isEmpty());
+        session.setValue(true);
+        viewModel.beginCreateForm();
+        fillForm();
+        viewModel.saveForm();
+        store.clear();
+        repository.posts.get(1).accept(ScreenState.success(habit(105, 73, 1, "07:00")));
+        assertTrue(main.isEmpty());
     }
 
     private RoutineUiState state() {

@@ -110,6 +110,19 @@
         android:paddingBottom="8dp"
         android:orientation="vertical">
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/routine_form_save"
+            style="@style/Routine.Action"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/routine_form_save" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/routine_form_check"
+            style="@style/Routine.Action"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:text="@string/routine_form_check" />
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/routine_form_validate"
             style="@style/Routine.Action"
             android:layout_width="match_parent"

@@ -8,16 +8,16 @@ import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.Gravity;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-
 import androidx.activity.ComponentDialog;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -31,10 +31,13 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.aula.delta_mobile_app.R;
+import com.aula.delta_mobile_app.model.RoutineData;
 import com.aula.delta_mobile_app.model.RoutineFormState;
 import com.aula.delta_mobile_app.model.RoutineFormValidator;
+import com.aula.delta_mobile_app.model.RoutineUiState;
+import com.aula.delta_mobile_app.model.ScreenState;
+import com.aula.delta_mobile_app.R;
+import com.aula.delta_mobile_app.view.RoutineAgendaAdapter;
 import com.aula.delta_mobile_app.view.StatusNoticeView;
 import com.aula.delta_mobile_app.viewmodel.RoutineViewModel;
 import com.google.android.material.chip.Chip;
@@ -43,9 +46,13 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
-
 import java.time.DayOfWeek;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.time.format.TextStyle;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -60,6 +67,10 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
     private TextInputEditText frequency;
     private FormAdapter adapter;
     private AlertDialog confirmation;
+    private AlertDialog resendConfirmation;
+    private Runnable retryUpdate;
+    private ScreenState.Status lastCreationStatus;
+    private boolean lastChecked;
     private final Map<DayOfWeek, Chip> chips = new EnumMap<>(DayOfWeek.class);
     private long token;
     private boolean binding, destroyingView;
@@ -125,6 +136,15 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
         adapter = new FormAdapter();
         list.setAdapter(adapter);
         header.findViewById(R.id.routine_form_close).setOnClickListener(button -> model.requestFormClose(token));
+        view.findViewById(R.id.routine_form_save).setOnClickListener(button -> {
+            if (model.state().getValue().uncertainCreation) model.requestResend();
+            else {
+                model.saveForm();
+                RoutineFormState current = current();
+                if (current != null && !current.errors.isEmpty()) focus(current.errors.keySet().iterator().next(), -1, -1, true, 8);
+            }
+        });
+        view.findViewById(R.id.routine_form_check).setOnClickListener(button -> model.checkCreation());
         view.findViewById(R.id.routine_form_validate).setOnClickListener(button -> {
             boolean valid = model.validateForm();
             RoutineFormState current = current();
@@ -172,7 +192,45 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
             return;
         }
         if (adapter == null) return;
+        RoutineUiState state = model.state().getValue();
+        boolean busy = state.creation.busy();
+        long wait = Math.max(0, state.creation.retryAt - System.currentTimeMillis());
+        View root = requireView();
+        if (retryUpdate != null) root.removeCallbacks(retryUpdate);
+        retryUpdate = null;
+        if (wait > 0) {
+            retryUpdate = () -> { if (current() != null) render(current()); };
+            root.postDelayed(retryUpdate, wait);
+        }
+        Button save = root.findViewById(R.id.routine_form_save);
+        save.setText(state.uncertainCreation ? R.string.routine_form_resend : R.string.routine_form_save);
+        save.setEnabled(!busy && wait == 0 && (!state.uncertainCreation || state.checkedCreation) && !state.reading.busy());
+        View check = root.findViewById(R.id.routine_form_check);
+        check.setVisibility(state.uncertainCreation ? View.VISIBLE : View.GONE);
+        check.setEnabled(!state.reading.busy());
+        root.findViewById(R.id.routine_form_validate).setEnabled(!busy);
+        header.findViewById(R.id.routine_form_close).setEnabled(!busy);
+        type.setEnabled(!busy);
+        frequency.setEnabled(!busy);
+        for (Chip chip : chips.values()) chip.setEnabled(!busy);
+        if (state.confirmResend && (resendConfirmation == null || !resendConfirmation.isShowing())) {
+            resendConfirmation = new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.routine_form_resend_title)
+                .setMessage(R.string.routine_form_resend_warning)
+                .setPositiveButton(R.string.routine_form_resend, (dialog, which) -> model.confirmResend())
+                .setNegativeButton(R.string.routine_form_cancel, (dialog, which) -> model.cancelResend())
+                .setOnCancelListener(dialog -> model.cancelResend()).show();
+        } else if (!state.confirmResend && resendConfirmation != null) {
+            resendConfirmation.dismiss();
+            resendConfirmation = null;
+        }
         adapter.update(form);
+        if ((state.creation.busy() || state.creation.status == ScreenState.Status.ERROR)
+            && (lastCreationStatus != state.creation.status || lastChecked != state.checkedCreation)) {
+            hideKeyboard();
+            list.scrollToPosition(0);
+        }
+        lastCreationStatus = state.creation.status;
+        lastChecked = state.checkedCreation;
         if (form.confirmDiscard && (confirmation == null || !confirmation.isShowing())) {
             confirmation = new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.routine_form_discard_title).setMessage(R.string.routine_form_discard_message)
                 .setPositiveButton(R.string.routine_form_discard, (dialog, which) -> model.discardForm(token))
@@ -198,6 +256,27 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
         groupError(R.id.routine_form_distribution_error, error(form.errors.get(RoutineFormState.DISTRIBUTION)));
         ((StatusNoticeView) header.findViewById(R.id.routine_form_notice)).setText(form.valid() ? getString(R.string.routine_form_valid)
             : form.legacy ? getString(R.string.routine_form_legacy) : "");
+        RoutineUiState state = model.state().getValue();
+        String notice = null;
+        if (state.creation.busy()) notice = getString(R.string.routine_form_sending);
+        else if (state.uncertainCreation) {
+            notice = getString(state.checkedCreation ? R.string.routine_form_checked : R.string.routine_form_uncertain);
+            if (state.reading.status == ScreenState.Status.ERROR) notice += "\n" + state.reading.message;
+            if (state.checkedCreation && state.data != null) {
+                StringBuilder summary = new StringBuilder(notice);
+                for (RoutineData.Habit habit : state.data.habits) {
+                    summary.append('\n').append(RoutineAgendaAdapter.name(requireContext(), habit));
+                    for (Map.Entry<DayOfWeek, List<LocalTime>> entry : habit.schedule.entrySet())
+                        summary.append('\n').append(entry.getKey().getDisplayName(TextStyle.FULL, locale())).append(": ").append(entry.getValue());
+                }
+                notice = summary.toString();
+            }
+        } else if (state.creation.status == ScreenState.Status.ERROR) {
+            notice = state.creation.message;
+            if (state.creation.retryAt > System.currentTimeMillis()) notice += "\n" + getString(R.string.routine_form_wait,
+                Instant.ofEpochMilli(state.creation.retryAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(locale())));
+        }
+        if (notice != null) ((StatusNoticeView) header.findViewById(R.id.routine_form_notice)).setText(notice);
         binding = false;
     }
 
@@ -286,6 +365,7 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
 
         void bind(Field next, RoutineFormState form) {
             writing = true;
+            input.setEnabled(!model.state().getValue().creation.busy());
             field = next;
             if (!next.key.equals(input.getTag())) {
                 input.setTag(next.key);
@@ -440,6 +520,10 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
     @Override
     public void onDestroyView() {
         destroyingView = true;
+        if (getView() != null && retryUpdate != null) getView().removeCallbacks(retryUpdate);
+        retryUpdate = null;
+        if (resendConfirmation != null) resendConfirmation.dismiss();
+        resendConfirmation = null;
         if (confirmation != null) confirmation.dismiss();
         confirmation = null;
         if (list != null) list.setAdapter(null);
