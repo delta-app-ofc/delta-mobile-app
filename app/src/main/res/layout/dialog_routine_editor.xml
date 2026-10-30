@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/routine_form_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <LinearLayout
+        android:id="@+id/routine_form_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/routine_page_padding"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/routine_form_close"
+            style="@style/Routine.Action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:text="@string/routine_details_close" />
+        <TextView
+            android:id="@+id/routine_form_title"
+            style="@style/Routine.Heading"
+            android:layout_marginTop="@dimen/routine_item_spacing" />
+        <TextView
+            style="@style/Routine.Caption"
+            android:layout_marginTop="8dp"
+            android:text="@string/routine_form_no_save" />
+        <com.aula.delta_mobile_app.view.StatusNoticeView
+            android:id="@+id/routine_form_notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/routine_item_spacing" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/routine_form_type_layout"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/routine_section_spacing"
+            android:hint="@string/routine_form_type">
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/routine_form_type"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/routine_touch_size"
+                android:inputType="none"
+                android:saveEnabled="false"
+                android:textColor="@color/routine_text" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/routine_form_frequency_layout"
+            style="@style/Routine.FormField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/routine_item_spacing"
+            android:hint="@string/routine_form_frequency">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/routine_form_frequency"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/routine_touch_size"
+                android:inputType="numberSigned"
+                android:imeOptions="actionNext"
+                android:saveEnabled="false"
+                android:singleLine="true"
+                android:textColor="@color/routine_text" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <TextView
+            style="@style/Routine.Section"
+            android:layout_marginTop="@dimen/routine_section_spacing"
+            android:labelFor="@id/routine_form_days"
+            android:text="@string/routine_form_days" />
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/routine_form_days"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+        <TextView
+            android:id="@+id/routine_form_days_error"
+            style="@style/Routine.FormError"
+            android:text="@string/routine_form_days_required"
+            android:labelFor="@id/routine_form_days"
+            android:visibility="gone" />
+        <TextView
+            style="@style/Routine.Caption"
+            android:layout_marginTop="@dimen/routine_item_spacing"
+            android:text="@string/routine_form_distribution" />
+        <TextView
+            android:id="@+id/routine_form_distribution_error"
+            style="@style/Routine.FormError"
+            android:text="@string/routine_form_mismatch"
+            android:layout_marginTop="8dp"
+            android:labelFor="@id/routine_form_fields"
+            android:visibility="gone" />
+    </LinearLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/routine_form_fields"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false" />
+    <LinearLayout
+        android:id="@+id/routine_form_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/routine_page_padding"
+        android:paddingEnd="@dimen/routine_page_padding"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:orientation="vertical">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/routine_form_validate"
+            style="@style/Routine.Action"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/routine_form_validate" />
+    </LinearLayout>
+</LinearLayout>

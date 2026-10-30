@@ -71,4 +71,16 @@
         <item name="colorOnSurface">@color/routine_text</item>
         <item name="colorSurface">@color/routine_background</item>
     </style>
+    <style name="Routine.EditorDialog" parent="Routine.DetailsDialog">
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+    <style name="Routine.FormField" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="hintTextColor">@color/routine_muted</item>
+        <item name="boxStrokeColor">@color/routine_muted</item>
+        <item name="errorTextColor">@color/auth_error</item>
+    </style>
+    <style name="Routine.FormError" parent="Routine.Caption">
+        <item name="android:textColor">@color/auth_error</item>
+        <item name="android:accessibilityLiveRegion">polite</item>
+    </style>
 </resources>
