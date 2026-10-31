@@ -15,13 +15,5 @@
     {"id":5,"key":"SEXTA","label":"Sexta-feira"},
     {"id":6,"key":"SÁBADO","label":"Sábado"},
     {"id":7,"key":"DOMINGO","label":"Domingo"}
-  ],
-  "regions": [
-    {"regionId":1,"state":"SP","city":"São Paulo"},
-    {"regionId":2,"state":"SP","city":"Lins"},
-    {"regionId":3,"state":"SP","city":"Presidente Prudente"},
-    {"regionId":4,"state":"SP","city":"Adamantina"},
-    {"regionId":4,"state":"SP","city":"Pirapozinho"},
-    {"regionId":5,"state":"SP","city":"Bragança Paulista"}
   ]
 }

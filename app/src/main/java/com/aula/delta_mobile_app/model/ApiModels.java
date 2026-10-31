@@ -102,7 +102,6 @@ public final class ApiModels {
     }
 
     public static class UpdateAddressRequest {
-        public Integer regionId;
         public String cep;
         public String city;
         public String state;
@@ -162,7 +161,6 @@ public final class ApiModels {
     }
 
     public static class CreateAddressRequest {
-        public Integer regionId;
         public String cep;
         public String city;
         public String state;

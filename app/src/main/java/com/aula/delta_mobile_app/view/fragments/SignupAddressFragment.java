@@ -28,8 +28,7 @@ public class SignupAddressFragment extends AuthFlowFragment {
         registration().postalCode.observe(getViewLifecycleOwner(), value -> {
             state.setText(flow().getString("state", ""));
             city.setText(flow().getString("city", ""));
-            cepStatus.setText(value.status == ScreenState.Status.SUCCESS && !flow().containsKey("regionId") ? "Localidade sem região tarifária configurada. A"
-                + " conclusão depende da configuração da" + " plataforma." : value.displayMessage());
+            cepStatus.setText(value.displayMessage());
         });
         registration().completion.observe(getViewLifecycleOwner(), value -> {
             showLoading(value.busy());
