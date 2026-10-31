@@ -92,7 +92,6 @@ public class SignupViewModel extends AndroidViewModel {
         postalCodes.cancel();
         draft.remove("state");
         draft.remove("city");
-        draft.remove("regionId");
         draft.remove("latitude");
         draft.remove("longitude");
         if (digits.length() != 8) {
@@ -107,8 +106,6 @@ public class SignupViewModel extends AndroidViewModel {
                 PostalCodeResponse value = result.data;
                 draft.putString("city", value.city);
                 draft.putString("state", value.state);
-                Integer region = catalog.region(value.state, value.city);
-                if (region != null) draft.putInt("regionId", region);
                 if (value.location != null && value.location.coordinates != null) {
                     Double lat = value.location.coordinates.latitude, lon = value.location.coordinates.longitude;
                     if (lat != null && lon != null && Double.isFinite(lat) && Double.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
@@ -170,9 +167,7 @@ public class SignupViewModel extends AndroidViewModel {
         ScreenState<Completed> state = completion.getValue();
         if (state != null && (state.busy() || state.status == ScreenState.Status.SUCCESS || System.currentTimeMillis() < state.retryAt)) return;
         String error = propertyError();
-        if (error == null && (currentCep.length() != 8 || !draft.containsKey("regionId")))
-            error = "Esta localidade ainda não tem uma região tarifária configurada. Não é possível" + " concluir o cadastro.";
-        if (error == null && (draft.getString("city", "").isEmpty() || draft.getString("city", "").length() > 60 || draft.getString("state", "").isEmpty()
+        if (error == null && (currentCep.length() != 8 || draft.getString("city", "").isEmpty() || draft.getString("city", "").length() > 60 || draft.getString("state", "").isEmpty()
             || draft.getString("state", "").length() > 30))
         error = "Consulte um CEP válido antes de concluir.";
         if (error != null) {
@@ -187,7 +182,6 @@ public class SignupViewModel extends AndroidViewModel {
         request.address = new Address();
         request.property = new Property();
         request.address.cep = currentCep;
-        request.address.regionId = draft.getInt("regionId");
         request.address.city = draft.getString("city");
         request.address.state = draft.getString("state");
         if (draft.containsKey("latitude") && draft.containsKey("longitude")) {
