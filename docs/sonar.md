@@ -18,6 +18,8 @@ Os testes existentes ficam em `app/src/test`. O verificador exige pelo menos um 
 
 O artefato `sonar-reports` preserva classes compiladas, dependências JAR, JUnit e cobertura. O scanner compartilhado restaura esses arquivos em `app/build`. O escopo de análise inclui todas as fontes de `app/src/main`, sem excluir telas ou regras de negócio da cobertura.
 
+O resultado dos testes também é publicado pelo reporter CI compartilhado, com comentário próprio e atualização automática da comprovação de testes. A análise Sonar mantém seu relatório separado. O arquivo `local.properties` não é versionado; no CI o SDK vem do ambiente Android do runner.
+
 O check `Delta / Política Sonar` usa a política compartilhada da organização: cobertura mínima de 70% no código novo instrumentável; problemas graves novos de segurança bloqueiam, confiabilidade exige revisão adicional e manutenibilidade avisa. O gate padrão do Sonar não substitui essa política.
 
 ## Configuração no GitHub e no Sonar
