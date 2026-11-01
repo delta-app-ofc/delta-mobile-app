@@ -398,11 +398,10 @@ public class ChatRenderingInstrumentedTest {
         seedSessions();
         scenario.onActivity(activity -> list().scrollToPosition(1));
         await(() -> list().getLayoutManager().findViewByPosition(1) != null);
-        onView(withText("ID: session-a")).check(matches(isDisplayed()));
         scenario.onActivity(activity -> {
             View row = list().getLayoutManager().findViewByPosition(1);
-            assertTrue(((TextView) row.findViewById(R.id.chat_session_title)).getText().toString().startsWith(activity.getString(R.string.chat_session_date, "")));
-            assertTrue(row.getContentDescription().toString().contains("session-a"));
+            assertEquals(activity.getString(R.string.chat_session_label), ((TextView) row.findViewById(R.id.chat_session_title)).getText().toString());
+            assertFalse(row.getContentDescription().toString().contains("session-a"));
             assertTrue(gateway.histories.isEmpty());
         });
         scrollToEnd();
@@ -490,9 +489,9 @@ public class ChatRenderingInstrumentedTest {
             assertTrue(node.isClickable());
             assertTrue(node.isFocusable());
             assertTrue(node.getActionList().contains(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK));
-            assertEquals(activity.getString(R.string.chat_session_open, activity.getString(R.string.chat_session_no_date), "session-b"), node.getContentDescription());
+            assertEquals(activity.getString(R.string.chat_session_open, activity.getString(R.string.chat_session_label), activity.getString(R.string.chat_session_no_date)), node.getContentDescription());
             assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO, row.findViewById(R.id.chat_session_title).getImportantForAccessibility());
-            assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO, row.findViewById(R.id.chat_session_identity).getImportantForAccessibility());
+            assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO, row.findViewById(R.id.chat_session_time).getImportantForAccessibility());
             int minimum = activity.getResources().getDimensionPixelSize(R.dimen.chat_composer_min_height);
             assertTrue(row.getWidth() >= minimum && row.getHeight() >= minimum);
             Rect bounds = new Rect();

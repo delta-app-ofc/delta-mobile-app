@@ -26,11 +26,17 @@ import java.util.function.LongSupplier;
 public final class ChatFlow {
     public static final class SessionEntry {
         public final String id;
+        public final String title;
         public final String createdAt;
         public final Instant created;
 
         public SessionEntry(String id, String createdAt) {
+            this(id, createdAt, null);
+        }
+
+        public SessionEntry(String id, String createdAt, String title) {
             this.id = Objects.requireNonNull(id);
+            this.title = title;
             this.createdAt = createdAt;
             Instant parsed = null;
             try {
@@ -163,7 +169,7 @@ public final class ChatFlow {
                         publishHistory();
                         return;
                     }
-                    entries.add(new SessionEntry(session.sessionId, session.createdAt));
+                    entries.add(new SessionEntry(session.sessionId, session.createdAt, session.title));
                 }
                 entries.sort(Comparator.comparing((SessionEntry entry) -> entry.created, Comparator.nullsLast(Comparator.reverseOrder())).thenComparing(entry -> entry.id));
                 sessions = ScreenState.success(Collections.unmodifiableList(entries));
