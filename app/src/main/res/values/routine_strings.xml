@@ -14,7 +14,6 @@
     <string name="routine_confirm">Selecionar</string>
     <string name="routine_cancel">Cancelar</string>
     <string name="routine_day">%1$s\n%2$s</string>
-    <string name="routine_day_selected">%1$s\n%2$s ✓</string>
     <string name="routine_selected">Selecionado</string>
     <string name="routine_not_selected">Não selecionado</string>
     <string name="routine_today_description">%1$s, hoje</string>
@@ -24,11 +23,12 @@
     <string name="routine_total_title">Planejado para o dia</string>
     <string name="routine_liters">%1$s L</string>
     <string name="routine_estimate">Estimativa por execução: %1$s</string>
+    <string name="routine_no_time">Sem horário</string>
+    <string name="routine_incomplete_notice_compact">Hábitos deste dia sem horário.</string>
     <string name="routine_estimate_disclaimer">Estimativas de consumo, não medições.</string>
     <string name="routine_unavailable">Indisponível</string>
     <string name="routine_incomplete_total">Total incompleto</string>
     <string name="routine_known_subtotal">Parte estimada conhecida: %1$s</string>
-    <string name="routine_incomplete_notice">Agenda incompleta\n%1$s\nEsses hábitos ainda não têm uma distribuição válida de horários. O total do dia está incompleto.</string>
     <string name="routine_missing_estimate">Há hábitos neste dia sem estimativa de consumo disponível. O total do dia está incompleto.</string>
     <string name="routine_updating">Atualizando a rotina. Os valores exibidos são da última consulta.</string>
     <string name="routine_stale">Os valores exibidos são da última consulta e podem estar desatualizados.</string>
@@ -51,10 +51,10 @@
     <string name="routine_habit_plants">Regar plantas</string>
     <string name="routine_habit_car">Lavar carro</string>
     <string name="routine_habit_dishes">Lavar louça</string>
-    <string name="routine_incomplete_habit">• %1$s</string>
     <string name="routine_details_title">Detalhes do hábito</string>
     <string name="routine_details_close">Fechar</string>
     <string name="routine_details_context">Selecionado na agenda: %1$s às %2$s</string>
+    <string name="routine_details_date_context">Selecionado na agenda: %1$s</string>
     <string name="routine_details_category">Categoria: %1$s</string>
     <string name="routine_details_count">Execuções no dia: %1$s</string>
     <string name="routine_details_times_title">Horários do hábito neste dia</string>
@@ -73,15 +73,13 @@
     <string name="routine_form_edit">Editar hábito</string>
     <string name="routine_form_type">Tipo de hábito</string>
     <string name="routine_form_unknown_type">Tipo indisponível no catálogo</string>
-    <string name="routine_form_frequency">Execuções por semana</string>
-    <string name="routine_form_days">Dias da semana</string>
-    <string name="routine_form_distribution">Distribua as execuções entre os dias selecionados e informe um horário para cada uma. A soma deve ser igual à frequência semanal.</string>
-    <string name="routine_form_quantity">%1$s: execuções</string>
-    <string name="routine_form_time">%1$s: horário da execução %2$d</string>
-    <string name="routine_form_validate">Validar formulário</string>
-    <string name="routine_form_no_save">Distribua as execuções pelos dias, informe os horários e revise os dados antes de salvar.</string>
+    <string name="routine_form_when">Quando acontece?</string>
+    <string name="routine_form_days_help">Selecione os dias e adicione os horários de cada execução.</string>
+    <string name="routine_form_help">Escolha o hábito e monte a agenda semanal. A frequência será calculada automaticamente.</string>
+    <string name="routine_form_add_time">Adicionar horário</string>
+    <string name="routine_form_day_needs_time">Adicione pelo menos um horário para este dia.</string>
     <string name="routine_add">Adicionar hábito</string>
-    <string name="routine_form_save">Salvar</string>
+    <string name="routine_form_save">Salvar hábito</string>
     <string name="routine_form_update">Salvar nova versão</string>
     <string name="routine_form_edit_help">Altere a rotina semanal. A nova versão valerá a partir da data indicada e o histórico anterior será preservado.</string>
     <string name="routine_form_effective_from">Válida a partir de %1$s, inclusive</string>
@@ -102,18 +100,17 @@
     <string name="routine_delete_check_error">Não foi possível conferir a agenda. Tente a consulta novamente antes de excluir.</string>
     <string name="routine_delete_error">Não foi possível excluir o hábito. Tente novamente.</string>
     <string name="routine_delete_not_found">O hábito não foi encontrado. A exclusão não foi confirmada; atualize a agenda.</string>
-    <string name="routine_form_check">Conferir agenda</string>
-    <string name="routine_form_resend">Enviar novamente</string>
+    <string name="routine_form_check">Atualizar agenda</string>
+    <string name="routine_form_resend">Tentar salvar novamente</string>
     <string name="routine_form_sending">Salvando hábito… Aguarde a confirmação.</string>
-    <string name="routine_form_uncertain">O hábito pode ter sido criado. Confira a agenda antes de tentar novamente.</string>
-    <string name="routine_form_checked">Consulta concluída. Confira a agenda antes de reenviar; ela não comprova o resultado da tentativa anterior.</string>
-    <string name="routine_form_resend_title">Enviar novamente?</string>
-    <string name="routine_form_resend_warning">A tentativa anterior pode ter sido gravada. Enviar novamente pode duplicar o cadastro. Deseja continuar?</string>
+    <string name="routine_form_uncertain">Não foi possível salvar o hábito. Tente novamente.</string>
+    <string name="routine_form_checked">A agenda foi atualizada, mas não permite confirmar o resultado da tentativa anterior.</string>
+    <string name="routine_form_resend_title">Tentar salvar novamente?</string>
+    <string name="routine_form_resend_warning">A tentativa anterior pode ter sido salva. Tentar novamente pode duplicar o hábito.</string>
     <string name="routine_form_cancel">Cancelar</string>
     <string name="routine_form_wait">Aguarde até %1$s para tentar novamente.</string>
     <string name="routine_saved_reload_error">Alteração concluída; não foi possível atualizar a agenda. Tente atualizar novamente.</string>
-    <string name="routine_form_valid">Formulário válido. Nenhum hábito foi salvo.</string>
-    <string name="routine_form_legacy">A distribuição anterior não está disponível. Preencha os dias, as quantidades e os horários sem presumir valores antigos.</string>
+    <string name="routine_form_legacy">A agenda anterior não está disponível. Escolha os dias e horários sem presumir valores antigos.</string>
     <string name="routine_form_required">Preencha este campo.</string>
     <string name="routine_form_invalid_type">Selecione um dos tipos disponíveis no catálogo.</string>
     <string name="routine_form_invalid_number">Informe um número inteiro válido.</string>
@@ -135,4 +132,8 @@
         <item>@string/routine_habit_car</item>
         <item>@string/routine_habit_dishes</item>
     </string-array>
+    <plurals name="routine_form_summary">
+        <item quantity="one">%1$d execução por semana • %2$s estimados</item>
+        <item quantity="other">%1$d execuções por semana • %2$s estimados</item>
+    </plurals>
 </resources>

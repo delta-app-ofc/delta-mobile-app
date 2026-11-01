@@ -1,23 +1,18 @@
 package com.aula.delta_mobile_app.view.fragments;
 
 import android.app.Dialog;
-import android.content.Context;
 import android.graphics.Rect;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.InputType;
-import android.text.TextWatcher;
 import android.view.Gravity;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import androidx.activity.ComponentDialog;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -26,17 +21,17 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+
+import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.RoutineData;
 import com.aula.delta_mobile_app.model.RoutineFormState;
 import com.aula.delta_mobile_app.model.RoutineFormValidator;
 import com.aula.delta_mobile_app.model.RoutineUiState;
 import com.aula.delta_mobile_app.model.ScreenState;
-import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.view.RoutineAgendaAdapter;
 import com.aula.delta_mobile_app.view.StatusNoticeView;
 import com.aula.delta_mobile_app.viewmodel.RoutineViewModel;
@@ -44,34 +39,36 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.android.material.timepicker.MaterialTimePicker;
+import com.google.android.material.timepicker.TimeFormat;
+
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
-import java.time.format.TextStyle;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.time.format.TextStyle;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 public final class RoutineEditorDialogFragment extends DialogFragment {
+    private static final String TIME_PICKER_PREFIX = "routine_time_";
+
     private RoutineViewModel model;
-    private RecyclerView list;
-    private View header;
     private MaterialAutoCompleteTextView type;
-    private TextInputEditText frequency;
-    private FormAdapter adapter;
+    private LinearLayout schedule;
+    private NestedScrollView scroll;
     private AlertDialog confirmation;
     private AlertDialog resendConfirmation;
     private Runnable retryUpdate;
     private ScreenState.Status lastCreationStatus;
     private boolean lastChecked;
-    private final Map<DayOfWeek, Chip> chips = new EnumMap<>(DayOfWeek.class);
+    private final Map<DayOfWeek, Chip> days = new EnumMap<>(DayOfWeek.class);
+    private final Map<DayOfWeek, View> dayCards = new EnumMap<>(DayOfWeek.class);
     private long token;
     private boolean binding, destroyingView;
 
@@ -97,73 +94,41 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
             return;
         }
         token = form.token;
-        header = view.findViewById(R.id.routine_form_header);
-        ((ViewGroup) header.getParent()).removeView(header);
-        header.setVisibility(View.VISIBLE);
-        header.setLayoutParams(new RecyclerView.LayoutParams(-1, -2));
-        type = header.findViewById(R.id.routine_form_type);
-        frequency = header.findViewById(R.id.routine_form_frequency);
-        type.setTag(RoutineFormState.TYPE);
-        frequency.setTag(RoutineFormState.FREQUENCY);
+        type = view.findViewById(R.id.routine_form_type);
         type.setSimpleItems(R.array.routine_form_types);
         type.setOnItemClickListener((parent, item, position, id) -> {
             if (!binding && current() != null) model.setFormHabit(position + 1);
         });
-        frequency.addTextChangedListener(watcher(value -> {
-            if (!binding && current() != null) model.setFormFrequency(value);
-        }));
-        frequency.setOnEditorActionListener((field, action, event) -> {
-            if (action != EditorInfo.IME_ACTION_NEXT) return false;
-            focusFirstDistributionField();
-            return true;
-        });
-        ChipGroup group = header.findViewById(R.id.routine_form_days);
+        ChipGroup group = view.findViewById(R.id.routine_form_days);
         for (DayOfWeek day : DayOfWeek.values()) {
             Chip chip = new Chip(requireContext());
             chip.setId(View.generateViewId());
-            chip.setText(day.getDisplayName(TextStyle.FULL, locale()));
+            chip.setText(day.getDisplayName(TextStyle.SHORT, locale()).toUpperCase(locale()));
             chip.setCheckable(true);
             chip.setEnsureMinTouchTargetSize(true);
             chip.setOnCheckedChangeListener((button, checked) -> {
-                if (!binding && current() != null) model.selectFormDay(day, checked);
+                if (!binding && current() != null) model.selectFormDayDerived(day, checked);
             });
             group.addView(chip);
-            chips.put(day, chip);
+            days.put(day, chip);
         }
-        list = view.findViewById(R.id.routine_form_fields);
-        list.setLayoutManager(new LinearLayoutManager(requireContext()));
-        list.setItemAnimator(null);
-        adapter = new FormAdapter();
-        list.setAdapter(adapter);
-        header.findViewById(R.id.routine_form_close).setOnClickListener(button -> model.requestFormClose(token));
+        scroll = view.findViewById(R.id.routine_form_scroll);
+        schedule = view.findViewById(R.id.routine_form_schedule);
+        view.findViewById(R.id.routine_form_close).setOnClickListener(button -> model.requestFormClose(token));
         view.findViewById(R.id.routine_form_save).setOnClickListener(button -> {
-            if (model.state().getValue().uncertainCreation) model.requestResend();
-            else {
-                model.saveForm();
-                RoutineFormState current = current();
-                if (current != null && !current.errors.isEmpty()) focus(current.errors.keySet().iterator().next(), -1, -1, true, 8);
-            }
-        });
-        view.findViewById(R.id.routine_form_check).setOnClickListener(button -> model.checkCreation());
-        view.findViewById(R.id.routine_form_validate).setOnClickListener(button -> {
-            boolean valid = model.validateForm();
+            model.saveForm();
             RoutineFormState current = current();
-            if (current == null) return;
-            if (valid) {
-                hideKeyboard();
-                list.scrollToPosition(0);
-            } else focus(current.errors.keySet().iterator().next(), -1, -1, true, 8);
+            if (current != null && !current.errors.isEmpty()) view.post(() -> focusError(current.errors.keySet().iterator().next()));
         });
         Dialog dialog = requireDialog();
         dialog.setCanceledOnTouchOutside(false);
-        if (dialog instanceof ComponentDialog) {
+        if (dialog instanceof ComponentDialog)
             ((ComponentDialog) dialog).getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
                 @Override
                 public void handleOnBackPressed() {
                     model.requestFormClose(token);
                 }
             });
-        }
         ViewCompat.setOnApplyWindowInsetsListener(view, (root, insets) -> {
             androidx.core.graphics.Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             int bottom = Math.max(bars.bottom, insets.getInsets(WindowInsetsCompat.Type.ime()).bottom);
@@ -172,8 +137,7 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
         });
         model.state().observe(getViewLifecycleOwner(), state -> render(state.form));
         render(form);
-        if (saved != null && saved.getLong("formToken", -1) == token && saved.getString("focusKey") != null)
-            focus(saved.getString("focusKey"), saved.getInt("selectionStart", -1), saved.getInt("selectionEnd", -1), saved.getBoolean("imeVisible"), 8);
+        restoreTimePicker();
     }
 
     private RoutineFormState current() {
@@ -191,7 +155,6 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
             dismissAllowingStateLoss();
             return;
         }
-        if (adapter == null) return;
         RoutineUiState state = model.state().getValue();
         boolean busy = state.creation.busy();
         long wait = Math.max(0, state.creation.retryAt - System.currentTimeMillis());
@@ -203,17 +166,13 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
             root.postDelayed(retryUpdate, wait);
         }
         Button save = root.findViewById(R.id.routine_form_save);
-        save.setText(state.uncertainCreation ? R.string.routine_form_resend
-            : form.mode == RoutineFormState.Mode.EDIT ? R.string.routine_form_update : R.string.routine_form_save);
-        save.setEnabled(!busy && wait == 0 && (!state.uncertainCreation || state.checkedCreation) && !state.reading.busy());
-        View check = root.findViewById(R.id.routine_form_check);
-        check.setVisibility(state.uncertainCreation ? View.VISIBLE : View.GONE);
-        check.setEnabled(!state.reading.busy());
-        root.findViewById(R.id.routine_form_validate).setEnabled(!busy);
-        header.findViewById(R.id.routine_form_close).setEnabled(!busy);
-        type.setEnabled(!busy);
-        frequency.setEnabled(!busy);
-        for (Chip chip : chips.values()) chip.setEnabled(!busy);
+        save.setText(form.mode == RoutineFormState.Mode.EDIT ? R.string.routine_form_update : R.string.routine_form_save);
+        save.setEnabled(!busy && wait == 0 && !state.reading.busy());
+        root.findViewById(R.id.routine_form_close).setEnabled(!busy);
+        bindHeader(form, busy);
+        bindSchedule(form, busy);
+        bindSummary(form);
+        bindNotice(form, state);
         if (state.confirmResend && (resendConfirmation == null || !resendConfirmation.isShowing())) {
             resendConfirmation = new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.routine_form_resend_title)
                 .setMessage(R.string.routine_form_resend_warning)
@@ -224,12 +183,8 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
             resendConfirmation.dismiss();
             resendConfirmation = null;
         }
-        adapter.update(form);
         if ((state.creation.busy() || state.creation.status == ScreenState.Status.ERROR)
-            && (lastCreationStatus != state.creation.status || lastChecked != state.checkedCreation)) {
-            hideKeyboard();
-            list.scrollToPosition(0);
-        }
+            && (lastCreationStatus != state.creation.status || lastChecked != state.checkedCreation)) scroll.smoothScrollTo(0, 0);
         lastCreationStatus = state.creation.status;
         lastChecked = state.checkedCreation;
         if (form.confirmDiscard && (confirmation == null || !confirmation.isShowing())) {
@@ -243,52 +198,154 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
         }
     }
 
-    private void bindHeader(RoutineFormState form) {
+    private void bindHeader(RoutineFormState form, boolean busy) {
         binding = true;
-        ((TextView) header.findViewById(R.id.routine_form_title)).setText(form.mode == RoutineFormState.Mode.CREATE ? R.string.routine_form_create : R.string.routine_form_edit);
-        TextView help = header.findViewById(R.id.routine_form_effective_from);
+        View root = requireView();
+        ((TextView) root.findViewById(R.id.routine_form_title)).setText(form.mode == RoutineFormState.Mode.CREATE ? R.string.routine_form_create : R.string.routine_form_edit);
+        TextView help = root.findViewById(R.id.routine_form_effective_from);
         boolean editing = form.mode == RoutineFormState.Mode.EDIT && form.effectiveFrom != null;
         help.setVisibility(editing ? View.VISIBLE : View.GONE);
         if (editing) help.setText(getString(R.string.routine_form_edit_context, getString(R.string.routine_form_edit_help),
-            getString(R.string.routine_form_effective_from,
-                form.effectiveFrom.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.LONG).withLocale(locale())))));
+            getString(R.string.routine_form_effective_from, form.effectiveFrom.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale())))));
         String[] labels = getResources().getStringArray(R.array.routine_form_types);
         String label = form.habitId == null ? "" : form.habitId >= 1 && form.habitId <= labels.length ? labels[form.habitId - 1] : getString(R.string.routine_form_unknown_type);
         if (!type.getText().toString().equals(label)) type.setText(label, false);
-        if (!frequency.getText().toString().equals(form.frequency)) frequency.setText(form.frequency);
-        ((TextInputLayout) header.findViewById(R.id.routine_form_type_layout)).setError(error(form.errors.get(RoutineFormState.TYPE)));
-        ((TextInputLayout) header.findViewById(R.id.routine_form_frequency_layout)).setError(error(form.errors.get(RoutineFormState.FREQUENCY)));
-        for (DayOfWeek day : DayOfWeek.values()) chips.get(day).setChecked(form.days.get(day).selected);
+        type.setEnabled(!busy);
+        ((TextInputLayout) root.findViewById(R.id.routine_form_type_layout)).setError(error(form.errors.get(RoutineFormState.TYPE)));
+        for (DayOfWeek day : DayOfWeek.values()) {
+            days.get(day).setChecked(form.days.get(day).selected);
+            days.get(day).setEnabled(!busy);
+        }
         groupError(R.id.routine_form_days_error, form.errors.containsKey(RoutineFormState.DAYS) ? getString(R.string.routine_form_days_required) : "");
         groupError(R.id.routine_form_distribution_error, error(form.errors.get(RoutineFormState.DISTRIBUTION)));
-        ((StatusNoticeView) header.findViewById(R.id.routine_form_notice)).setText(form.valid() ? getString(R.string.routine_form_valid)
-            : form.legacy ? getString(R.string.routine_form_legacy) : "");
-        RoutineUiState state = model.state().getValue();
-        String notice = null;
-        if (state.creation.busy()) notice = getString(R.string.routine_form_sending);
-        else if (state.uncertainCreation) {
-            notice = getString(state.checkedCreation ? R.string.routine_form_checked : R.string.routine_form_uncertain);
-            if (state.reading.status == ScreenState.Status.ERROR) notice += "\n" + state.reading.message;
-            if (state.checkedCreation && state.data != null) {
-                StringBuilder summary = new StringBuilder(notice);
-                for (RoutineData.Habit habit : state.data.habits) {
-                    summary.append('\n').append(RoutineAgendaAdapter.name(requireContext(), habit));
-                    for (Map.Entry<DayOfWeek, List<LocalTime>> entry : habit.schedule.entrySet())
-                        summary.append('\n').append(entry.getKey().getDisplayName(TextStyle.FULL, locale())).append(": ").append(entry.getValue());
-                }
-                notice = summary.toString();
+        binding = false;
+    }
+
+    private void bindSchedule(RoutineFormState form, boolean busy) {
+        schedule.removeAllViews();
+        dayCards.clear();
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        for (DayOfWeek day : DayOfWeek.values()) {
+            RoutineFormState.DayDraft draft = form.days.get(day);
+            if (!draft.selected) continue;
+            View card = inflater.inflate(R.layout.item_routine_schedule_day, schedule, false);
+            ((TextView) card.findViewById(R.id.routine_schedule_day_title)).setText(day.getDisplayName(TextStyle.FULL, locale()));
+            ChipGroup times = card.findViewById(R.id.routine_schedule_times);
+            for (int i = 0; i < draft.times.size(); i++) {
+                int index = i;
+                Chip chip = new Chip(requireContext());
+                chip.setText(draft.times.get(i));
+                chip.setCheckable(false);
+                chip.setCloseIconVisible(true);
+                chip.setEnsureMinTouchTargetSize(true);
+                chip.setEnabled(!busy);
+                chip.setOnClickListener(view -> openTimePicker(day, index));
+                chip.setOnCloseIconClickListener(view -> model.removeFormTime(day, index));
+                times.addView(chip);
             }
-        } else if (state.creation.status == ScreenState.Status.ERROR) {
+            TextView error = card.findViewById(R.id.routine_schedule_error);
+            String message = dayError(form, day);
+            error.setText(message);
+            error.setVisibility(message == null || message.isEmpty() ? View.GONE : View.VISIBLE);
+            View add = card.findViewById(R.id.routine_schedule_add_time);
+            add.setEnabled(!busy);
+            add.setOnClickListener(view -> openTimePicker(day, -1));
+            schedule.addView(card);
+            dayCards.put(day, card);
+        }
+    }
+
+    private String dayError(RoutineFormState form, DayOfWeek day) {
+        RoutineFormValidator.Error quantity = form.errors.get(RoutineFormState.quantityKey(day));
+        if (quantity != null) return quantity == RoutineFormValidator.Error.TOO_MANY_TIMES ? error(quantity) : getString(R.string.routine_form_day_needs_time);
+        RoutineFormState.DayDraft draft = form.days.get(day);
+        for (int i = 0; i < draft.times.size(); i++) {
+            RoutineFormValidator.Error time = form.errors.get(RoutineFormState.timeKey(day, i));
+            if (time != null) return error(time);
+        }
+        return "";
+    }
+
+    private void bindSummary(RoutineFormState form) {
+        int count = form.executionCount();
+        BigDecimal perExecution = form.habitId == null ? null : RoutineData.estimateForHabit(form.habitId);
+        BigDecimal estimate = perExecution == null ? null : perExecution.multiply(BigDecimal.valueOf(count));
+        ((TextView) requireView().findViewById(R.id.routine_form_summary)).setText(getResources().getQuantityString(R.plurals.routine_form_summary,
+            count, count, RoutineAgendaAdapter.liters(requireContext(), estimate)));
+    }
+
+    private void bindNotice(RoutineFormState form, RoutineUiState state) {
+        String notice = form.legacy ? getString(R.string.routine_form_legacy) : "";
+        if (state.creation.busy()) notice = getString(R.string.routine_form_sending);
+        else if (state.creation.status == ScreenState.Status.ERROR) {
             notice = state.creation.message;
             if (state.creation.retryAt > System.currentTimeMillis()) notice += "\n" + getString(R.string.routine_form_wait,
                 Instant.ofEpochMilli(state.creation.retryAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(locale())));
         }
-        if (notice != null) ((StatusNoticeView) header.findViewById(R.id.routine_form_notice)).setText(notice);
-        binding = false;
+        ((StatusNoticeView) requireView().findViewById(R.id.routine_form_notice)).setText(notice);
+    }
+
+    private void openTimePicker(DayOfWeek day, int index) {
+        if (getChildFragmentManager().isStateSaved() || current() == null) return;
+        RoutineFormState.DayDraft draft = current().days.get(day);
+        LocalTime initial = index >= 0 && index < draft.times.size() ? parseTime(draft.times.get(index)) : LocalTime.now();
+        MaterialTimePicker picker = new MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H).setHour(initial.getHour()).setMinute(initial.getMinute())
+            .setTitleText(R.string.routine_form_add_time).build();
+        bindTimePicker(picker, day, index);
+        picker.showNow(getChildFragmentManager(), timePickerTag(day, index));
+    }
+
+    private void restoreTimePicker() {
+        for (Fragment fragment : getChildFragmentManager().getFragments()) {
+            if (!(fragment instanceof MaterialTimePicker) || fragment.getTag() == null || !fragment.getTag().startsWith(TIME_PICKER_PREFIX)) continue;
+            String[] values = fragment.getTag().substring(TIME_PICKER_PREFIX.length()).split("_");
+            if (values.length == 2) bindTimePicker((MaterialTimePicker) fragment, DayOfWeek.of(Integer.parseInt(values[0])), Integer.parseInt(values[1]));
+        }
+    }
+
+    private void bindTimePicker(MaterialTimePicker picker, DayOfWeek day, int index) {
+        picker.addOnPositiveButtonClickListener(view -> model.putFormTime(day, index, String.format(Locale.ROOT, "%02d:%02d", picker.getHour(), picker.getMinute())));
+    }
+
+    private String timePickerTag(DayOfWeek day, int index) {
+        return TIME_PICKER_PREFIX + day.getValue() + "_" + index;
+    }
+
+    private LocalTime parseTime(String value) {
+        try {
+            return LocalTime.parse(value);
+        } catch (RuntimeException invalid) {
+            return LocalTime.now();
+        }
+    }
+
+    private void focusError(String key) {
+        View target;
+        if (RoutineFormState.TYPE.equals(key)) target = type;
+        else if (RoutineFormState.DAYS.equals(key)) target = days.get(DayOfWeek.MONDAY);
+        else {
+            DayOfWeek day = dayFromKey(key);
+            View card = day == null ? null : dayCards.get(day);
+            target = card == null ? null : card.findViewById(R.id.routine_schedule_add_time);
+        }
+        if (target == null) return;
+        target.requestFocus();
+        target.requestRectangleOnScreen(new Rect(0, 0, target.getWidth(), target.getHeight()), true);
+        scroll.smoothScrollTo(0, Math.max(0, target.getTop() - getResources().getDimensionPixelSize(R.dimen.routine_item_spacing)));
+    }
+
+    private DayOfWeek dayFromKey(String key) {
+        String[] values = key.split(":");
+        if (values.length < 2) return null;
+        try {
+            return DayOfWeek.of(Integer.parseInt(values[1]));
+        } catch (RuntimeException invalid) {
+            return null;
+        }
     }
 
     private void groupError(int id, String message) {
-        TextView view = header.findViewById(id);
+        TextView view = requireView().findViewById(id);
         view.setText(message);
         view.setVisibility(message == null || message.isEmpty() ? View.GONE : View.VISIBLE);
     }
@@ -305,190 +362,6 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
             case DUPLICATE_TIME: return getString(R.string.routine_form_duplicate_time);
             default: return getString(R.string.routine_form_mismatch);
         }
-    }
-
-    private static TextWatcher watcher(java.util.function.Consumer<String> changed) {
-        return new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence value, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence value, int start, int before, int count) {}
-
-            @Override
-            public void afterTextChanged(Editable value) {
-                changed.accept(value.toString());
-            }
-        };
-    }
-
-    private static final class Field {
-        final DayOfWeek day;
-        final int index;
-        final String key;
-
-        Field(DayOfWeek day, int index) {
-            this.day = day;
-            this.index = index;
-            key = index < 0 ? RoutineFormState.quantityKey(day) : RoutineFormState.timeKey(day, index);
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            return other instanceof Field && key.equals(((Field) other).key);
-        }
-
-        @Override
-        public int hashCode() {
-            return key.hashCode();
-        }
-    }
-
-    private class Holder extends RecyclerView.ViewHolder {
-        final TextInputLayout layout;
-        final TextInputEditText input;
-        Field field;
-        boolean writing;
-
-        Holder(View view, boolean row) {
-            super(view);
-            layout = row ? (TextInputLayout) view : null;
-            input = row ? view.findViewById(R.id.routine_execution_input) : null;
-            if (input != null) {
-                input.addTextChangedListener(watcher(value -> {
-                    if (writing || field == null || current() == null) return;
-                    if (field.index < 0) model.setFormQuantity(field.day, value);
-                    else model.setFormTime(field.day, field.index, value);
-                }));
-                input.setOnEditorActionListener((target, action, event) -> {
-                    if (action != EditorInfo.IME_ACTION_NEXT || field == null) return false;
-                    int position = adapter.fields.indexOf(field) + 1;
-                    if (position < adapter.fields.size()) focus(adapter.fields.get(position).key, -1, -1, true, 8);
-                    else hideKeyboard();
-                    return true;
-                });
-            }
-        }
-
-        void bind(Field next, RoutineFormState form) {
-            writing = true;
-            input.setEnabled(!model.state().getValue().creation.busy());
-            field = next;
-            if (!next.key.equals(input.getTag())) {
-                input.setTag(next.key);
-                input.setInputType(next.index < 0 ? InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED
-                    : InputType.TYPE_CLASS_DATETIME | InputType.TYPE_DATETIME_VARIATION_TIME);
-            }
-            String day = next.day.getDisplayName(TextStyle.FULL, locale());
-            layout.setHint(next.index < 0 ? getString(R.string.routine_form_quantity, day) : getString(R.string.routine_form_time, day, next.index + 1));
-            String raw = next.index < 0 ? form.days.get(next.day).quantity : form.days.get(next.day).times.get(next.index);
-            if (!input.getText().toString().equals(raw)) input.setText(raw);
-            layout.setError(error(form.errors.get(next.key)));
-            writing = false;
-        }
-    }
-
-    private final class FormAdapter extends RecyclerView.Adapter<Holder> {
-        List<Field> fields = new ArrayList<>();
-        RoutineFormState form;
-
-        FormAdapter() {
-            setHasStableIds(true);
-        }
-
-        void update(RoutineFormState value) {
-            List<Field> next = new ArrayList<>();
-            for (DayOfWeek day : DayOfWeek.values()) {
-                RoutineFormState.DayDraft draft = value.days.get(day);
-                if (!draft.selected) continue;
-                next.add(new Field(day, -1));
-                for (int i = 0; i < draft.activeCount(); i++) next.add(new Field(day, i));
-            }
-            form = value;
-            if (!fields.equals(next)) {
-                List<Field> previous = fields;
-                DiffUtil.DiffResult diff = DiffUtil.calculateDiff(new DiffUtil.Callback() {
-                    @Override
-                    public int getOldListSize() { return previous.size() + 1; }
-                    @Override
-                    public int getNewListSize() { return next.size() + 1; }
-                    @Override
-                    public boolean areItemsTheSame(int oldPosition, int newPosition) {
-                        return oldPosition == 0 || newPosition == 0 ? oldPosition == newPosition : previous.get(oldPosition - 1).equals(next.get(newPosition - 1));
-                    }
-                    @Override
-                    public boolean areContentsTheSame(int oldPosition, int newPosition) { return true; }
-                });
-                fields = next;
-                diff.dispatchUpdatesTo(this);
-            }
-            notifyItemRangeChanged(0, getItemCount(), Boolean.TRUE);
-        }
-
-        @Override
-        public int getItemCount() { return fields.size() + 1; }
-
-        @Override
-        public int getItemViewType(int position) { return position == 0 ? 0 : 1; }
-
-        @Override
-        public long getItemId(int position) {
-            if (position == 0) return 0;
-            Field field = fields.get(position - 1);
-            return field.day.getValue() * 10000L + field.index + 2;
-        }
-
-        @NonNull
-        @Override
-        public Holder onCreateViewHolder(@NonNull ViewGroup parent, int type) {
-            return type == 0 ? new Holder(header, false) : new Holder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_routine_execution_field, parent, false), true);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull Holder holder, int position) {
-            if (form == null) return;
-            if (position == 0) bindHeader(form);
-            else holder.bind(fields.get(position - 1), form);
-        }
-    }
-
-    private void focusFirstDistributionField() {
-        if (adapter != null && !adapter.fields.isEmpty()) focus(adapter.fields.get(0).key, -1, -1, true, 8);
-        else focus(RoutineFormState.DAYS, -1, -1, false, 8);
-    }
-
-    private void focus(String key, int start, int end, boolean keyboard, int attempts) {
-        if (list == null || adapter == null || current() == null || attempts == 0) return;
-        if (RoutineFormState.DISTRIBUTION.equals(key)) {
-            focusFirstDistributionField();
-            return;
-        }
-        int position = 0;
-        for (int i = 0; i < adapter.fields.size(); i++) if (adapter.fields.get(i).key.equals(key)) position = i + 1;
-        final int targetPosition = position;
-        list.scrollToPosition(position);
-        list.postOnAnimation(() -> {
-            if (list == null || current() == null) return;
-            Holder holder = (Holder) list.findViewHolderForAdapterPosition(targetPosition);
-            if (holder == null) {
-                focus(key, start, end, keyboard, attempts - 1);
-                return;
-            }
-            View target = targetPosition > 0 ? holder.input : RoutineFormState.TYPE.equals(key) ? type : RoutineFormState.FREQUENCY.equals(key) ? frequency
-                : chips.get(DayOfWeek.MONDAY);
-            target.requestFocus();
-            target.requestRectangleOnScreen(new Rect(0, 0, target.getWidth(), target.getHeight()), true);
-            if (target instanceof EditText) {
-                EditText input = (EditText) target;
-                int length = input.length();
-                input.setSelection(start < 0 ? length : Math.min(start, length), end < 0 ? length : Math.min(end, length));
-                if (keyboard && target != type) ((InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE)).showSoftInput(input, InputMethodManager.SHOW_IMPLICIT);
-            }
-        });
-    }
-
-    private void hideKeyboard() {
-        if (getView() != null) ((InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(getView().getWindowToken(), 0);
     }
 
     @Override
@@ -511,20 +384,6 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
     }
 
     @Override
-    public void onSaveInstanceState(@NonNull Bundle saved) {
-        super.onSaveInstanceState(saved);
-        saved.putLong("formToken", token);
-        View focused = getView() == null ? null : getView().findFocus();
-        if (focused instanceof EditText && focused.getTag() instanceof String) {
-            saved.putString("focusKey", (String) focused.getTag());
-            saved.putInt("selectionStart", ((EditText) focused).getSelectionStart());
-            saved.putInt("selectionEnd", ((EditText) focused).getSelectionEnd());
-            WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(getView());
-            saved.putBoolean("imeVisible", insets != null && insets.isVisible(WindowInsetsCompat.Type.ime()));
-        }
-    }
-
-    @Override
     public void onDestroyView() {
         destroyingView = true;
         if (getView() != null && retryUpdate != null) getView().removeCallbacks(retryUpdate);
@@ -533,13 +392,11 @@ public final class RoutineEditorDialogFragment extends DialogFragment {
         resendConfirmation = null;
         if (confirmation != null) confirmation.dismiss();
         confirmation = null;
-        if (list != null) list.setAdapter(null);
-        adapter = null;
-        list = null;
-        header = null;
+        schedule = null;
+        scroll = null;
         type = null;
-        frequency = null;
-        chips.clear();
+        days.clear();
+        dayCards.clear();
         super.onDestroyView();
     }
 }
