@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 @RunWith(AndroidJUnit4.class)
 public class AuthStateInstrumentedTest {
@@ -75,9 +76,15 @@ public class AuthStateInstrumentedTest {
             assertNotNull(model.personalError());
             model.secret("password", "senha-teste");
             assertFalse(model.draft.containsKey("password"));
-            assertNull(model.setHabit("shower", 2, Arrays.asList(1, 3)));
-            assertNotNull(model.setHabit("yard", 0, Arrays.asList(1)));
-            assertNotNull(model.setHabit("yard", 2, Arrays.asList(1, 1)));
+            java.util.Map<Integer, java.util.List<String>> schedule = new java.util.LinkedHashMap<>();
+            schedule.put(1, Arrays.asList("07:00", "20:00"));
+            schedule.put(3, Collections.singletonList("08:30"));
+            assertNull(model.setHabit("shower", schedule));
+            assertEquals(Integer.valueOf(3), model.habit("shower").frequency);
+            assertEquals("20:00", model.habit("shower").schedule.get(0).startTimes.get(1));
+            assertNotNull(model.setHabit("yard", Collections.emptyMap()));
+            schedule.put(3, Arrays.asList("08:30", "08:30"));
+            assertNotNull(model.setHabit("yard", schedule));
             model.reset();
             assertNull(model.habit("shower"));
             assertTrue(model.secret("password").isEmpty());

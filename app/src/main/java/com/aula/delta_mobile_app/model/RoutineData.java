@@ -38,7 +38,9 @@ public final class RoutineData {
         public final int id, userId, habitId;
         public final String name, category, description;
         public final Integer frequency;
+        public final LocalTime legacyStartTime;
         public final Map<DayOfWeek, List<LocalTime>> schedule;
+        public final Set<DayOfWeek> declaredDays;
         public final boolean scheduleComplete;
         public final BigDecimal litersPerExecution;
         public final List<ScheduleVersion> scheduleVersions;
@@ -59,10 +61,13 @@ public final class RoutineData {
             scheduleVersions = parsedVersions == null ? Collections.emptyList() : Collections.unmodifiableList(parsedVersions);
             ScheduleVersion latest = scheduleVersions.isEmpty() ? null : scheduleVersions.get(scheduleVersions.size() - 1);
             Map<DayOfWeek, List<LocalTime>> parsed = versioned ? latest == null ? null : latest.schedule : parseSchedule(value.frequency, value.daysOfWeek, value.schedule);
+            Set<DayOfWeek> days = parseDeclaredDays(value.daysOfWeek);
+            declaredDays = days == null ? Collections.emptySet() : Collections.unmodifiableSet(days);
             frequency = versioned && latest != null ? latest.frequency : value.frequency;
+            legacyStartTime = versioned ? null : parseLegacyTime(value.startTime);
             scheduleComplete = parsed != null && versionsComplete;
             schedule = parsed == null ? Collections.emptyMap() : parsed;
-            litersPerExecution = estimate(habitId);
+            litersPerExecution = estimateForHabit(habitId);
         }
 
         public boolean activeAt(LocalDate date) {
@@ -81,6 +86,10 @@ public final class RoutineData {
         public Map<DayOfWeek, List<LocalTime>> scheduleAt(LocalDate date) {
             ScheduleVersion version = versionAt(date);
             return versioned ? version == null ? Collections.emptyMap() : version.schedule : schedule;
+        }
+
+        private boolean mayApplyWithoutSchedule(LocalDate date) {
+            return versioned || declaredDays.isEmpty() || declaredDays.contains(date.getDayOfWeek());
         }
 
         private ScheduleVersion versionAt(LocalDate date) {
@@ -164,6 +173,19 @@ public final class RoutineData {
         return new RoutineData(reference, habits);
     }
 
+    public static RoutineData withHabit(RoutineData previous, Habit addition) {
+        return withHabit(previous, addition, previous == null ? LocalDate.now() : previous.reference);
+    }
+
+    public static RoutineData withHabit(RoutineData previous, Habit addition, LocalDate reference) {
+        Objects.requireNonNull(addition);
+        List<Habit> values = new ArrayList<>();
+        if (previous != null) values.addAll(previous.habits);
+        values.removeIf(value -> value.id == addition.id);
+        values.add(addition);
+        return new RoutineData(Objects.requireNonNull(reference), values);
+    }
+
     public Day day(LocalDate date) {
         Objects.requireNonNull(date);
         DayOfWeek weekday = date.getDayOfWeek();
@@ -173,7 +195,7 @@ public final class RoutineData {
         for (Habit habit : habits) {
             if (!habit.activeAt(date)) continue;
             if (!habit.scheduleCompleteAt(date)) {
-                incomplete.add(habit);
+                if (habit.mayApplyWithoutSchedule(date)) incomplete.add(habit);
                 continue;
             }
             List<LocalTime> times = habit.scheduleAt(date).get(weekday);
@@ -200,7 +222,7 @@ public final class RoutineData {
             Set<LocalTime> uniqueTimes = new HashSet<>();
             List<LocalTime> times = new ArrayList<>();
             for (String time : entry.startTimes) {
-                if (time == null || !time.matches("[0-2][0-9]:[0-5][0-9]")) return null;
+                if (time == null || !time.matches("(?:[01][0-9]|2[0-3]):[0-5][0-9]")) return null;
                 LocalTime parsed;
                 try {
                     parsed = LocalTime.parse(time);
@@ -215,6 +237,24 @@ public final class RoutineData {
             count += times.size();
         }
         return schedule.size() == days.size() && count == frequency ? Collections.unmodifiableMap(schedule) : null;
+    }
+
+    private static Set<DayOfWeek> parseDeclaredDays(List<Integer> values) {
+        if (values == null || values.isEmpty()) return null;
+        Set<DayOfWeek> days = new HashSet<>();
+        for (Integer value : values)
+            if (value == null || value < 1 || value > 7 || !days.add(DayOfWeek.of(value))) return null;
+        return days;
+    }
+
+    private static LocalTime parseLegacyTime(String value) {
+        if (value == null || value.isEmpty() || !value.equals(value.trim())) return null;
+        if (value.equals("string")) return null;
+        try {
+            return LocalTime.parse(value);
+        } catch (DateTimeException invalid) {
+            return null;
+        }
     }
 
     private static List<Habit.ScheduleVersion> parseVersions(List<ApiModels.UserHabitScheduleVersionResponse> values) {
@@ -248,7 +288,7 @@ public final class RoutineData {
         return versions;
     }
 
-    private static BigDecimal estimate(int habitId) {
+    public static BigDecimal estimateForHabit(int habitId) {
         switch (habitId) {
             case 1: return BigDecimal.valueOf(80);
             case 2: return BigDecimal.valueOf(150);

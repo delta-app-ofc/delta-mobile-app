@@ -185,13 +185,14 @@ public class RoutineDataTest {
         assertEquals(new BigDecimal("15"), monday.knownLiters);
         assertEquals(1, monday.executions.size());
         assertEquals(108, monday.incompleteHabits.get(0).id);
+        assertEquals(LocalTime.of(7, 0), monday.incompleteHabits.get(0).legacyStartTime);
         assertFalse(monday.incompleteHabits.get(0).scheduleComplete);
         assertTrue(monday.incompleteHabits.get(0).schedule.isEmpty());
         RoutineData.Day tuesday = routine.day(MONDAY.plusDays(1));
         assertTrue(tuesday.executions.isEmpty());
-        assertFalse(tuesday.confirmedEmpty());
-        assertFalse(tuesday.totalComplete);
-        assertNull(tuesday.totalLiters);
+        assertTrue(tuesday.confirmedEmpty());
+        assertTrue(tuesday.totalComplete);
+        assertEquals(BigDecimal.ZERO, tuesday.totalLiters);
     }
 
     @Test
@@ -221,7 +222,7 @@ public class RoutineDataTest {
         for (int i = 0; i < invalid.size(); i++) {
             UserHabitResponse habit = singleDay(105, 1, 1, "07:00");
             invalid.get(i).accept(habit);
-            RoutineData.Day day = data(habit).day(MONDAY);
+            RoutineData.Day day = data(habit).day(i == 11 ? MONDAY.plusDays(2) : MONDAY);
             assertFalse("case " + i, day.agendaComplete);
             assertNull("case " + i, day.totalLiters);
             assertEquals("case " + i, 1, day.incompleteHabits.size());

@@ -96,6 +96,14 @@ public final class RoutineFormState {
         return changeDay(day, new DayDraft(selected, previous.quantity, previous.times));
     }
 
+    public RoutineFormState selectDayDerived(DayOfWeek day, boolean selected) {
+        DayDraft previous = days.get(Objects.requireNonNull(day));
+        if (previous.selected == selected) return this;
+        Map<DayOfWeek, DayDraft> next = new EnumMap<>(days);
+        next.put(day, new DayDraft(selected, String.valueOf(previous.times.size()), previous.times));
+        return copy(habitId, derivedFrequency(next), next, attempted, true, false);
+    }
+
     public RoutineFormState withQuantity(DayOfWeek day, String value) {
         Objects.requireNonNull(value);
         DayDraft previous = days.get(Objects.requireNonNull(day));
@@ -115,6 +123,34 @@ public final class RoutineFormState {
         List<String> times = new ArrayList<>(previous.times);
         times.set(index, value);
         return changeDay(day, new DayDraft(previous.selected, previous.quantity, times));
+    }
+
+    public RoutineFormState putTime(DayOfWeek day, int index, String value) {
+        Objects.requireNonNull(value);
+        DayDraft previous = days.get(Objects.requireNonNull(day));
+        List<String> times = new ArrayList<>(previous.times);
+        if (index < 0) times.add(value);
+        else if (index < times.size()) times.set(index, value);
+        else return this;
+        Map<DayOfWeek, DayDraft> next = new EnumMap<>(days);
+        next.put(day, new DayDraft(previous.selected, String.valueOf(times.size()), times));
+        return copy(habitId, derivedFrequency(next), next, attempted, true, false);
+    }
+
+    public RoutineFormState removeTime(DayOfWeek day, int index) {
+        DayDraft previous = days.get(Objects.requireNonNull(day));
+        if (index < 0 || index >= previous.times.size()) return this;
+        List<String> times = new ArrayList<>(previous.times);
+        times.remove(index);
+        Map<DayOfWeek, DayDraft> next = new EnumMap<>(days);
+        next.put(day, new DayDraft(previous.selected, String.valueOf(times.size()), times));
+        return copy(habitId, derivedFrequency(next), next, attempted, true, false);
+    }
+
+    public int executionCount() {
+        int count = 0;
+        for (DayDraft day : days.values()) if (day.selected) count += day.times.size();
+        return count;
     }
 
     public RoutineFormState validate() {
@@ -151,5 +187,11 @@ public final class RoutineFormState {
         Map<DayOfWeek, DayDraft> days = new EnumMap<>(DayOfWeek.class);
         for (DayOfWeek day : DayOfWeek.values()) days.put(day, new DayDraft(false, "", Collections.emptyList()));
         return days;
+    }
+
+    private static String derivedFrequency(Map<DayOfWeek, DayDraft> days) {
+        int count = 0;
+        for (DayDraft day : days.values()) if (day.selected) count += day.times.size();
+        return String.valueOf(count);
     }
 }

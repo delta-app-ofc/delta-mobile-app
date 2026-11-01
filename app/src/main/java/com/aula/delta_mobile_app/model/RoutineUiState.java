@@ -18,7 +18,7 @@ public final class RoutineUiState {
             this.id = id;
             this.userId = userId;
             this.date = Objects.requireNonNull(date);
-            this.startTime = Objects.requireNonNull(startTime);
+            this.startTime = startTime;
         }
     }
 
@@ -34,7 +34,7 @@ public final class RoutineUiState {
             scheduleComplete = habit.scheduleCompleteAt(target.date);
             times = habit.scheduleAt(target.date).getOrDefault(target.date.getDayOfWeek(), Collections.emptyList());
             executionCount = scheduleComplete ? times.size() : null;
-            selectedExecutionPresent = scheduleComplete && times.contains(target.startTime);
+            selectedExecutionPresent = scheduleComplete && target.startTime != null && times.contains(target.startTime);
             executionLiters = habit.litersPerExecution;
             dailyLiters = !scheduleComplete ? null : times.isEmpty() ? BigDecimal.ZERO : executionLiters == null ? null
                 : executionLiters.multiply(BigDecimal.valueOf(times.size()));

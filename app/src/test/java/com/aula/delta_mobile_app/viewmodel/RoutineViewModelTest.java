@@ -586,17 +586,17 @@ public class RoutineViewModelTest {
     }
 
     @Test
-    public void staleUnknownOrUnscheduledItemsCannotBeOpened() {
+    public void staleUnknownOrUnscheduledCardsCanOpenTheirDetails() {
         assertFalse(viewModel.openDetails(105, LocalTime.of(7, 0)));
         load(data(73, 1));
         assertFalse(viewModel.openDetails(106, LocalTime.of(7, 0)));
-        assertFalse(viewModel.openDetails(105, LocalTime.of(8, 0)));
-        assertFalse(viewModel.openDetails(105, null));
+        assertTrue(viewModel.openDetails(105, null));
+        assertEquals(1, repository.details.size());
         viewModel.refresh();
-        assertFalse(viewModel.openDetails(105, LocalTime.of(7, 0)));
+        assertFalse(viewModel.openDetails(105, null));
         reply(1, ScreenState.error("Sem conexão."));
-        assertFalse(viewModel.openDetails(105, LocalTime.of(7, 0)));
-        assertTrue(repository.details.isEmpty());
+        assertFalse(viewModel.openDetails(105, null));
+        assertEquals(1, repository.details.size());
     }
 
     @Test
@@ -1171,29 +1171,20 @@ public class RoutineViewModelTest {
     }
 
     @Test
-    public void confirmedSaveClosesEditorInvalidatesOldGetAndRetriesOnlyReload() {
+    public void confirmedCreateClosesEditorAndShowsTheNewHabitOnItsFirstDay() {
         viewModel.load();
         viewModel.beginCreateForm();
         fillForm();
         viewModel.saveForm();
-        repository.posts.get(0).accept(ScreenState.success(habit(105, 73, 1, "07:00")));
+        repository.posts.get(0).accept(ScreenState.success(habitOn(106, 73, 1, 1, "07:00")));
         drain();
         assertNull(state().form);
-        assertTrue(state().savedAwaitingReload);
-        assertEquals(2, repository.callbacks.size());
-        reply(0, ScreenState.success(data(74, 2)));
-        assertTrue(state().reading.busy());
-        reply(1, ScreenState.error("Sem rede"));
-        assertTrue(state().savedAwaitingReload);
-        viewModel.saveForm();
-        viewModel.retry();
-        reply(2, ScreenState.success(data(73, 1)));
         assertFalse(state().savedAwaitingReload);
-        assertEquals(INITIAL, state().selectedDate);
+        assertEquals(LocalDate.of(2026, 2, 2), state().selectedDate);
+        assertEquals(ScreenState.Status.SUCCESS, state().reading.status);
+        assertEquals(106, state().day.executions.get(0).habit.id);
+        assertEquals(1, repository.callbacks.size());
         assertEquals(1, repository.posts.size());
-        repository.posts.get(0).accept(ScreenState.success(habit(105, 73, 1, "07:00")));
-        drain();
-        assertEquals(3, repository.callbacks.size());
     }
 
     @Test

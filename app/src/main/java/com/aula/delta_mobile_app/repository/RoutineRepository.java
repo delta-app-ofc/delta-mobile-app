@@ -57,25 +57,45 @@ public final class RoutineRepository implements RoutineActions {
                 Call<UserHabitResponse> call = access.api().createUserHabit(profile.id, request);
                 started = true;
                 Response<UserHabitResponse> response = call.execute();
-                if (response.code() >= 500) return uncertain();
+                if (response.code() >= 500) return uncertainCreate();
                 if (!response.isSuccessful()) return ApiErrors.from(response);
                 UserHabitResponse value = response.body();
-                if (response.code() != 201 || !owned(value, profile.id) || value.id <= 0) return uncertain();
-                RoutineData.Habit habit = RoutineData.from(Collections.singletonList(value), clock).habits.get(0);
-                if (!habit.scheduleComplete || habit.habitId != form.habitId || !Objects.equals(habit.frequency, request.frequency)) return uncertain();
-                for (DayOfWeek day : DayOfWeek.values()) {
-                    List<LocalTime> expected = new ArrayList<>();
-                    RoutineFormState.DayDraft draft = form.days.get(day);
-                    for (int i = 0; i < draft.activeCount(); i++) expected.add(LocalTime.parse(draft.times.get(i)));
-                    if (!new HashSet<>(expected).equals(new HashSet<>(habit.schedule.getOrDefault(day, Collections.emptyList())))) return uncertain();
+                if (response.code() != 201 || !owned(value, profile.id) || value.id <= 0) return uncertainCreate();
+                RoutineData.Habit habit;
+                try {
+                    habit = RoutineData.from(Collections.singletonList(value), clock).habits.get(0);
+                } catch (JsonParseException | IllegalArgumentException | IllegalStateException invalidSchedule) {
+                    value.frequency = request.frequency;
+                    value.daysOfWeek = request.daysOfWeek;
+                    value.schedule = request.schedule;
+                    habit = RoutineData.from(Collections.singletonList(value), clock).habits.get(0);
                 }
+                if (habit.habitId != form.habitId) return uncertainCreate();
+                if (!habit.scheduleComplete || !Objects.equals(habit.frequency, request.frequency) || !matchesSchedule(form, habit)) {
+                    value.frequency = request.frequency;
+                    value.daysOfWeek = request.daysOfWeek;
+                    value.schedule = request.schedule;
+                    habit = RoutineData.from(Collections.singletonList(value), clock).habits.get(0);
+                }
+                if (!habit.scheduleComplete || !Objects.equals(habit.frequency, request.frequency) || !matchesSchedule(form, habit)) return uncertainCreate();
+                if (scheduleStore != null) scheduleStore.save(profile.id, habit.id, request.frequency, request.daysOfWeek, request.schedule);
                 return ScreenState.success(habit);
             } catch (IOException unavailable) {
-                return started ? uncertain() : ApiErrors.network();
+                return started ? uncertainCreate() : ApiErrors.network();
             } catch (JsonParseException | IllegalArgumentException | IllegalStateException invalid) {
-                return started ? uncertain() : invalidBody();
+                return started ? uncertainCreate() : invalidBody();
             }
         }, callback);
+    }
+
+    private static boolean matchesSchedule(RoutineFormState form, RoutineData.Habit habit) {
+        for (DayOfWeek day : DayOfWeek.values()) {
+            List<LocalTime> expected = new ArrayList<>();
+            RoutineFormState.DayDraft draft = form.days.get(day);
+            for (int i = 0; i < draft.activeCount(); i++) expected.add(LocalTime.parse(draft.times.get(i)));
+            if (!new HashSet<>(expected).equals(new HashSet<>(habit.schedule.getOrDefault(day, Collections.emptyList())))) return false;
+        }
+        return true;
     }
 
     @Override
@@ -106,10 +126,30 @@ public final class RoutineRepository implements RoutineActions {
                 if (response.code() >= 500) return uncertain();
                 if (!response.isSuccessful()) return ApiErrors.from(response);
                 UserHabitResponse value = response.body();
-                if (response.code() != 200 || !owned(value, profile.id) || !Objects.equals(form.id, value.id)
-                    || !Objects.equals(request.effectiveFrom, value.effectiveFrom)) return uncertain();
-                RoutineData.Habit habit = RoutineData.from(Collections.singletonList(value), clock).habits.get(0);
-                return matches(form, habit) ? ScreenState.success(habit) : uncertain();
+                if (response.code() != 200 || !owned(value, profile.id) || !Objects.equals(form.id, value.id)) return uncertain();
+                if (value.effectiveFrom != null && !Objects.equals(request.effectiveFrom, value.effectiveFrom)) return uncertain();
+                boolean responseHasSchedule = value.frequency != null && value.daysOfWeek != null && !value.daysOfWeek.isEmpty()
+                    && value.schedule != null && !value.schedule.isEmpty();
+                RoutineData.Habit habit;
+                try {
+                    habit = RoutineData.from(Collections.singletonList(value), clock).habits.get(0);
+                } catch (JsonParseException | IllegalArgumentException | IllegalStateException invalidSchedule) {
+                    if (responseHasSchedule) return uncertain();
+                    value.frequency = request.frequency;
+                    value.daysOfWeek = request.daysOfWeek;
+                    value.schedule = request.schedule;
+                    habit = RoutineData.from(Collections.singletonList(value), clock).habits.get(0);
+                }
+                if (!matches(form, habit)) {
+                    if (responseHasSchedule) return uncertain();
+                    value.frequency = request.frequency;
+                    value.daysOfWeek = request.daysOfWeek;
+                    value.schedule = request.schedule;
+                    habit = RoutineData.from(Collections.singletonList(value), clock).habits.get(0);
+                }
+                if (!matches(form, habit)) return uncertain();
+                if (scheduleStore != null) scheduleStore.save(profile.id, habit.id, request.frequency, request.daysOfWeek, request.schedule);
+                return ScreenState.success(habit);
             } catch (IOException unavailable) {
                 return started ? uncertain() : ApiErrors.network();
             } catch (JsonParseException | IllegalArgumentException | IllegalStateException invalid) {
@@ -139,7 +179,9 @@ public final class RoutineRepository implements RoutineActions {
                 Response<Void> response = call.execute();
                 if (response.code() >= 500) return uncertain();
                 if (!response.isSuccessful()) return ApiErrors.from(response);
-                return response.code() == 204 ? ScreenState.success(null) : uncertain();
+                if (response.code() != 204) return uncertain();
+                if (scheduleStore != null) scheduleStore.remove(profile.id, id);
+                return ScreenState.success(null);
             } catch (IOException unavailable) {
                 return started ? uncertain() : ApiErrors.network();
             } catch (JsonParseException | IllegalArgumentException | IllegalStateException invalid) {
@@ -150,6 +192,10 @@ public final class RoutineRepository implements RoutineActions {
 
     private static <T> ScreenState<T> uncertain() {
         return ScreenState.error("Não foi possível confirmar o resultado da alteração.", UNCERTAIN, 0);
+    }
+
+    private static <T> ScreenState<T> uncertainCreate() {
+        return ScreenState.error("Não foi possível salvar o hábito. Tente novamente.", UNCERTAIN, 0);
     }
 
     private static List<Integer> days(RoutineFormState form) {
@@ -195,18 +241,27 @@ public final class RoutineRepository implements RoutineActions {
 
     private final Access access;
     private final Clock clock;
+    private final RoutineScheduleStore scheduleStore;
 
     public RoutineRepository(AuthRepository auth) {
         this(auth, Clock.systemDefaultZone());
     }
 
     public RoutineRepository(AuthRepository auth, Clock clock) {
-        this(authenticated(Objects.requireNonNull(auth)), clock);
+        AuthRepository value = Objects.requireNonNull(auth);
+        access = authenticated(value);
+        this.clock = Objects.requireNonNull(clock);
+        scheduleStore = new RoutineScheduleStore(value.applicationContext());
     }
 
     RoutineRepository(Access access, Clock clock) {
+        this(access, clock, null);
+    }
+
+    RoutineRepository(Access access, Clock clock, RoutineScheduleStore scheduleStore) {
         this.access = Objects.requireNonNull(access);
         this.clock = Objects.requireNonNull(clock);
+        this.scheduleStore = scheduleStore;
     }
 
     @Override
@@ -221,6 +276,7 @@ public final class RoutineRepository implements RoutineActions {
             if (values == null) return invalidBody();
             for (UserHabitResponse value : values)
                 if (!owned(value, user)) return invalidBody();
+            if (scheduleStore != null) scheduleStore.apply(user, values);
             return ScreenState.success(RoutineData.from(values, clock));
         }, callback);
     }
@@ -235,6 +291,7 @@ public final class RoutineRepository implements RoutineActions {
             if (!response.isSuccessful()) return ApiErrors.from(response);
             UserHabitResponse value = response.body();
             if (!owned(value, user) || !Objects.equals(id, value.id)) return invalidBody();
+            if (scheduleStore != null) scheduleStore.apply(user, Collections.singletonList(value));
             return ScreenState.success(RoutineData.from(Collections.singletonList(value), clock).habits.get(0));
         }, callback);
     }

@@ -121,6 +121,25 @@ public class RoutineFormValidatorTest {
     }
 
     @Test
+    public void simplifiedEditorDerivesFrequencyAndPreservesTimesWhenDayIsToggled() {
+        RoutineFormState form = RoutineFormState.create(1).withHabit(4).selectDayDerived(DayOfWeek.MONDAY, true)
+            .putTime(DayOfWeek.MONDAY, -1, "07:00").putTime(DayOfWeek.MONDAY, -1, "20:00")
+            .selectDayDerived(DayOfWeek.WEDNESDAY, true).putTime(DayOfWeek.WEDNESDAY, -1, "08:30");
+        assertEquals("3", form.frequency);
+        assertEquals("2", form.days.get(DayOfWeek.MONDAY).quantity);
+        assertEquals(3, form.executionCount());
+        assertTrue(form.validate().valid());
+
+        RoutineFormState hidden = form.selectDayDerived(DayOfWeek.MONDAY, false);
+        assertEquals("1", hidden.frequency);
+        assertEquals(Arrays.asList("07:00", "20:00"), hidden.days.get(DayOfWeek.MONDAY).times);
+        RoutineFormState restored = hidden.selectDayDerived(DayOfWeek.MONDAY, true).removeTime(DayOfWeek.MONDAY, 0);
+        assertEquals("2", restored.frequency);
+        assertEquals(Collections.singletonList("20:00"), restored.days.get(DayOfWeek.MONDAY).times);
+        assertTrue(restored.validate().valid());
+    }
+
+    @Test
     public void correctionRevalidatesAfterTheFirstAttemptWithoutChangingOtherFields() {
         RoutineFormState invalid = valid().withTime(DayOfWeek.MONDAY, 0, "7:").validate();
         RoutineFormState corrected = invalid.withTime(DayOfWeek.MONDAY, 0, "07:00");

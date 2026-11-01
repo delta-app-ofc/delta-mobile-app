@@ -71,6 +71,18 @@ public class RoutineRepositoryTest {
     }
 
     @Test
+    public void updateUsesSubmittedScheduleWhenSuccessfulResponseDoesNotEchoIt() {
+        access.queue(200, UPDATE_HABIT);
+        access.queue(200, "{\"id\":105,\"userId\":73,\"habitId\":1}");
+        Result<RoutineData.Habit> result = new Result<>();
+        repository.update(editForm(), result);
+        access.run();
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertTrue(result.only().data.scheduleComplete);
+        assertEquals(2, result.only().data.schedule.get(DayOfWeek.MONDAY).size());
+    }
+
+    @Test
     public void updateRejectsInvalidIdentityOrDraftWithoutNetwork() {
         Result<RoutineData.Habit> missingDate = new Result<>();
         repository.update(RoutineFormState.edit(2, habit()), missingDate);
@@ -192,15 +204,30 @@ public class RoutineRepositoryTest {
     }
 
     @Test
-    public void createTreatsMismatchedMissingOrMalformedSuccessAsUncertain() {
+    public void createTreatsMissingMalformedOrWrongIdentityAsUncertain() {
         for (String body : new String[]{"", "{}", "null", "broken", HABIT.replace("\"userId\":73", "\"userId\":74"),
-            HABIT.replace("\"habitId\":1", "\"habitId\":2"), HABIT.replace("07:00", "07:30"), HABIT.replace("\"frequency\":5", "\"frequency\":6")}) {
+            HABIT.replace("\"habitId\":1", "\"habitId\":2")}) {
             access.code = 201;
             access.body = body;
             Result<RoutineData.Habit> result = new Result<>();
             repository.create(createForm(), result);
             access.run();
             assertEquals(body, RoutineRepository.UNCERTAIN, result.only().code);
+        }
+    }
+
+    @Test
+    public void createUsesSubmittedScheduleWhenSuccessfulResponseDoesNotEchoIt() {
+        for (String body : new String[]{HABIT.replace("07:00", "07:30"), HABIT.replace("\"frequency\":5", "\"frequency\":6")}) {
+            access.code = 201;
+            access.body = body;
+            Result<RoutineData.Habit> result = new Result<>();
+            repository.create(createForm(), result);
+            access.run();
+            assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+            assertTrue(result.only().data.scheduleComplete);
+            assertEquals(Arrays.asList(LocalTime.of(7, 0), LocalTime.of(20, 0)), result.only().data.schedule.get(DayOfWeek.MONDAY));
+            assertEquals(Integer.valueOf(5), result.only().data.frequency);
         }
     }
 

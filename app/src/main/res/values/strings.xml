@@ -70,6 +70,16 @@
     <string name="auth_manual_description">Caso não saiba consulte seu síndico\nou responsável do prédio</string>
     <string name="auth_cancel">Cancelar</string>
     <string name="auth_confirm">Confirmar</string>
+    <string name="auth_habit_description">Escolha os dias e adicione os horários desta atividade.</string>
+    <string name="auth_habit_when">Quando acontece?</string>
+    <string name="auth_habit_days_help">Cada dia selecionado precisa ter pelo menos um horário.</string>
+    <string name="auth_habit_add_time">Adicionar horário</string>
+    <string name="auth_habit_duplicate_time">Este horário já foi adicionado neste dia.</string>
+    <string name="auth_habit_selected_description">%1$s, selecionado, %2$d execuções por semana</string>
+    <plurals name="auth_habit_summary">
+        <item quantity="one">1 execução por semana</item>
+        <item quantity="other">%1$d execuções por semana</item>
+    </plurals>
     <string name="auth_config_title">Última conta de água</string>
     <string name="auth_config_subtitle">Opcional - mas ajuda a calibrar a previsão</string>
     <string name="auth_config_info">ⓘ  Com esses dados a previsão da sua conta já começam desde o primeiro dia.</string>

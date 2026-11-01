@@ -86,7 +86,7 @@ public final class RoutineViewModel extends ViewModel {
     }
 
     public void saveForm() {
-        if (cleared || !ensureSession() || form == null || creation.busy() || uncertainCreation
+        if (cleared || !ensureSession() || form == null || creation.busy()
             || creation.retryAt > clock.millis() || !validateForm()) return;
         RoutineFormState submitted = form;
         long operation = ++creationGeneration;
@@ -98,14 +98,25 @@ public final class RoutineViewModel extends ViewModel {
                 if (cleared || operation != creationGeneration || form != submitted || !creation.busy() || !ensureSession()) return;
                 creation = result == null || (result.status != ScreenState.Status.SUCCESS && result.status != ScreenState.Status.ERROR)
                     || (result.status == ScreenState.Status.SUCCESS && result.data == null)
-                    ? ScreenState.error("Não foi possível confirmar o resultado da alteração.", RoutineRepository.UNCERTAIN, 0) : result;
+                    ? ScreenState.error(submitted.mode == RoutineFormState.Mode.CREATE ? "Não foi possível salvar o hábito. Tente novamente." : "Não foi possível confirmar o resultado da alteração.", RoutineRepository.UNCERTAIN, 0) : result;
                 if (creation.status == ScreenState.Status.SUCCESS) {
+                    boolean created = submitted.mode == RoutineFormState.Mode.CREATE;
                     form = null;
-                    savedAwaitingReload = true;
                     generation++;
-                    loading = false;
-                    reading = ScreenState.idle();
-                    load(true);
+                    resetDetail();
+                    if (created) {
+                        LocalDate firstDay = firstScheduledDay(submitted, selectedDate);
+                        if (firstDay != null) selectedDate = firstDay;
+                        data = RoutineData.withHabit(data, creation.data, selectedDate);
+                        reading = ScreenState.success(data);
+                        savedAwaitingReload = false;
+                        publish();
+                    } else {
+                        savedAwaitingReload = true;
+                        loading = false;
+                        reading = ScreenState.idle();
+                        load(true);
+                    }
                 } else if (creation.code == 401 || creation.code == 403) {
                     reading = ScreenState.error(creation.message, creation.code, creation.retryAt);
                     data = null;
@@ -287,13 +298,13 @@ public final class RoutineViewModel extends ViewModel {
     }
 
     public boolean openDetails(int id, LocalTime startTime) {
-        if (cleared || !ensureSession() || loading || deleteTarget != null || reading.status != ScreenState.Status.SUCCESS || data == null || startTime == null) return false;
+        if (cleared || !ensureSession() || loading || deleteTarget != null || reading.status != ScreenState.Status.SUCCESS || data == null) return false;
         RoutineData.Habit habit = null;
         for (RoutineData.Habit value : data.habits)
             if (value.id == id) habit = value;
-        if (habit == null || !habit.scheduleComplete || !habit.schedule.getOrDefault(selectedDate.getDayOfWeek(), java.util.Collections.emptyList()).contains(startTime)) return false;
+        if (habit == null) return false;
         boolean same = detailTarget != null && detailTarget.id == id && detailTarget.userId == habit.userId && detailTarget.date.equals(selectedDate)
-            && detailTarget.startTime.equals(startTime);
+            && java.util.Objects.equals(detailTarget.startTime, startTime);
         if (same && (detailLoading || detail.status == ScreenState.Status.SUCCESS)) return true;
         if (!same) {
             resetDetail();
@@ -343,12 +354,24 @@ public final class RoutineViewModel extends ViewModel {
         editForm(current -> current.selectDay(day, selected));
     }
 
+    public void selectFormDayDerived(DayOfWeek day, boolean selected) {
+        editForm(current -> current.selectDayDerived(day, selected));
+    }
+
     public void setFormQuantity(DayOfWeek day, String value) {
         editForm(current -> current.withQuantity(day, value));
     }
 
     public void setFormTime(DayOfWeek day, int index, String value) {
         editForm(current -> current.withTime(day, index, value));
+    }
+
+    public void putFormTime(DayOfWeek day, int index, String value) {
+        editForm(current -> current.putTime(day, index, value));
+    }
+
+    public void removeFormTime(DayOfWeek day, int index) {
+        editForm(current -> current.removeTime(day, index));
     }
 
     public boolean validateForm() {
@@ -383,6 +406,15 @@ public final class RoutineViewModel extends ViewModel {
         if (next == form) return;
         form = next;
         publish();
+    }
+
+    private static LocalDate firstScheduledDay(RoutineFormState form, LocalDate base) {
+        for (DayOfWeek day : DayOfWeek.values()) {
+            RoutineFormState.DayDraft draft = form.days.get(day);
+            if (draft != null && draft.selected && draft.activeCount() > 0)
+                return base.with(java.time.temporal.TemporalAdjusters.nextOrSame(day));
+        }
+        return null;
     }
 
     private void resetDetail() {

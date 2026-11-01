@@ -1,28 +1,22 @@
 package com.aula.delta_mobile_app;
 
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.junit.Assert.*;
 
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -32,14 +26,12 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.FragmentNavigator;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.aula.delta_mobile_app.model.RoutineData;
 import com.aula.delta_mobile_app.model.RoutineFormState;
-import com.aula.delta_mobile_app.model.RoutineFormValidator;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.repository.RoutineActions;
 import com.aula.delta_mobile_app.view.activities.login.LoginActivity;
@@ -52,6 +44,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.util.Collections;
@@ -118,15 +111,11 @@ public class RoutineFormInstrumentedTest {
             RoutineFragment parent = (RoutineFragment) host.getChildFragmentManager().getPrimaryNavigationFragment();
             assertTrue(model.beginCreateForm());
             model.setFormHabit(1);
-            model.setFormFrequency("02");
-            model.selectFormDay(DayOfWeek.MONDAY, true);
-            model.setFormQuantity(DayOfWeek.MONDAY, "2");
-            model.setFormTime(DayOfWeek.MONDAY, 0, "07:00");
-            model.setFormTime(DayOfWeek.MONDAY, 1, "7:0");
-            model.validateForm();
+            model.selectFormDayDerived(DayOfWeek.MONDAY, true);
+            model.putFormTime(DayOfWeek.MONDAY, -1, "07:00");
             new RoutineEditorDialogFragment().showNow(parent.getChildFragmentManager(), "routine_form_test");
         });
-        await(() -> editor() != null && editor().getView() != null);
+        await(() -> editor() != null && editor().getView() != null && editor().requireDialog().getWindow().getDecorView().hasWindowFocus());
     }
 
     @After
@@ -136,73 +125,45 @@ public class RoutineFormInstrumentedTest {
     }
 
     @Test
-    public void rotationKeepsRawErrorsCursorAndKeyboardWithLastFieldAndActionReachable() {
+    public void rotationKeepsSelectedDayTimeAndSimpleSummary() {
         RoutineViewModel original = model;
-        RoutineEditorDialogFragment[] originalEditor = {null};
-        run(() -> originalEditor[0] = editor());
-        run(() -> fields().scrollToPosition(3));
-        await(() -> fields().findViewHolderForAdapterPosition(3) != null);
-        run(() -> {
-            EditText input = row(3);
-            input.requestFocus();
-            input.setSelection(1);
-            ((InputMethodManager) input.getContext().getSystemService(Context.INPUT_METHOD_SERVICE)).showSoftInput(input, InputMethodManager.SHOW_IMPLICIT);
-        });
-        await(this::keyboardVisible);
-        int[] expected = {0};
-        scenario.onActivity(activity -> {
-            boolean landscape = activity.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
-            expected[0] = landscape ? Configuration.ORIENTATION_PORTRAIT : Configuration.ORIENTATION_LANDSCAPE;
-            activity.setRequestedOrientation(landscape ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        });
-        await(() -> editor() != null && editor() != originalEditor[0] && editor().getView() != null && editor().getResources().getConfiguration().orientation == expected[0]
-            && editor().requireView().findFocus() instanceof EditText && keyboardVisible());
+        RoutineEditorDialogFragment[] before = {null};
+        run(() -> before[0] = editor());
+        scenario.recreate();
+        await(() -> editor() != null && editor() != before[0] && editor().getView() != null);
         run(() -> {
             assertSame(original, model);
             RoutineFormState form = model.state().getValue().form;
-            assertEquals("02", form.frequency);
-            assertEquals("7:0", form.days.get(DayOfWeek.MONDAY).times.get(1));
-            assertEquals(RoutineFormValidator.Error.INVALID_TIME, form.errors.get(RoutineFormState.timeKey(DayOfWeek.MONDAY, 1)));
-            EditText input = (EditText) editor().requireView().findFocus();
-            assertEquals(RoutineFormState.timeKey(DayOfWeek.MONDAY, 1), input.getTag());
-            assertEquals(1, input.getSelectionStart());
-            input.requestRectangleOnScreen(new Rect(0, 0, input.getWidth(), input.getHeight()), true);
-        });
-        await(() -> {
-            Rect input = new Rect(), action = new Rect();
-            View focused = editor().requireView().findFocus();
-            return focused != null && focused.getGlobalVisibleRect(input) && input.height() == focused.getHeight()
-                && editor().requireView().findViewById(R.id.routine_form_validate).getGlobalVisibleRect(action) && action.height() >= 48 * editor().getResources().getDisplayMetrics().density;
+            assertEquals("1", form.frequency);
+            assertEquals("07:00", form.days.get(DayOfWeek.MONDAY).times.get(0));
+            LinearLayout schedule = editor().requireView().findViewById(R.id.routine_form_schedule);
+            assertEquals(1, schedule.getChildCount());
+            assertTrue(((TextView) editor().requireView().findViewById(R.id.routine_form_summary)).getText().toString().contains("1 execução"));
         });
     }
 
     @Test
-    public void typingDoesNotResetCursorAndDiscardConfirmationSurvivesRecreation() {
-        run(() -> fields().scrollToPosition(3));
-        await(() -> fields().findViewHolderForAdapterPosition(3) != null);
+    public void saveValidatesAutomaticallyAndDiscardConfirmationPreservesDraft() {
         run(() -> {
-            EditText input = row(3);
-            input.setText("20:00");
-            input.requestFocus();
-            input.setSelection(2);
-            model.setFormFrequency("002");
+            model.selectFormDayDerived(DayOfWeek.TUESDAY, true);
+            editor().requireView().findViewById(R.id.routine_form_save).performClick();
         });
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        await(() -> model.state().getValue().form.errors.containsKey(RoutineFormState.quantityKey(DayOfWeek.TUESDAY)));
         run(() -> {
-            assertEquals(2, row(3).getSelectionStart());
-            assertEquals("20:00", model.state().getValue().form.days.get(DayOfWeek.MONDAY).times.get(1));
-            editor().requireView().findViewById(R.id.routine_form_validate).performClick();
-            assertTrue(model.state().getValue().form.valid());
+            LinearLayout schedule = editor().requireView().findViewById(R.id.routine_form_schedule);
+            View tuesday = schedule.getChildAt(1);
+            assertEquals(View.VISIBLE, tuesday.findViewById(R.id.routine_schedule_error).getVisibility());
             model.requestFormClose(model.state().getValue().form.token);
         });
-        scenario.recreate();
-        onView(withText(R.string.routine_form_continue)).perform(click());
+        await(() -> confirmation() != null && confirmation().isShowing());
+        clickConfirmation(DialogInterface.BUTTON_NEGATIVE);
         run(() -> {
-            assertEquals("002", model.state().getValue().form.frequency);
+            assertNotNull(model.state().getValue().form);
             assertFalse(model.state().getValue().form.confirmDiscard);
             model.requestFormClose(model.state().getValue().form.token);
         });
-        onView(withText(R.string.routine_form_discard)).perform(click());
+        await(() -> confirmation() != null && confirmation().isShowing());
+        clickConfirmation(DialogInterface.BUTTON_POSITIVE);
         run(() -> assertNull(model.state().getValue().form));
     }
 
@@ -218,16 +179,27 @@ public class RoutineFormInstrumentedTest {
         return result[0];
     }
 
-    private RecyclerView fields() { return editor().requireView().findViewById(R.id.routine_form_fields); }
-
-    private EditText row(int position) { return fields().findViewHolderForAdapterPosition(position).itemView.findViewById(R.id.routine_execution_input); }
-
-    private boolean keyboardVisible() {
-        WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(editor().requireView());
-        return insets != null && insets.isVisible(WindowInsetsCompat.Type.ime());
+    private AlertDialog confirmation() {
+        try {
+            Field field = RoutineEditorDialogFragment.class.getDeclaredField("confirmation");
+            field.setAccessible(true);
+            return (AlertDialog) field.get(editor());
+        } catch (ReflectiveOperationException error) {
+            throw new AssertionError(error);
+        }
     }
 
-    private void run(Runnable action) { InstrumentationRegistry.getInstrumentation().runOnMainSync(action); }
+    private void clickConfirmation(int which) {
+        run(() -> {
+            AlertDialog dialog = confirmation();
+            assertNotNull(dialog);
+            assertTrue(dialog.getButton(which).performClick());
+        });
+    }
+
+    private void run(Runnable action) {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(action);
+    }
 
     private void await(BooleanSupplier condition) {
         long deadline = SystemClock.uptimeMillis() + 10000;
