@@ -27,6 +27,7 @@ android {
     }
     buildTypes {
         debug {
+            enableUnitTestCoverage = true
             buildConfigField("String", "DELTA_API_URL", "\"${providers.gradleProperty("deltaApiUrl").getOrElse("https://delta-api-postgres.onrender.com/")}\"")
             manifestPlaceholders["deltaCleartext"] = "true"
         }
@@ -37,6 +38,21 @@ android {
             manifestPlaceholders["deltaCleartext"] = "false"
         }
     }
+}
+
+tasks.register<Copy>("prepareSonarLibraries") {
+    val compilation = tasks.named<JavaCompile>("compileDebugJavaWithJavac")
+    val testCompilation = tasks.named<JavaCompile>("compileDebugUnitTestJavaWithJavac")
+    from(compilation.map { it.classpath })
+    from(compilation.map { it.options.bootstrapClasspath })
+    from(testCompilation.map { it.classpath })
+    include("**/*.jar")
+    eachFile {
+        path = "${file.absolutePath.hashCode().toUInt()}-${file.name}"
+    }
+    includeEmptyDirs = false
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    into(layout.buildDirectory.dir("sonar/libraries"))
 }
 
 dependencies {
