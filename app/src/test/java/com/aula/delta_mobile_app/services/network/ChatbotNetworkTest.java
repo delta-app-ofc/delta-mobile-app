@@ -42,7 +42,7 @@ public class ChatbotNetworkTest {
     public void configuredServiceTargetsChatbotHttpsOrigin() {
         Request request = RetrofitClient.getChatbotService().chat(new ChatModels.ChatRequest(42, "Água", null)).request();
 
-        assertEquals("https://delta-artificial-intelligence.onrender.com/", BuildConfig.CHATBOT_API_URL);
+        assertEquals("https://delta-artificial-intelligence-mvo1.onrender.com/", BuildConfig.CHATBOT_API_URL);
         assertEquals(BuildConfig.CHATBOT_API_URL + "chat", request.url().toString());
         assertTrue(request.url().isHttps());
     }
