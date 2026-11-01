@@ -112,22 +112,19 @@ public class ChatRepositoryTest {
         final List<Pending<HistoryResponse>> histories = new ArrayList<>();
         final List<Pending<ChatResponse>> sends = new ArrayList<>();
         final List<Pending<CloseResponse>> closes = new ArrayList<>();
-        final List<Integer> sessionUsers = new ArrayList<>(), historyUsers = new ArrayList<>(), closeUsers = new ArrayList<>();
         final List<String> historyIds = new ArrayList<>(), closeIds = new ArrayList<>();
         final List<ChatRequest> payloads = new ArrayList<>();
 
         @Override
-        public Call<SessionsResponse> sessions(int userId) {
-            sessionUsers.add(userId);
+        public Call<SessionsResponse> sessions(Integer limit, Integer offset) {
             Pending<SessionsResponse> call = new Pending<>();
             sessions.add(call);
             return call;
         }
 
         @Override
-        public Call<HistoryResponse> history(String sessionId, int userId) {
+        public Call<HistoryResponse> history(String sessionId) {
             historyIds.add(sessionId);
-            historyUsers.add(userId);
             Pending<HistoryResponse> call = new Pending<>();
             histories.add(call);
             return call;
@@ -142,9 +139,8 @@ public class ChatRepositoryTest {
         }
 
         @Override
-        public Call<CloseResponse> close(String sessionId, int userId) {
+        public Call<CloseResponse> close(String sessionId) {
             closeIds.add(sessionId);
-            closeUsers.add(userId);
             Pending<CloseResponse> call = new Pending<>();
             closes.add(call);
             return call;
@@ -182,7 +178,6 @@ public class ChatRepositoryTest {
         Result<List<Session>> result = new Result<>();
         repository.sessions(result);
 
-        assertEquals(Integer.valueOf(42), api.sessionUsers.get(0));
         assertTrue(result.values.isEmpty());
         assertEquals(1, api.sessions.get(0).enqueues);
         api.sessions.get(0).respond(json("{\"sessions\":[{\"session_id\":\"opaque-b\",\"created_at\":\"2026-10-25T19:57:00+00:00\"},"
@@ -200,7 +195,6 @@ public class ChatRepositoryTest {
         Result<List<HistoryMessage>> result = new Result<>();
         repository.history("opaque-session", result);
 
-        assertEquals(Integer.valueOf(42), api.historyUsers.get(0));
         assertEquals("opaque-session", api.historyIds.get(0));
         assertTrue(result.values.isEmpty());
         api.histories.get(0).respond(json("{\"messages\":[{\"role\":\"human\",\"content\":\"Água 💧\",\"timestamp\":\"2026-10-25T19:57:00Z\"},"
@@ -263,8 +257,6 @@ public class ChatRepositoryTest {
         assertTrue(oldResult.values.isEmpty());
         api.sessions.get(0).respond(json("{\"sessions\":[{\"session_id\":\"old-account\",\"created_at\":\"date\"}]}", SessionsResponse.class));
 
-        assertEquals(Integer.valueOf(42), api.sessionUsers.get(0));
-        assertEquals(Integer.valueOf(77), api.sessionUsers.get(1));
         assertEquals("old-account", oldResult.only().data.get(0).sessionId);
         assertEquals("new-account", newResult.only().data.get(0).sessionId);
     }
@@ -381,7 +373,6 @@ public class ChatRepositoryTest {
         Result<CloseResponse> result = new Result<>();
         repository.close("opaque-session", result);
 
-        assertEquals(Integer.valueOf(42), api.closeUsers.get(0));
         assertEquals("opaque-session", api.closeIds.get(0));
         assertTrue(result.values.isEmpty());
         api.closes.get(0).respond(json("{\"status\":\"ok\",\"session_id\":\"opaque-session\"}", CloseResponse.class));
