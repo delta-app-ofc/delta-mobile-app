@@ -1188,32 +1188,14 @@ public class RoutineViewModelTest {
     }
 
     @Test
-    public void uncertainSaveNeedsSuccessfulExplicitCheckAndConfirmationBeforeResend() {
+    public void uncertainSaveCanRetryWithoutManualConfirmation() {
         viewModel.beginCreateForm();
         fillForm();
         viewModel.saveForm();
         repository.posts.get(0).accept(ScreenState.error("Incerto", -7, 0));
         drain();
-        RoutineFormState draft = state().form;
+        assertTrue(state().uncertainCreation);
         viewModel.saveForm();
-        viewModel.requestResend();
-        assertFalse(state().confirmResend);
-        viewModel.checkCreation();
-        reply(0, ScreenState.error("Sem rede"));
-        viewModel.confirmResend();
-        assertEquals(1, repository.posts.size());
-        viewModel.checkCreation();
-        reply(1, ScreenState.success(data(73, 1)));
-        assertTrue(state().checkedCreation);
-        assertSame(draft, state().form);
-        viewModel.requestResend();
-        assertTrue(state().confirmResend);
-        assertTrue(provider.get(RoutineViewModel.class).state().getValue().confirmResend);
-        viewModel.cancelResend();
-        assertEquals(1, repository.posts.size());
-        viewModel.requestResend();
-        viewModel.confirmResend();
-        viewModel.confirmResend();
         assertEquals(2, repository.posts.size());
     }
 
