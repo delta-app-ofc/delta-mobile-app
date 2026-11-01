@@ -52,7 +52,6 @@ public final class AuthModels {
     }
 
     public static class Address {
-        public Integer regionId;
         public String cep, city, state;
         public BigDecimal latitude, longitude;
     }

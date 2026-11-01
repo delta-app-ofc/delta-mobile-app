@@ -32,7 +32,7 @@ public class RegistrationContractTest {
     public void completionIsOneNestedPayloadWithAnExplicitConfirmation() {
         Completion payload = new Completion();
         payload.address = new Address();
-        payload.address.regionId = 1;
+        payload.address.cep = "01001000";
         payload.property = new Property();
         payload.property.name = "Casa";
         Habit habit = new Habit();
