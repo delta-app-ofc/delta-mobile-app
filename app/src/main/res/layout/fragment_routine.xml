@@ -147,8 +147,9 @@
                     <TextView
                         android:id="@+id/routine_agenda_title"
                         style="@style/Routine.Section" />
-                    <com.aula.delta_mobile_app.view.StatusNoticeView
+                    <TextView
                         android:id="@+id/routine_data_notice"
+                        style="@style/Routine.Caption"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/routine_item_spacing" />
@@ -181,45 +182,12 @@
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/routine_habits"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="@dimen/routine_habits_list_height"
                         android:layout_marginTop="@dimen/routine_item_spacing"
-                        android:nestedScrollingEnabled="false"
-                        android:overScrollMode="never" />
+                        android:nestedScrollingEnabled="true"
+                        android:overScrollMode="always"
+                        android:scrollbars="vertical" />
                 </LinearLayout>
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/routine_summary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/routine_section_spacing"
-                    app:cardBackgroundColor="@color/routine_surface"
-                    app:cardCornerRadius="@dimen/routine_card_radius"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="0dp">
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="@dimen/routine_card_padding"
-                        android:orientation="vertical">
-                        <TextView
-                            style="@style/Routine.Caption"
-                            android:text="@string/routine_total_title" />
-                        <TextView
-                            android:id="@+id/routine_total"
-                            style="@style/Routine.Metric"
-                            android:layout_marginTop="8dp"
-                            android:accessibilityLiveRegion="polite"
-                            android:text="@string/routine_unavailable" />
-                        <TextView
-                            android:id="@+id/routine_subtotal"
-                            style="@style/Routine.Caption"
-                            android:layout_marginTop="8dp"
-                            android:visibility="gone" />
-                        <TextView
-                            style="@style/Routine.Caption"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/routine_estimate_disclaimer" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

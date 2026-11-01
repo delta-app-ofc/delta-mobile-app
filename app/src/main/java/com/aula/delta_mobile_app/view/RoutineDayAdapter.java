@@ -87,7 +87,7 @@ public final class RoutineDayAdapter extends RecyclerView.Adapter<RoutineDayAdap
         button.setLayoutParams(params);
         String weekday = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, locale).toUpperCase(locale);
         String number = NumberFormat.getIntegerInstance(locale).format(date.getDayOfMonth());
-        button.setText(button.getContext().getString(active ? R.string.routine_day_selected : R.string.routine_day, weekday, number));
+        button.setText(button.getContext().getString(R.string.routine_day, weekday, number));
         button.setSelected(active);
         button.setEnabled(enabled);
         button.setAlpha(enabled ? 1f : 0.4f);

@@ -70,7 +70,7 @@ public final class RoutineFragment extends AuthFlowFragment {
         });
         RecyclerView habits = view.findViewById(R.id.routine_habits);
         habits.setLayoutManager(new LinearLayoutManager(requireContext()));
-        habits.setNestedScrollingEnabled(false);
+        habits.setNestedScrollingEnabled(true);
         habits.setAdapter(agenda);
         habits.addOnChildAttachStateChangeListener(new RecyclerView.OnChildAttachStateChangeListener() {
             @Override
@@ -105,7 +105,8 @@ public final class RoutineFragment extends AuthFlowFragment {
 
     private void bindHabitClick(RecyclerView list, View child) {
         child.setFocusable(true);
-        child.setEnabled(canOpenDetails(model.state().getValue()));
+        int initialPosition = list.getChildAdapterPosition(child);
+        child.setEnabled(canOpenDetails(model.state().getValue()) && agenda.habitAt(initialPosition) != null);
         ViewCompat.setAccessibilityDelegate(child, new AccessibilityDelegateCompat() {
             @Override
             public void onInitializeAccessibilityNodeInfo(@NonNull View host, @NonNull AccessibilityNodeInfoCompat info) {
@@ -116,9 +117,10 @@ public final class RoutineFragment extends AuthFlowFragment {
         child.setOnClickListener(button -> {
             RoutineUiState state = model.state().getValue();
             int position = list.getChildAdapterPosition(button);
-            if (!canOpenDetails(state) || position == RecyclerView.NO_POSITION || position >= state.day.executions.size() || getChildFragmentManager().isStateSaved()) return;
-            RoutineData.Execution execution = state.day.executions.get(position);
-            if (model.openDetails(execution.habit.id, execution.startTime) && getChildFragmentManager().findFragmentByTag(DETAILS) == null)
+            RoutineData.Habit habit = agenda.habitAt(position);
+            RoutineData.Execution execution = agenda.executionAt(position);
+            if (!canOpenDetails(state) || habit == null || getChildFragmentManager().isStateSaved()) return;
+            if (model.openDetails(habit.id, execution == null ? null : execution.startTime) && getChildFragmentManager().findFragmentByTag(DETAILS) == null)
                 new RoutineDetailsDialogFragment().showNow(getChildFragmentManager(), DETAILS);
         });
     }
@@ -156,28 +158,18 @@ public final class RoutineFragment extends AuthFlowFragment {
         view.findViewById(R.id.routine_empty).setVisibility(state.day != null && state.day.confirmedEmpty() ? View.VISIBLE : View.GONE);
         agenda.submit(state.day);
         RecyclerView habits = view.findViewById(R.id.routine_habits);
-        for (int i = 0; i < habits.getChildCount(); i++) habits.getChildAt(i).setEnabled(canOpenDetails(state));
-        TextView total = view.findViewById(R.id.routine_total);
-        total.setText(state.day == null ? getString(R.string.routine_unavailable) : state.day.totalComplete ? RoutineAgendaAdapter.liters(requireContext(), state.day.totalLiters)
-            : getString(R.string.routine_incomplete_total));
-        TextView subtotal = view.findViewById(R.id.routine_subtotal);
-        boolean incompleteTotal = state.day != null && !state.day.totalComplete;
-        subtotal.setVisibility(incompleteTotal ? View.VISIBLE : View.GONE);
-        if (incompleteTotal) subtotal.setText(getString(R.string.routine_known_subtotal, RoutineAgendaAdapter.liters(requireContext(), state.day.knownLiters)));
-        ((StatusNoticeView) view.findViewById(R.id.routine_data_notice)).setText(dataNotice(state.day));
+        for (int i = 0; i < habits.getChildCount(); i++) {
+            View child = habits.getChildAt(i);
+            child.setEnabled(canOpenDetails(state) && agenda.executionAt(habits.getChildAdapterPosition(child)) != null);
+        }
+        TextView dataNotice = view.findViewById(R.id.routine_data_notice);
+        dataNotice.setText(dataNotice(state.day));
         renderFeedback(view, state, locale);
     }
 
     private String dataNotice(RoutineData.Day day) {
         if (day == null) return "";
-        if (!day.incompleteHabits.isEmpty()) {
-            StringBuilder names = new StringBuilder();
-            for (RoutineData.Habit habit : day.incompleteHabits) {
-                if (names.length() > 0) names.append('\n');
-                names.append(getString(R.string.routine_incomplete_habit, RoutineAgendaAdapter.name(requireContext(), habit)));
-            }
-            return getString(R.string.routine_incomplete_notice, names);
-        }
+        if (!day.incompleteHabits.isEmpty()) return getString(R.string.routine_incomplete_notice_compact);
         return day.totalComplete ? "" : getString(R.string.routine_missing_estimate);
     }
 

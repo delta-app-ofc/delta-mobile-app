@@ -4,6 +4,10 @@
     <dimen name="routine_section_spacing">20dp</dimen>
     <dimen name="routine_card_padding">16dp</dimen>
     <dimen name="routine_item_spacing">12dp</dimen>
+    <dimen name="routine_timeline_time_width">56dp</dimen>
+    <dimen name="routine_timeline_time_padding">10dp</dimen>
+    <dimen name="routine_timeline_card_min_height">72dp</dimen>
+    <dimen name="routine_timeline_card_padding">12dp</dimen>
     <dimen name="routine_menu_clearance">136dp</dimen>
     <dimen name="routine_touch_size">48dp</dimen>
     <dimen name="routine_day_min_height">72dp</dimen>
@@ -16,6 +20,7 @@
     <dimen name="routine_selected_stroke">2dp</dimen>
     <dimen name="routine_empty_icon_size">48dp</dimen>
     <dimen name="routine_empty_min_height">240dp</dimen>
+    <dimen name="routine_habits_list_height">280dp</dimen>
     <dimen name="routine_details_max_width">0dp</dimen>
     <dimen name="routine_details_window_margin">0dp</dimen>
     <dimen name="routine_details_loading_height">240dp</dimen>
