@@ -54,6 +54,12 @@ public final class RetrofitClient {
         return ChatbotHolder.SERVICE;
     }
 
+    public static ChatbotApiService getChatbotService(Context context) {
+        AuthRepository auth = AuthRepository.getInstance(context);
+        OkHttpClient client = createChatbotHttpClient().newBuilder().addInterceptor(new ChatbotAuthInterceptor(auth.tokenStore())).build();
+        return createChatbotApiService(BuildConfig.CHATBOT_API_URL, client);
+    }
+
     static OkHttpClient createChatbotHttpClient() {
         return createHttpClient().newBuilder().followRedirects(false).followSslRedirects(false).retryOnConnectionFailure(false).build();
     }

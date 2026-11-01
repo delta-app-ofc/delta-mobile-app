@@ -1,8 +1,10 @@
 package com.aula.delta_mobile_app.services.network;
 
 import com.aula.delta_mobile_app.BuildConfig;
+import com.aula.delta_mobile_app.model.AuthModels.Tokens;
 import com.aula.delta_mobile_app.model.ChatModels;
 import com.aula.delta_mobile_app.services.api.ChatbotApiService;
+import com.aula.delta_mobile_app.services.session.SessionStore;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
@@ -61,6 +63,30 @@ public class ChatbotNetworkTest {
         assertSame(CookieJar.NO_COOKIES, client.cookieJar());
         assertTrue(client.networkInterceptors().isEmpty());
         assertFalse(client.interceptors().stream().anyMatch(interceptor -> interceptor instanceof SessionInterceptor));
+    }
+
+    @Test
+    public void authenticatedChatbotClientAddsBearerFromSessionStore() throws Exception {
+        SessionStore store = new SessionStore() {
+            @Override public long generation() { return 1; }
+            @Override public boolean hasSession() { return true; }
+            @Override public String access() { return "access-token"; }
+            @Override public String refresh() { return null; }
+            @Override public long accessExpiresAt() { return Long.MAX_VALUE; }
+            @Override public boolean updateAccess(Tokens tokens, long expected) { return false; }
+            @Override public void clear() {}
+        };
+        OkHttpClient client = RetrofitClient.createChatbotHttpClient().newBuilder()
+            .addInterceptor(new ChatbotAuthInterceptor(store))
+            .addInterceptor(chain -> {
+                requests.add(chain.request());
+                return new okhttp3.Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(ResponseBody.create(MediaType.get("application/json"), "{\"response\":\"ok\",\"session_id\":\"s\"}")).build();
+            }).build();
+
+        RetrofitClient.createChatbotApiService(BASE, client).chat(new ChatModels.ChatRequest("Água", null)).execute();
+
+        assertEquals("Bearer access-token", requests.get(0).header("Authorization"));
     }
 
     @Test

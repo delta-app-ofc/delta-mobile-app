@@ -75,7 +75,7 @@ public final class ChatViewModel extends AndroidViewModel {
 
             @Override
             public ChatActions chat(int userId) {
-                return new ChatRepository(RetrofitClient.getChatbotService(), userId, application::getString);
+                return new ChatRepository(RetrofitClient.getChatbotService(application), userId, application::getString);
             }
         };
     }

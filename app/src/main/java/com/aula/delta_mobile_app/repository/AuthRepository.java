@@ -54,6 +54,10 @@ public final class AuthRepository implements AuthActions, SignupActions {
         return api;
     }
 
+    public TokenStore tokenStore() {
+        return store;
+    }
+
     public <T> void resource(java.util.concurrent.Callable<ScreenState<T>> operation, Consumer<ScreenState<T>> callback) {
         long expected = store.generation();
         worker.execute(() -> {
