@@ -94,6 +94,11 @@ public final class ChatFlow {
         if (active) publish(new ChatState(state.account, true, state.draft, state.sessionId, state.messages, state.sending));
     }
 
+    public void startNewConversation() {
+        if (!active || state.sending.busy()) return;
+        resetConversation();
+    }
+
     public void resumeConversation() {
         if (active) publish(new ChatState(state.account, false, state.draft, state.sessionId, state.messages, state.sending));
     }

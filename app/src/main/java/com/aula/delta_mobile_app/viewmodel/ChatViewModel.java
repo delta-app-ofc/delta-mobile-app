@@ -123,6 +123,10 @@ public final class ChatViewModel extends AndroidViewModel {
         if (!cleared && flow != null) flow.showIntroduction();
     }
 
+    public void startNewConversation() {
+        if (!cleared && flow != null) flow.startNewConversation();
+    }
+
     public void resumeConversation() {
         if (accountReady && !cleared && flow != null && account.hasSession()) flow.resumeConversation();
         else if (!cleared && !account.hasSession()) clearAccount();

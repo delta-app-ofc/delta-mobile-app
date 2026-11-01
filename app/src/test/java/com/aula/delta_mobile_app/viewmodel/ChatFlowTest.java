@@ -314,6 +314,20 @@ public class ChatFlowTest {
     }
 
     @Test
+    public void backToStartClearsCurrentConversationSoNextSendCreatesNewSession() {
+        conversation();
+        flow.startNewConversation();
+
+        assertTrue(flow.state().showIntroduction);
+        assertNull(flow.state().sessionId);
+        assertTrue(flow.state().messages.isEmpty());
+
+        flow.setDraft("Nova pergunta");
+        flow.send();
+        assertNull(gateway.sessions.get(1));
+    }
+
+    @Test
     public void doubleSendAndEditedDraftStillProduceOneRequestUntilReply() {
         send("Primeira pergunta");
         flow.setDraft("Próxima pergunta");
