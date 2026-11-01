@@ -12,6 +12,7 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowMetrics;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -30,6 +31,7 @@ import com.aula.delta_mobile_app.view.RoutineAgendaAdapter;
 import com.aula.delta_mobile_app.view.StatusNoticeView;
 import com.aula.delta_mobile_app.viewmodel.RoutineViewModel;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 
 import java.text.NumberFormat;
 import java.time.Instant;
@@ -86,8 +88,10 @@ public final class RoutineDetailsDialogFragment extends DialogFragment {
         displayedTarget = state.detailTarget;
         Locale locale = getResources().getConfiguration().getLocales().get(0);
         DateTimeFormatter time = DateTimeFormatter.ofPattern("HH:mm", locale);
-        ((TextView) view.findViewById(R.id.routine_details_context)).setText(getString(R.string.routine_details_context,
-            displayedTarget.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)), displayedTarget.startTime.format(time)));
+        String date = displayedTarget.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale));
+        ((TextView) view.findViewById(R.id.routine_details_context)).setText(displayedTarget.startTime == null
+            ? getString(R.string.routine_details_date_context, date)
+            : getString(R.string.routine_details_context, date, displayedTarget.startTime.format(time)));
         setLoading(view, state.detail.busy());
         RoutineUiState.HabitDetails details = state.details;
         view.findViewById(R.id.routine_details_content).setVisibility(details == null ? View.GONE : View.VISIBLE);
@@ -98,6 +102,9 @@ public final class RoutineDetailsDialogFragment extends DialogFragment {
             message = getString(resource);
         } else if (details != null) {
             ((TextView) view.findViewById(R.id.routine_details_name)).setText(RoutineAgendaAdapter.name(requireContext(), details.habit));
+            MaterialCardView iconContainer = view.findViewById(R.id.routine_details_icon_container);
+            ImageView icon = view.findViewById(R.id.routine_details_icon);
+            RoutineAgendaAdapter.applyPalette(requireContext(), iconContainer, icon, details.habit.habitId);
             TextView category = view.findViewById(R.id.routine_details_category);
             boolean hasCategory = details.habit.category != null && !details.habit.category.trim().isEmpty();
             category.setVisibility(hasCategory ? View.VISIBLE : View.GONE);
