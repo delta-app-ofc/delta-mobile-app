@@ -44,7 +44,7 @@ tasks.register<Copy>("prepareSonarLibraries") {
     val compilation = tasks.named<JavaCompile>("compileDebugJavaWithJavac")
     val testCompilation = tasks.named<JavaCompile>("compileDebugUnitTestJavaWithJavac")
     from(compilation.map { it.classpath })
-    from(compilation.map { it.options.bootstrapClasspath })
+    from(compilation.map { it.options.bootstrapClasspath ?: emptyList<java.io.File>() })
     from(testCompilation.map { it.classpath })
     include("**/*.jar")
     eachFile {
