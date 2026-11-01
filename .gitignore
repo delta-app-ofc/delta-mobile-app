@@ -78,4 +78,8 @@ nbdist/
 Thumbs.db
 desktop.ini
 TASK*.md
+reports/
+.scannerwork/
+local.properties
+!gradle/wrapper/gradle-wrapper.jar
 --- FIM DO .gitignore OBRIGATÓRIO ---
