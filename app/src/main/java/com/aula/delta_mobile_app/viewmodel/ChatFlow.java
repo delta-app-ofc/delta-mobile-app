@@ -199,12 +199,12 @@ public final class ChatFlow {
             if (result != null && result.status == ScreenState.Status.SUCCESS && result.data != null) {
                 List<ChatMessage> messages = new ArrayList<>();
                 for (HistoryMessage message : result.data) {
-                    if (message == null || message.content == null || !("human".equals(message.role) || "assistant".equals(message.role))) {
+                    if (message == null || message.content == null || !(userRole(message.role) || assistantRole(message.role))) {
                         history = ChatbotErrors.invalidBody(strings);
                         publishHistory();
                         return;
                     }
-                    messages.add(new ChatMessage(++nextId, "human".equals(message.role) ? ChatMessage.Author.USER : ChatMessage.Author.ASSISTANT,
+                    messages.add(new ChatMessage(++nextId, userRole(message.role) ? ChatMessage.Author.USER : ChatMessage.Author.ASSISTANT,
                         message.content, ScreenState.Status.SUCCESS, null));
                 }
                 history = ScreenState.success(Collections.unmodifiableList(messages));
@@ -270,6 +270,14 @@ public final class ChatFlow {
 
     private void invalidInput(int message) {
         publish(new ChatState(state.account, state.showIntroduction, state.draft, state.sessionId, state.messages, ScreenState.error(strings.apply(message))));
+    }
+
+    private static boolean userRole(String role) {
+        return "user".equals(role) || "human".equals(role);
+    }
+
+    private static boolean assistantRole(String role) {
+        return "bot".equals(role) || "assistant".equals(role);
     }
 
     private void finish(long identity, long request, long id, String content, String session, ScreenState<ChatResponse> result) {
