@@ -32,7 +32,7 @@ public final class ChatRepository implements ChatActions {
         request(api.sessions(null, null), body -> {
             if (body.sessions == null) return null;
             for (Session session : body.sessions)
-                if (session == null || !present(session.sessionId) || !text(session.createdAt)) return null;
+                if (session == null || !present(session.sessionId)) return null;
             return body.sessions;
         }, callback);
     }
@@ -42,7 +42,7 @@ public final class ChatRepository implements ChatActions {
         request(api.history(Objects.requireNonNull(sessionId)), body -> {
             if (body.messages == null) return null;
             for (HistoryMessage message : body.messages)
-                if (message == null || !text(message.role) || !text(message.content) || !text(message.timestamp)) return null;
+                if (message == null || !text(message.role) || !text(message.content)) return null;
             return body.messages;
         }, callback);
     }

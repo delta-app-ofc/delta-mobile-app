@@ -226,7 +226,7 @@ public class ChatRepositoryTest {
     @Test
     public void missingOrIncompleteSessionsAreInvalidRatherThanEmptySuccess() {
         for (String body : new String[] {"null", "{}", "{\"sessions\":null}", "{\"sessions\":[null]}", "{\"sessions\":[{}]}",
-                "{\"sessions\":[{\"session_id\":\"a\"}]}", "{\"sessions\":[{\"session_id\":\"\",\"created_at\":\"date\"}]}"}) {
+                "{\"sessions\":[{\"session_id\":\"\"}]}"}) {
             Result<List<Session>> result = new Result<>();
             repository.sessions(result);
             api.sessions.get(api.sessions.size() - 1).respond(json(body, SessionsResponse.class));
@@ -235,15 +235,35 @@ public class ChatRepositoryTest {
     }
 
     @Test
+    public void sessionsAcceptOptionalMetadataAndDates() {
+        Result<List<Session>> result = new Result<>();
+        repository.sessions(result);
+        api.sessions.get(0).respond(json("{\"sessions\":[{\"session_id\":\"opaque-session\"}]}", SessionsResponse.class));
+
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertEquals("opaque-session", result.only().data.get(0).sessionId);
+        assertNull(result.only().data.get(0).createdAt);
+    }
+
+    @Test
     public void missingOrIncompleteHistoryIsInvalidRatherThanEmptySuccess() {
         for (String body : new String[] {"null", "{}", "{\"messages\":null}", "{\"messages\":[null]}", "{\"messages\":[{}]}",
-                "{\"messages\":[{\"role\":\"assistant\",\"content\":\"Answer\"}]}",
                 "{\"messages\":[{\"role\":\"assistant\",\"content\":\" \",\"timestamp\":\"date\"}]}"}) {
             Result<List<HistoryMessage>> result = new Result<>();
             repository.history("opaque-session", result);
             api.histories.get(api.histories.size() - 1).respond(json(body, HistoryResponse.class));
             assertInvalid(result.only());
         }
+    }
+
+    @Test
+    public void historyAcceptsMessageWithoutOptionalTimestamp() {
+        Result<List<HistoryMessage>> result = new Result<>();
+        repository.history("opaque-session", result);
+        api.histories.get(0).respond(json("{\"messages\":[{\"role\":\"assistant\",\"content\":\"Answer\"}]}", HistoryResponse.class));
+
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertNull(result.only().data.get(0).timestamp);
     }
 
     @Test
