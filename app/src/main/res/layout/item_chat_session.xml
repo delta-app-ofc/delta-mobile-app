@@ -19,8 +19,7 @@
         android:layout_height="@dimen/chat_history_icon_size"
         android:padding="@dimen/chat_history_icon_padding"
         android:background="@drawable/chat_history_icon_background"
-        android:src="@drawable/figma_menu_chat"
-        android:tint="@color/chat_history_icon"
+        android:src="@drawable/chat_history_icon"
         android:scaleType="fitCenter"
         android:importantForAccessibility="no" />
 
