@@ -127,11 +127,10 @@ public class SignupViewModel extends AndroidViewModel {
         draft.putBoolean(key, false);
     }
 
-    public String setHabit(String key, int frequency, List<Integer> days) {
+    public String setHabit(String key, Map<Integer, List<String>> schedule) {
         Integer id = catalog.habit(key);
-        if (id == null || frequency <= 0 || days.isEmpty() || new HashSet<>(days).size() != days.size())
-            return "Informe frequência positiva e dias válidos.";
-        for (Integer day : days)
+        if (id == null || schedule == null || schedule.isEmpty()) return "Selecione pelo menos um dia.";
+        for (Integer day : schedule.keySet())
             if (day == null || day <= 0 || catalog.days.stream().noneMatch(entry -> entry.id == day))
                 return "Dia não disponível no catálogo.";
         for (Map.Entry<String, Habit> entry : habits.entrySet())
@@ -139,8 +138,25 @@ public class SignupViewModel extends AndroidViewModel {
                 return "Este hábito já foi selecionado.";
         Habit value = new Habit();
         value.habitId = id;
+        int frequency = 0;
+        for (SignupOptions.Entry day : catalog.days) {
+            if (!schedule.containsKey(day.id)) continue;
+            List<String> times = schedule.get(day.id);
+            if (times == null || times.isEmpty()) return "Adicione pelo menos um horário para cada dia selecionado.";
+            LinkedHashSet<String> unique = new LinkedHashSet<>();
+            for (String time : times) {
+                if (time == null || !time.matches("(?:[01][0-9]|2[0-3]):[0-5][0-9]")) return "Informe horários válidos no formato HH:mm.";
+                if (!unique.add(time)) return "Use horários diferentes no mesmo dia.";
+            }
+            HabitSchedule item = new HabitSchedule();
+            item.dayOfWeek = day.id;
+            item.startTimes.addAll(unique);
+            value.daysOfWeek.add(day.id);
+            value.schedule.add(item);
+            frequency += item.startTimes.size();
+        }
+        if (value.daysOfWeek.size() != schedule.size()) return "Dia não disponível no catálogo.";
         value.frequency = frequency;
-        value.daysOfWeek = new ArrayList<>(days);
         habits.put(key, value);
         draft.putBoolean(key, true);
         return null;

@@ -28,9 +28,11 @@ public final class AuthRepository implements AuthActions, SignupActions {
     private Profile profile;
     private boolean authenticating;
     private final android.content.SharedPreferences loginPreferences;
+    private final Context applicationContext;
 
     private AuthRepository(Context context) {
-        loginPreferences = context.getApplicationContext().getSharedPreferences("delta_login_preferences", Context.MODE_PRIVATE);
+        applicationContext = context.getApplicationContext();
+        loginPreferences = applicationContext.getSharedPreferences("delta_login_preferences", Context.MODE_PRIVATE);
         store = new TokenStore(context);
         api = RetrofitClient.createApiService(store);
     }
@@ -38,6 +40,10 @@ public final class AuthRepository implements AuthActions, SignupActions {
     public static synchronized AuthRepository getInstance(Context context) {
         if (instance == null) instance = new AuthRepository(context.getApplicationContext());
         return instance;
+    }
+
+    public Context applicationContext() {
+        return applicationContext;
     }
 
     public LiveData<Boolean> session() {
