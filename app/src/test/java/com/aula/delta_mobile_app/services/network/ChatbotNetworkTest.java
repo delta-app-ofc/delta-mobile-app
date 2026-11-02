@@ -157,7 +157,7 @@ public class ChatbotNetworkTest {
         Request request = service("{}").history("session with spaces?x=1").request();
 
         assertEquals("/sessions/session%20with%20spaces%3Fx=1/messages", request.url().encodedPath());
-        assertEquals("", request.url().encodedQuery());
+        assertNull(request.url().encodedQuery());
     }
 
     @Test
