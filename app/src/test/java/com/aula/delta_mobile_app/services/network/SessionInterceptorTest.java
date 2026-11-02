@@ -18,6 +18,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SessionInterceptorTest {
     private static final String BASE = "https://delta.test/";
 
+    @Test
+    public void mongo401RefreshesThroughPostgresAndRetriesWithJwt() throws Exception {
+        MemoryStore store = new MemoryStore();
+        AtomicInteger requests = new AtomicInteger(), refreshes = new AtomicInteger();
+        SessionInterceptor interceptor = new SessionInterceptor(store, api(body -> {
+            refreshes.incrementAndGet();
+            return retrofit2.Response.success(token());
+        }), BASE, "api/");
+        try (okhttp3.Response response = interceptor.intercept(chain(BASE + "api/alerts", requests, false, null))) {
+            assertEquals(200, response.code());
+        }
+        assertEquals(1, refreshes.get());
+        assertEquals(2, requests.get());
+    }
+
     private static class MemoryStore implements SessionStore {
         volatile String access = "expired", refresh = "original-refresh";
         volatile long generation, expires = Long.MAX_VALUE;

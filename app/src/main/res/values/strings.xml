@@ -120,4 +120,15 @@
     <string name="auth_home_title">Bem-vindo ao Delta</string>
     <string name="auth_home_meter">Configurar hidrômetro</string>
     <string name="auth_logout">Sair da conta</string>
+    <string name="alert_title">Alertas</string>
+    <string name="alert_all">Todos</string>
+    <string name="alert_high">Crítico</string>
+    <string name="alert_medium">Atenção</string>
+    <string name="alert_low">Informativo</string>
+    <string name="alert_dismiss">Dispensar alerta</string>
+    <string name="alert_loading">Carregando alertas…</string>
+    <string name="alert_empty">Nenhum alerta neste filtro.</string>
+    <string name="alert_retry">Atualizar</string>
+    <string name="alert_previous">Anterior</string>
+    <string name="alert_next">Próxima</string>
 </resources>

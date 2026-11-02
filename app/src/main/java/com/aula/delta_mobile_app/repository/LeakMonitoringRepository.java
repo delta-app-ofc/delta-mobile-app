@@ -45,7 +45,44 @@ public final class LeakMonitoringRepository {
             if (devices.body() == null)
                 return ScreenState.error("Não foi possível consultar os medidores do imóvel.");
 
-            return ScreenState.success(LeakMonitoringData.unavailable(selected.propertyId, selected.propertyName, devices.body()));
+            var api=com.aula.delta_mobile_app.services.network.RetrofitClient.createMongoService(auth);
+            List<com.aula.delta_mobile_app.model.AlertModels.Alert> alerts=new ArrayList<>();
+            for(int page=0;page<100;page++) {
+                var batch=api.alerts(null,page,100).execute();
+                if(!batch.isSuccessful())return ApiErrors.from(batch);
+                if(batch.body()==null || batch.body().content==null || batch.body().page==null)return ScreenState.error("Resposta de alertas invalida.");
+                alerts.addAll(batch.body().content);
+                if(page+1>=batch.body().page.totalPages)break;
+                if(page==99)return ScreenState.error("Historico muito extenso; consulte os alertas por filtro.");
+            }
+            List<LeakMonitoringData.Event> events=new ArrayList<>();
+            var end=java.time.Instant.now();var start=end.minusSeconds(86400);
+            for(DeviceResponse device:LeakMonitoringData.activeDevices(selected.propertyId,devices.body())) {
+                List<LeakMonitoringData.Sample> samples=new ArrayList<>();
+                java.math.BigDecimal latest=null;
+                for(int page=0;page<10;page++) {
+                    var batch=api.evidence(device.deviceId,start.toString(),end.toString(),page,100).execute();
+                    if(!batch.isSuccessful())return ApiErrors.from(batch);
+                    if(batch.body()==null || batch.body().content==null || batch.body().page==null)return ScreenState.error("Evidencias indisponiveis.");
+                    for(var window:batch.body().content) {
+                        if(window.start!=null && window.lpm!=null) {
+                            samples.add(new LeakMonitoringData.Sample(java.time.Instant.parse(window.start).toEpochMilli(),java.math.BigDecimal.valueOf(window.lpm)));
+                        }
+                    }
+                    if(page+1>=batch.body().page.totalPages)break;
+                    if(page==9)return ScreenState.error("Serie de evidencias acima do limite.");
+                }
+                samples=LeakMonitoringData.orderedSamples(samples);
+                if(!samples.isEmpty())latest=samples.get(samples.size()-1).litersPerMinute;
+                for(var alert:alerts) {
+                    if(!device.deviceId.equals(alert.deviceId) || !"detector".equals(alert.source) || alert.resolvedAt!=null ||
+                        !("vazamento_continuo".equals(alert.type) || "consumo_noturno".equals(alert.type)))continue;
+                    long triggered=alert.triggeredAt==null?start.toEpochMilli():java.time.Instant.parse(alert.triggeredAt).toEpochMilli();
+                    events.add(new LeakMonitoringData.Event(alert.id,selected.propertyId,device.deviceId,LeakMonitoringData.Status.ACTIVE,
+                        latest,null,null,Math.max(start.toEpochMilli(),triggered),end.toEpochMilli(),null,samples));
+                }
+            }
+            return ScreenState.success(LeakMonitoringData.monitored(selected.propertyId,selected.propertyName,devices.body(),events));
         }, callback);
     }
 }

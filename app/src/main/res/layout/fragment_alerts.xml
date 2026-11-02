@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+<TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/alert_title" android:textSize="24sp" android:accessibilityHeading="true"/>
+<Button android:id="@+id/alert_all" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/alert_all"/>
+<Button android:id="@+id/alert_high" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/alert_high"/>
+<Button android:id="@+id/alert_medium" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/alert_medium"/>
+<Button android:id="@+id/alert_low" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/alert_low"/>
+
+<TextView android:id="@+id/alert_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:accessibilityLiveRegion="polite"/>
+<Button android:id="@+id/alert_retry" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/alert_retry"/>
+<LinearLayout android:id="@+id/alert_list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+<Button android:id="@+id/alert_previous" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/alert_previous"/>
+<Button android:id="@+id/alert_next" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/alert_next"/>
+</LinearLayout></ScrollView>

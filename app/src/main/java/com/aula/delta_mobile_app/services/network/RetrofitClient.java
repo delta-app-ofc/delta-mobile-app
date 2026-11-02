@@ -29,6 +29,14 @@ public final class RetrofitClient {
         return createSessionRetrofit(store).create(ApiService.class);
     }
 
+    public static com.aula.delta_mobile_app.services.api.MongoApiService createMongoService(AuthRepository auth) {
+        OkHttpClient client = createHttpClient().newBuilder().followRedirects(false).followSslRedirects(false)
+            .addInterceptor(new SessionInterceptor(auth.tokenStore(), auth.api(), BuildConfig.MONGO_API_URL, "api/")).build();
+        return new Retrofit.Builder().baseUrl(BuildConfig.MONGO_API_URL).client(client)
+            .addConverterFactory(GsonConverterFactory.create(GsonProvider.getInstance())).build()
+            .create(com.aula.delta_mobile_app.services.api.MongoApiService.class);
+    }
+
     private static Retrofit createSessionRetrofit(TokenStore store) {
         ApiService publicApi = new Retrofit.Builder().baseUrl(NetworkConfig.BASE_URL).client(createHttpClient().newBuilder().followRedirects(false).followSslRedirects(false)
             .build()).addConverterFactory(GsonConverterFactory.create(GsonProvider.getInstance())).build().create(ApiService.class);
