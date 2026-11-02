@@ -5,6 +5,9 @@
     <color name="chat_user_bubble_end">#486EA6</color>
     <color name="chat_assistant_bubble">#E7EFFF</color>
     <color name="chat_assistant_text">#234FA3</color>
+    <color name="chat_history_primary">#F4F4F7</color>
+    <color name="chat_history_secondary">#8F9098</color>
+    <color name="chat_history_icon">#F4F4F7</color>
 
     <style name="Chat.Heading" parent="Home.Body">
         <item name="android:textSize">@dimen/chat_heading_size</item>
@@ -37,6 +40,21 @@
     <style name="Chat.MessageStatus" parent="Home.Caption">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:textSize">@dimen/chat_message_status_size</item>
+    </style>
+
+    <style name="Chat.HistoryTitle" parent="Home.Body">
+        <item name="android:textColor">@color/chat_history_primary</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="Chat.HistoryTime" parent="Home.Caption">
+        <item name="android:textColor">@color/chat_history_secondary</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
     </style>
 
     <style name="Chat.Action" parent="Widget.Material3.Button">

@@ -92,7 +92,6 @@ public class SignupViewModel extends AndroidViewModel {
         postalCodes.cancel();
         draft.remove("state");
         draft.remove("city");
-        draft.remove("regionId");
         draft.remove("latitude");
         draft.remove("longitude");
         if (digits.length() != 8) {
@@ -107,8 +106,6 @@ public class SignupViewModel extends AndroidViewModel {
                 PostalCodeResponse value = result.data;
                 draft.putString("city", value.city);
                 draft.putString("state", value.state);
-                Integer region = catalog.region(value.state, value.city);
-                if (region != null) draft.putInt("regionId", region);
                 if (value.location != null && value.location.coordinates != null) {
                     Double lat = value.location.coordinates.latitude, lon = value.location.coordinates.longitude;
                     if (lat != null && lon != null && Double.isFinite(lat) && Double.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
@@ -130,11 +127,10 @@ public class SignupViewModel extends AndroidViewModel {
         draft.putBoolean(key, false);
     }
 
-    public String setHabit(String key, int frequency, List<Integer> days) {
+    public String setHabit(String key, Map<Integer, List<String>> schedule) {
         Integer id = catalog.habit(key);
-        if (id == null || frequency <= 0 || days.isEmpty() || new HashSet<>(days).size() != days.size())
-            return "Informe frequência positiva e dias válidos.";
-        for (Integer day : days)
+        if (id == null || schedule == null || schedule.isEmpty()) return "Selecione pelo menos um dia.";
+        for (Integer day : schedule.keySet())
             if (day == null || day <= 0 || catalog.days.stream().noneMatch(entry -> entry.id == day))
                 return "Dia não disponível no catálogo.";
         for (Map.Entry<String, Habit> entry : habits.entrySet())
@@ -142,8 +138,25 @@ public class SignupViewModel extends AndroidViewModel {
                 return "Este hábito já foi selecionado.";
         Habit value = new Habit();
         value.habitId = id;
+        int frequency = 0;
+        for (SignupOptions.Entry day : catalog.days) {
+            if (!schedule.containsKey(day.id)) continue;
+            List<String> times = schedule.get(day.id);
+            if (times == null || times.isEmpty()) return "Adicione pelo menos um horário para cada dia selecionado.";
+            LinkedHashSet<String> unique = new LinkedHashSet<>();
+            for (String time : times) {
+                if (time == null || !time.matches("(?:[01][0-9]|2[0-3]):[0-5][0-9]")) return "Informe horários válidos no formato HH:mm.";
+                if (!unique.add(time)) return "Use horários diferentes no mesmo dia.";
+            }
+            HabitSchedule item = new HabitSchedule();
+            item.dayOfWeek = day.id;
+            item.startTimes.addAll(unique);
+            value.daysOfWeek.add(day.id);
+            value.schedule.add(item);
+            frequency += item.startTimes.size();
+        }
+        if (value.daysOfWeek.size() != schedule.size()) return "Dia não disponível no catálogo.";
         value.frequency = frequency;
-        value.daysOfWeek = new ArrayList<>(days);
         habits.put(key, value);
         draft.putBoolean(key, true);
         return null;
@@ -170,9 +183,7 @@ public class SignupViewModel extends AndroidViewModel {
         ScreenState<Completed> state = completion.getValue();
         if (state != null && (state.busy() || state.status == ScreenState.Status.SUCCESS || System.currentTimeMillis() < state.retryAt)) return;
         String error = propertyError();
-        if (error == null && (currentCep.length() != 8 || !draft.containsKey("regionId")))
-            error = "Esta localidade ainda não tem uma região tarifária configurada. Não é possível" + " concluir o cadastro.";
-        if (error == null && (draft.getString("city", "").isEmpty() || draft.getString("city", "").length() > 60 || draft.getString("state", "").isEmpty()
+        if (error == null && (currentCep.length() != 8 || draft.getString("city", "").isEmpty() || draft.getString("city", "").length() > 60 || draft.getString("state", "").isEmpty()
             || draft.getString("state", "").length() > 30))
         error = "Consulte um CEP válido antes de concluir.";
         if (error != null) {
@@ -187,7 +198,6 @@ public class SignupViewModel extends AndroidViewModel {
         request.address = new Address();
         request.property = new Property();
         request.address.cep = currentCep;
-        request.address.regionId = draft.getInt("regionId");
         request.address.city = draft.getString("city");
         request.address.state = draft.getString("state");
         if (draft.containsKey("latitude") && draft.containsKey("longitude")) {

@@ -57,7 +57,7 @@ public final class ChatFragment extends Fragment {
     private boolean productionHistory;
     private boolean sendingEnabled = true;
     private Consumer<Boolean> newChatAction;
-    private Runnable resumeAction, introductionAction;
+    private Runnable resumeAction, introductionAction, startNewConversationAction;
     private NavController navigation;
     private int sectionDestination;
     private View newButton;
@@ -102,6 +102,7 @@ public final class ChatFragment extends Fragment {
             newChatAction = model::newChat;
             resumeAction = model::resumeConversation;
             introductionAction = model::showIntroduction;
+            startNewConversationAction = model::startNewConversation;
             historySource = model.history();
             reloadSessions = model::loadSessions;
             selectSession = model::openSession;
@@ -122,7 +123,9 @@ public final class ChatFragment extends Fragment {
         sendButton = view.findViewById(R.id.chat_send);
         newButton = view.findViewById(R.id.chat_new);
         newButton.setOnClickListener(button -> requestNewChat());
-        view.findViewById(R.id.chat_back).setOnClickListener(button -> { if (introductionAction != null && !current.showIntroduction) introductionAction.run(); });
+        view.findViewById(R.id.chat_back).setOnClickListener(button -> {
+            if (startNewConversationAction != null && !current.showIntroduction) startNewConversationAction.run();
+        });
         adapter = new ChatMessageAdapter();
         feedback = new FeedbackAdapter();
         landing = new LandingAdapter();

@@ -12,7 +12,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-        buildConfigField("String", "CHATBOT_API_URL", "\"https://delta-artificial-intelligence.onrender.com/\"")
+        buildConfigField("String", "CHATBOT_API_URL", "\"https://delta-artificial-intelligence-mvo1.onrender.com/\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -27,16 +27,32 @@ android {
     }
     buildTypes {
         debug {
-            buildConfigField("String", "DELTA_API_URL", "\"${providers.gradleProperty("deltaApiUrl").getOrElse("https://delta-app-a3po.onrender.com/")}\"")
+            enableUnitTestCoverage = true
+            buildConfigField("String", "DELTA_API_URL", "\"${providers.gradleProperty("deltaApiUrl").getOrElse("https://delta-api-postgres.onrender.com/")}\"")
             manifestPlaceholders["deltaCleartext"] = "true"
         }
         release {
-            val apiUrl = providers.gradleProperty("deltaReleaseApiUrl").getOrElse("https://delta-app-a3po.onrender.com/")
+            val apiUrl = providers.gradleProperty("deltaReleaseApiUrl").getOrElse("https://delta-api-postgres.onrender.com/")
             require(apiUrl.startsWith("https://")) { "Release exige HTTPS" }
             buildConfigField("String", "DELTA_API_URL", "\"$apiUrl\"")
             manifestPlaceholders["deltaCleartext"] = "false"
         }
     }
+}
+
+tasks.register<Copy>("prepareSonarLibraries") {
+    val compilation = tasks.named<JavaCompile>("compileDebugJavaWithJavac")
+    val testCompilation = tasks.named<JavaCompile>("compileDebugUnitTestJavaWithJavac")
+    from(compilation.map { it.classpath })
+    from(compilation.map { it.options.bootstrapClasspath ?: emptyList<java.io.File>() })
+    from(testCompilation.map { it.classpath })
+    include("**/*.jar")
+    eachFile {
+        path = "${file.absolutePath.hashCode().toUInt()}-${file.name}"
+    }
+    includeEmptyDirs = false
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    into(layout.buildDirectory.dir("sonar/libraries"))
 }
 
 dependencies {

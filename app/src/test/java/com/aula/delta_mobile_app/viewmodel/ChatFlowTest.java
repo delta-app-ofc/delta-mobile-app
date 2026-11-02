@@ -314,6 +314,20 @@ public class ChatFlowTest {
     }
 
     @Test
+    public void backToStartClearsCurrentConversationSoNextSendCreatesNewSession() {
+        conversation();
+        flow.startNewConversation();
+
+        assertTrue(flow.state().showIntroduction);
+        assertNull(flow.state().sessionId);
+        assertTrue(flow.state().messages.isEmpty());
+
+        flow.setDraft("Nova pergunta");
+        flow.send();
+        assertNull(gateway.sessions.get(1));
+    }
+
+    @Test
     public void doubleSendAndEditedDraftStillProduceOneRequestUntilReply() {
         send("Primeira pergunta");
         flow.setDraft("Próxima pergunta");
@@ -483,6 +497,18 @@ public class ChatFlowTest {
         assertEquals("Pergunta\nÁgua 💧", flow.state().messages.get(0).content);
         assertNull(flow.state().messages.get(1).agentUsed);
         assertEquals(ScreenState.Status.SUCCESS, flow.state().messages.get(0).status);
+    }
+
+    @Test
+    public void reopeningAcceptsRolesFromCurrentFastApiContract() {
+        listSessions();
+        flow.openSession("a");
+        gateway.histories.get(0).accept(ScreenState.success(List.of(history("user", "Pergunta"), history("bot", "Resposta"))));
+        drain();
+
+        assertEquals(ScreenState.Status.SUCCESS, flow.historyState().history.status);
+        assertEquals(ChatMessage.Author.USER, flow.state().messages.get(0).author);
+        assertEquals(ChatMessage.Author.ASSISTANT, flow.state().messages.get(1).author);
     }
 
     @Test

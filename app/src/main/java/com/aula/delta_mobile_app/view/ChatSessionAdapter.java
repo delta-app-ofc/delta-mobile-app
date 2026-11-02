@@ -31,7 +31,7 @@ public final class ChatSessionAdapter extends ListAdapter<SessionEntry, ChatSess
 
             @Override
             public boolean areContentsTheSame(@NonNull SessionEntry before, @NonNull SessionEntry after) {
-                return Objects.equals(before.createdAt, after.createdAt);
+                return Objects.equals(before.createdAt, after.createdAt) && Objects.equals(before.title, after.title);
             }
         });
         this.select = Objects.requireNonNull(select);
@@ -49,19 +49,20 @@ public final class ChatSessionAdapter extends ListAdapter<SessionEntry, ChatSess
         String title = entry.created == null ? holder.itemView.getContext().getString(R.string.chat_session_no_date)
             : holder.itemView.getContext().getString(R.string.chat_session_date, DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
                 .withLocale(holder.itemView.getResources().getConfiguration().getLocales().get(0)).withZone(ZoneId.systemDefault()).format(entry.created));
-        holder.title.setText(title);
-        holder.identity.setText(holder.itemView.getContext().getString(R.string.chat_session_identity, entry.id));
-        holder.itemView.setContentDescription(holder.itemView.getContext().getString(R.string.chat_session_open, title, entry.id));
+        if (entry.title == null || entry.title.trim().isEmpty()) holder.title.setText(R.string.chat_session_label);
+        else holder.title.setText(entry.title);
+        holder.time.setText(title);
+        holder.itemView.setContentDescription(holder.itemView.getContext().getString(R.string.chat_session_open, holder.title.getText(), title));
         holder.itemView.setOnClickListener(view -> select.accept(entry.id));
     }
 
     public static final class Holder extends RecyclerView.ViewHolder {
-        private final TextView title, identity;
+        private final TextView title, time;
 
         Holder(View view) {
             super(view);
             title = view.findViewById(R.id.chat_session_title);
-            identity = view.findViewById(R.id.chat_session_identity);
+            time = view.findViewById(R.id.chat_session_time);
         }
     }
 }

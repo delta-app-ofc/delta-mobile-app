@@ -23,4 +23,9 @@
     <dimen name="chat_composer_inner_spacing">2dp</dimen>
     <dimen name="chat_send_min_width">72dp</dimen>
     <dimen name="chat_progress_size">24dp</dimen>
+    <dimen name="chat_history_row_padding">4dp</dimen>
+    <dimen name="chat_history_row_spacing">12dp</dimen>
+    <dimen name="chat_history_icon_size">48dp</dimen>
+    <dimen name="chat_history_icon_padding">12dp</dimen>
+    <dimen name="chat_history_text_spacing">3dp</dimen>
 </resources>

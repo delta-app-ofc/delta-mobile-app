@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="routine_page_padding">24dp</dimen>
+    <dimen name="routine_week_outset">0dp</dimen>
+    <dimen name="routine_details_max_width">600dp</dimen>
+    <dimen name="routine_details_window_margin">24dp</dimen>
+    <dimen name="routine_form_max_width">600dp</dimen>
+    <dimen name="routine_form_window_margin">24dp</dimen>
+</resources>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/routine_item_spacing"
+    app:cardBackgroundColor="@color/routine_card"
+    app:cardCornerRadius="@dimen/routine_card_radius"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/routine_border"
+    app:strokeWidth="1dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/routine_card_padding">
+        <TextView
+            android:id="@+id/routine_schedule_day_title"
+            style="@style/Routine.Section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/routine_schedule_times"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+        <TextView
+            android:id="@+id/routine_schedule_error"
+            style="@style/Routine.FormError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/routine_schedule_add_time"
+            style="@style/Routine.Action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/routine_form_add_time" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

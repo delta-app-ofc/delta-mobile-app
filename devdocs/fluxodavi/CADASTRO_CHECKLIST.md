@@ -4,7 +4,7 @@
 |---|---|
 | Layout XML da tela de cadastro | `res/layout/fragment_signup_profile.xml` até `fragment_signup_address.xml`. |
 | CadastroActivity | O cadastro usa `view/activities/login/LoginActivity.java` e Fragments, conforme a arquitetura existente. Não foi criada uma segunda Activity com a mesma função. |
-| Campos obrigatórios | Nome, nascimento, e-mail, senha, confirmação, nome/tipo/classificação do imóvel e CEP com cidade, estado e região tarifária configurada. Telefone, área e hábitos são opcionais. |
+| Campos obrigatórios | Nome, nascimento, e-mail, senha, confirmação, nome/tipo/classificação do imóvel e CEP com cidade e estado. A API define a região tarifária pela cidade e recusa cidade não atendida pela Sabesp. Telefone, área e hábitos são opcionais. |
 | CadastroRequestDTO | `AuthModels.CreateAccount` para criação e `AuthModels.Completion` para complemento. Contrato JSON testado. |
 | CadastroResponseDTO | `AuthModels.Tokens` para autenticação e `AuthModels.Completed` para confirmação final. |
 | Endpoint de cadastro | `AuthApiService.create`: POST `delta/auth/create-account`; `complete`: POST `delta/auth/complete-registration`. Testes do contrato Retrofit. |

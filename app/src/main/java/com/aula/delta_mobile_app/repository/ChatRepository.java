@@ -29,27 +29,27 @@ public final class ChatRepository implements ChatActions {
 
     @Override
     public void sessions(Consumer<ScreenState<List<Session>>> callback) {
-        request(api.sessions(userId), body -> {
+        request(api.sessions(null, null), body -> {
             if (body.sessions == null) return null;
             for (Session session : body.sessions)
-                if (session == null || !present(session.sessionId) || !text(session.createdAt)) return null;
+                if (session == null || !present(session.sessionId)) return null;
             return body.sessions;
         }, callback);
     }
 
     @Override
     public void history(String sessionId, Consumer<ScreenState<List<HistoryMessage>>> callback) {
-        request(api.history(Objects.requireNonNull(sessionId), userId), body -> {
+        request(api.history(Objects.requireNonNull(sessionId)), body -> {
             if (body.messages == null) return null;
             for (HistoryMessage message : body.messages)
-                if (message == null || !text(message.role) || !text(message.content) || !text(message.timestamp)) return null;
+                if (message == null || !text(message.role) || !text(message.content)) return null;
             return body.messages;
         }, callback);
     }
 
     @Override
     public void send(String message, String sessionId, Consumer<ScreenState<ChatResponse>> callback) {
-        request(api.chat(new ChatRequest(userId, Objects.requireNonNull(message), sessionId)), body -> {
+        request(api.chat(new ChatRequest(Objects.requireNonNull(message), sessionId)), body -> {
             if (!text(body.response) || !present(body.sessionId)) return null;
             if (present(sessionId) && !sessionId.equals(body.sessionId)) return null;
             if (body.chartData != null && !body.chartData.isJsonNull() && !body.chartData.isJsonObject()) return null;
@@ -60,7 +60,7 @@ public final class ChatRepository implements ChatActions {
 
     @Override
     public void close(String sessionId, Consumer<ScreenState<CloseResponse>> callback) {
-        request(api.close(Objects.requireNonNull(sessionId), userId), body -> "ok".equals(body.status) && sessionId.equals(body.sessionId) ? body : null, callback);
+        request(api.close(Objects.requireNonNull(sessionId)), body -> "ok".equals(body.status) && sessionId.equals(body.sessionId) ? body : null, callback);
     }
 
     private <S, T> void request(Call<S> call, Function<S, T> read, Consumer<ScreenState<T>> callback) {

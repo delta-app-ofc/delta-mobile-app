@@ -13,12 +13,11 @@ public class ChatModelsTest {
 
     @Test
     public void newChatRequestUsesContractNamesAndOmitsNullSession() {
-        ChatModels.ChatRequest request = new ChatModels.ChatRequest(42, "Como economizar água?", null);
+        ChatModels.ChatRequest request = new ChatModels.ChatRequest("Como economizar água?", null);
 
         JsonObject json = gson.toJsonTree(request).getAsJsonObject();
 
-        assertEquals(2, json.size());
-        assertEquals(42, json.get("user_id").getAsInt());
+        assertEquals(1, json.size());
         assertEquals("Como economizar água?", json.get("message").getAsString());
         assertFalse(json.has("session_id"));
         assertFalse(json.has("userId"));
@@ -27,11 +26,12 @@ public class ChatModelsTest {
     @Test
     public void continuingChatRequestPreservesSessionAndMessage() {
         String message = "  Água e consumo\nO que posso mudar? 💧  ";
-        ChatModels.ChatRequest request = new ChatModels.ChatRequest(42, message, "opaque-session-id");
+        ChatModels.ChatRequest request = new ChatModels.ChatRequest(message, "opaque-session-id");
 
         JsonObject json = gson.toJsonTree(request).getAsJsonObject();
 
-        assertEquals(3, json.size());
+        assertEquals(2, json.size());
+        assertFalse(json.has("user_id"));
         assertEquals("opaque-session-id", json.get("session_id").getAsString());
         assertEquals(message, json.get("message").getAsString());
         assertFalse(json.has("sessionId"));
@@ -81,16 +81,20 @@ public class ChatModelsTest {
 
     @Test
     public void sessionsResponsePreservesIdentifiersAndTransportDates() {
-        String json = "{\"sessions\":[{\"session_id\":\"opaque-session-id\",\"created_at\":\"2026-10-25T19:57:00.123456+00:00\"},"
-                + "{\"session_id\":\"session-b\",\"created_at\":\"2026-10-24T16:57:00-03:00\"}]}";
+        String json = "{\"sessions\":[{\"session_id\":\"opaque-session-id\",\"title\":\"Economia\",\"preview\":\"Confira as torneiras\","
+                + "\"icon\":\"savings\",\"created_at\":\"2026-10-25T19:57:00.123456+00:00\",\"updated_at\":\"2026-10-25T20:00:00+00:00\",\"is_open\":true}],\"total\":1}";
 
         ChatModels.SessionsResponse response = gson.fromJson(json, ChatModels.SessionsResponse.class);
 
-        assertEquals(2, response.sessions.size());
+        assertEquals(1, response.sessions.size());
         assertEquals("opaque-session-id", response.sessions.get(0).sessionId);
+        assertEquals("Economia", response.sessions.get(0).title);
+        assertEquals("Confira as torneiras", response.sessions.get(0).preview);
+        assertEquals("savings", response.sessions.get(0).icon);
         assertEquals("2026-10-25T19:57:00.123456+00:00", response.sessions.get(0).createdAt);
-        assertEquals("session-b", response.sessions.get(1).sessionId);
-        assertEquals("2026-10-24T16:57:00-03:00", response.sessions.get(1).createdAt);
+        assertEquals("2026-10-25T20:00:00+00:00", response.sessions.get(0).updatedAt);
+        assertTrue(response.sessions.get(0).isOpen);
+        assertEquals(Integer.valueOf(1), response.total);
     }
 
     @Test
@@ -141,6 +145,9 @@ public class ChatModelsTest {
         ChatModels.HistoryMessage message = gson.fromJson("{}", ChatModels.HistoryMessage.class);
 
         assertNull(session.sessionId);
+        assertNull(session.title);
+        assertNull(session.updatedAt);
+        assertNull(session.isOpen);
         assertNull(session.createdAt);
         assertNull(message.role);
         assertNull(message.content);

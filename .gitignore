@@ -56,6 +56,7 @@ pnpm-debug.log*
 *.swo
 *~
 .idea/
+local.properties
 *.iws
 *.iml
 *.ipr
@@ -77,4 +78,8 @@ nbdist/
 Thumbs.db
 desktop.ini
 TASK*.md
+reports/
+.scannerwork/
+local.properties
+!gradle/wrapper/gradle-wrapper.jar
 --- FIM DO .gitignore OBRIGATÓRIO ---

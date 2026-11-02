@@ -9,16 +9,17 @@ public final class ChatModels {
     private ChatModels() {}
 
     public static class ChatRequest {
-        @SerializedName("user_id")
-        public final int userId;
         @SerializedName("session_id")
         public final String sessionId;
         public final String message;
 
-        public ChatRequest(int userId, String message, String sessionId) {
-            this.userId = userId;
+        public ChatRequest(String message, String sessionId) {
             this.message = message;
             this.sessionId = sessionId;
+        }
+
+        public ChatRequest(int ignoredUserId, String message, String sessionId) {
+            this(message, sessionId);
         }
     }
 
@@ -37,12 +38,20 @@ public final class ChatModels {
     public static class Session {
         @SerializedName("session_id")
         public String sessionId;
+        public String title;
+        public String preview;
+        public String icon;
         @SerializedName("created_at")
         public String createdAt;
+        @SerializedName("updated_at")
+        public String updatedAt;
+        @SerializedName("is_open")
+        public Boolean isOpen;
     }
 
     public static class SessionsResponse {
         public List<Session> sessions;
+        public Integer total;
     }
 
     public static class HistoryMessage {

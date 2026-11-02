@@ -52,7 +52,6 @@ public final class AuthModels {
     }
 
     public static class Address {
-        public Integer regionId;
         public String cep, city, state;
         public BigDecimal latitude, longitude;
     }
@@ -66,6 +65,12 @@ public final class AuthModels {
     public static class Habit {
         public Integer habitId, frequency;
         public List<Integer> daysOfWeek = new ArrayList<>();
+        public List<HabitSchedule> schedule = new ArrayList<>();
+    }
+
+    public static class HabitSchedule {
+        public Integer dayOfWeek;
+        public List<String> startTimes = new ArrayList<>();
     }
 
     public static class Completion {
