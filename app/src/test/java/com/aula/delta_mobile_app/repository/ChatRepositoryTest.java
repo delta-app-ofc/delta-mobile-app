@@ -112,22 +112,19 @@ public class ChatRepositoryTest {
         final List<Pending<HistoryResponse>> histories = new ArrayList<>();
         final List<Pending<ChatResponse>> sends = new ArrayList<>();
         final List<Pending<CloseResponse>> closes = new ArrayList<>();
-        final List<Integer> sessionUsers = new ArrayList<>(), historyUsers = new ArrayList<>(), closeUsers = new ArrayList<>();
         final List<String> historyIds = new ArrayList<>(), closeIds = new ArrayList<>();
         final List<ChatRequest> payloads = new ArrayList<>();
 
         @Override
-        public Call<SessionsResponse> sessions(int userId) {
-            sessionUsers.add(userId);
+        public Call<SessionsResponse> sessions(Integer limit, Integer offset) {
             Pending<SessionsResponse> call = new Pending<>();
             sessions.add(call);
             return call;
         }
 
         @Override
-        public Call<HistoryResponse> history(String sessionId, int userId) {
+        public Call<HistoryResponse> history(String sessionId) {
             historyIds.add(sessionId);
-            historyUsers.add(userId);
             Pending<HistoryResponse> call = new Pending<>();
             histories.add(call);
             return call;
@@ -142,9 +139,8 @@ public class ChatRepositoryTest {
         }
 
         @Override
-        public Call<CloseResponse> close(String sessionId, int userId) {
+        public Call<CloseResponse> close(String sessionId) {
             closeIds.add(sessionId);
-            closeUsers.add(userId);
             Pending<CloseResponse> call = new Pending<>();
             closes.add(call);
             return call;
@@ -182,7 +178,6 @@ public class ChatRepositoryTest {
         Result<List<Session>> result = new Result<>();
         repository.sessions(result);
 
-        assertEquals(Integer.valueOf(42), api.sessionUsers.get(0));
         assertTrue(result.values.isEmpty());
         assertEquals(1, api.sessions.get(0).enqueues);
         api.sessions.get(0).respond(json("{\"sessions\":[{\"session_id\":\"opaque-b\",\"created_at\":\"2026-10-25T19:57:00+00:00\"},"
@@ -200,7 +195,6 @@ public class ChatRepositoryTest {
         Result<List<HistoryMessage>> result = new Result<>();
         repository.history("opaque-session", result);
 
-        assertEquals(Integer.valueOf(42), api.historyUsers.get(0));
         assertEquals("opaque-session", api.historyIds.get(0));
         assertTrue(result.values.isEmpty());
         api.histories.get(0).respond(json("{\"messages\":[{\"role\":\"human\",\"content\":\"Água 💧\",\"timestamp\":\"2026-10-25T19:57:00Z\"},"
@@ -232,7 +226,7 @@ public class ChatRepositoryTest {
     @Test
     public void missingOrIncompleteSessionsAreInvalidRatherThanEmptySuccess() {
         for (String body : new String[] {"null", "{}", "{\"sessions\":null}", "{\"sessions\":[null]}", "{\"sessions\":[{}]}",
-                "{\"sessions\":[{\"session_id\":\"a\"}]}", "{\"sessions\":[{\"session_id\":\"\",\"created_at\":\"date\"}]}"}) {
+                "{\"sessions\":[{\"session_id\":\"\"}]}"}) {
             Result<List<Session>> result = new Result<>();
             repository.sessions(result);
             api.sessions.get(api.sessions.size() - 1).respond(json(body, SessionsResponse.class));
@@ -241,15 +235,35 @@ public class ChatRepositoryTest {
     }
 
     @Test
+    public void sessionsAcceptOptionalMetadataAndDates() {
+        Result<List<Session>> result = new Result<>();
+        repository.sessions(result);
+        api.sessions.get(0).respond(json("{\"sessions\":[{\"session_id\":\"opaque-session\"}]}", SessionsResponse.class));
+
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertEquals("opaque-session", result.only().data.get(0).sessionId);
+        assertNull(result.only().data.get(0).createdAt);
+    }
+
+    @Test
     public void missingOrIncompleteHistoryIsInvalidRatherThanEmptySuccess() {
         for (String body : new String[] {"null", "{}", "{\"messages\":null}", "{\"messages\":[null]}", "{\"messages\":[{}]}",
-                "{\"messages\":[{\"role\":\"assistant\",\"content\":\"Answer\"}]}",
                 "{\"messages\":[{\"role\":\"assistant\",\"content\":\" \",\"timestamp\":\"date\"}]}"}) {
             Result<List<HistoryMessage>> result = new Result<>();
             repository.history("opaque-session", result);
             api.histories.get(api.histories.size() - 1).respond(json(body, HistoryResponse.class));
             assertInvalid(result.only());
         }
+    }
+
+    @Test
+    public void historyAcceptsMessageWithoutOptionalTimestamp() {
+        Result<List<HistoryMessage>> result = new Result<>();
+        repository.history("opaque-session", result);
+        api.histories.get(0).respond(json("{\"messages\":[{\"role\":\"assistant\",\"content\":\"Answer\"}]}", HistoryResponse.class));
+
+        assertEquals(ScreenState.Status.SUCCESS, result.only().status);
+        assertNull(result.only().data.get(0).timestamp);
     }
 
     @Test
@@ -263,8 +277,6 @@ public class ChatRepositoryTest {
         assertTrue(oldResult.values.isEmpty());
         api.sessions.get(0).respond(json("{\"sessions\":[{\"session_id\":\"old-account\",\"created_at\":\"date\"}]}", SessionsResponse.class));
 
-        assertEquals(Integer.valueOf(42), api.sessionUsers.get(0));
-        assertEquals(Integer.valueOf(77), api.sessionUsers.get(1));
         assertEquals("old-account", oldResult.only().data.get(0).sessionId);
         assertEquals("new-account", newResult.only().data.get(0).sessionId);
     }
@@ -305,7 +317,6 @@ public class ChatRepositoryTest {
         String message = "  Como economizar água?\n💧  ";
         repository.send(message, null, result);
 
-        assertEquals(42, api.payloads.get(0).userId);
         assertEquals(message, api.payloads.get(0).message);
         assertNull(api.payloads.get(0).sessionId);
         assertTrue(result.values.isEmpty());
@@ -381,7 +392,6 @@ public class ChatRepositoryTest {
         Result<CloseResponse> result = new Result<>();
         repository.close("opaque-session", result);
 
-        assertEquals(Integer.valueOf(42), api.closeUsers.get(0));
         assertEquals("opaque-session", api.closeIds.get(0));
         assertTrue(result.values.isEmpty());
         api.closes.get(0).respond(json("{\"status\":\"ok\",\"session_id\":\"opaque-session\"}", CloseResponse.class));
@@ -445,8 +455,6 @@ public class ChatRepositoryTest {
         assertTrue(oldResult.values.isEmpty());
         api.sends.get(0).respond(json("{\"response\":\"Old reply\",\"agent_used\":\"rag\",\"session_id\":\"old-account\"}", ChatResponse.class));
 
-        assertEquals(42, api.payloads.get(0).userId);
-        assertEquals(77, api.payloads.get(1).userId);
         assertEquals("old-account", oldResult.only().data.sessionId);
         assertEquals("new-account", newResult.only().data.sessionId);
     }

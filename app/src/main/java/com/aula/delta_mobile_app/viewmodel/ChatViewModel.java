@@ -75,7 +75,7 @@ public final class ChatViewModel extends AndroidViewModel {
 
             @Override
             public ChatActions chat(int userId) {
-                return new ChatRepository(RetrofitClient.getChatbotService(), userId, application::getString);
+                return new ChatRepository(RetrofitClient.getChatbotService(application), userId, application::getString);
             }
         };
     }
@@ -121,6 +121,10 @@ public final class ChatViewModel extends AndroidViewModel {
 
     public void showIntroduction() {
         if (!cleared && flow != null) flow.showIntroduction();
+    }
+
+    public void startNewConversation() {
+        if (!cleared && flow != null) flow.startNewConversation();
     }
 
     public void resumeConversation() {

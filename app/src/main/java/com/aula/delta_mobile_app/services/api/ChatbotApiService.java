@@ -9,12 +9,12 @@ public interface ChatbotApiService {
     @POST("chat")
     Call<ChatResponse> chat(@Body ChatRequest request);
 
-    @GET("sessions/{user_id}")
-    Call<SessionsResponse> sessions(@Path("user_id") int userId);
+    @GET("sessions")
+    Call<SessionsResponse> sessions(@Query("limit") Integer limit, @Query("offset") Integer offset);
 
-    @GET("sessions/{session_id}/history")
-    Call<HistoryResponse> history(@Path("session_id") String sessionId, @Query("user_id") int userId);
+    @GET("sessions/{session_id}/messages")
+    Call<HistoryResponse> history(@Path("session_id") String sessionId);
 
     @POST("sessions/{session_id}/close")
-    Call<CloseResponse> close(@Path("session_id") String sessionId, @Query("user_id") int userId);
+    Call<CloseResponse> close(@Path("session_id") String sessionId);
 }

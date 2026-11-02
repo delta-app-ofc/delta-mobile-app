@@ -3,9 +3,11 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="@dimen/chat_composer_min_height"
-    android:paddingTop="@dimen/chat_composer_spacing"
-    android:paddingBottom="@dimen/chat_composer_spacing"
+    android:minHeight="@dimen/chat_history_icon_size"
+    android:paddingTop="@dimen/chat_history_row_padding"
+    android:paddingBottom="@dimen/chat_history_row_padding"
+    android:paddingStart="@dimen/chat_history_row_padding"
+    android:paddingEnd="@dimen/chat_history_row_padding"
     android:background="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
@@ -13,10 +15,11 @@
     android:orientation="horizontal">
 
     <ImageView
-        android:layout_width="@dimen/chat_composer_min_height"
-        android:layout_height="@dimen/chat_composer_min_height"
-        android:padding="@dimen/chat_bubble_padding"
-        android:src="@drawable/figma_menu_chat"
+        android:layout_width="@dimen/chat_history_icon_size"
+        android:layout_height="@dimen/chat_history_icon_size"
+        android:padding="@dimen/chat_history_icon_padding"
+        android:background="@drawable/chat_history_icon_background"
+        android:src="@drawable/chat_history_icon"
         android:scaleType="fitCenter"
         android:importantForAccessibility="no" />
 
@@ -24,17 +27,26 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:layout_marginStart="@dimen/chat_history_row_spacing"
         android:orientation="vertical">
 
         <TextView
             android:id="@+id/chat_session_title"
-            style="@style/Home.Section"
+            style="@style/Chat.HistoryTitle"
             android:importantForAccessibility="no" />
 
         <TextView
-            android:id="@+id/chat_session_identity"
-            style="@style/Home.Caption"
-            android:textColor="@color/chat_placeholder_text"
+            android:id="@+id/chat_session_time"
+            style="@style/Chat.HistoryTime"
+            android:layout_marginTop="@dimen/chat_history_text_spacing"
             android:importantForAccessibility="no" />
     </LinearLayout>
+
+    <ImageView
+        android:layout_width="@dimen/chat_composer_min_height"
+        android:layout_height="@dimen/chat_composer_min_height"
+        android:padding="@dimen/chat_composer_inner_spacing"
+        android:src="@drawable/chat_history_chevron"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no" />
 </LinearLayout>

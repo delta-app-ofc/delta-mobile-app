@@ -26,11 +26,17 @@ import java.util.function.LongSupplier;
 public final class ChatFlow {
     public static final class SessionEntry {
         public final String id;
+        public final String title;
         public final String createdAt;
         public final Instant created;
 
         public SessionEntry(String id, String createdAt) {
+            this(id, createdAt, null);
+        }
+
+        public SessionEntry(String id, String createdAt, String title) {
             this.id = Objects.requireNonNull(id);
+            this.title = title;
             this.createdAt = createdAt;
             Instant parsed = null;
             try {
@@ -92,6 +98,11 @@ public final class ChatFlow {
 
     public void showIntroduction() {
         if (active) publish(new ChatState(state.account, true, state.draft, state.sessionId, state.messages, state.sending));
+    }
+
+    public void startNewConversation() {
+        if (!active || state.sending.busy()) return;
+        resetConversation();
     }
 
     public void resumeConversation() {
@@ -158,7 +169,7 @@ public final class ChatFlow {
                         publishHistory();
                         return;
                     }
-                    entries.add(new SessionEntry(session.sessionId, session.createdAt));
+                    entries.add(new SessionEntry(session.sessionId, session.createdAt, session.title));
                 }
                 entries.sort(Comparator.comparing((SessionEntry entry) -> entry.created, Comparator.nullsLast(Comparator.reverseOrder())).thenComparing(entry -> entry.id));
                 sessions = ScreenState.success(Collections.unmodifiableList(entries));
@@ -188,12 +199,12 @@ public final class ChatFlow {
             if (result != null && result.status == ScreenState.Status.SUCCESS && result.data != null) {
                 List<ChatMessage> messages = new ArrayList<>();
                 for (HistoryMessage message : result.data) {
-                    if (message == null || message.content == null || !("human".equals(message.role) || "assistant".equals(message.role))) {
+                    if (message == null || message.content == null || !(userRole(message.role) || assistantRole(message.role))) {
                         history = ChatbotErrors.invalidBody(strings);
                         publishHistory();
                         return;
                     }
-                    messages.add(new ChatMessage(++nextId, "human".equals(message.role) ? ChatMessage.Author.USER : ChatMessage.Author.ASSISTANT,
+                    messages.add(new ChatMessage(++nextId, userRole(message.role) ? ChatMessage.Author.USER : ChatMessage.Author.ASSISTANT,
                         message.content, ScreenState.Status.SUCCESS, null));
                 }
                 history = ScreenState.success(Collections.unmodifiableList(messages));
@@ -259,6 +270,14 @@ public final class ChatFlow {
 
     private void invalidInput(int message) {
         publish(new ChatState(state.account, state.showIntroduction, state.draft, state.sessionId, state.messages, ScreenState.error(strings.apply(message))));
+    }
+
+    private static boolean userRole(String role) {
+        return "user".equals(role) || "human".equals(role);
+    }
+
+    private static boolean assistantRole(String role) {
+        return "bot".equals(role) || "assistant".equals(role);
     }
 
     private void finish(long identity, long request, long id, String content, String session, ScreenState<ChatResponse> result) {
