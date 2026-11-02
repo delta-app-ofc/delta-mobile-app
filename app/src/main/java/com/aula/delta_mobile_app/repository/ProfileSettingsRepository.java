@@ -16,12 +16,7 @@ public final class ProfileSettingsRepository {
     public ProfileSettingsRepository(AuthRepository auth) { this.auth = auth; }
 
     public void profile(Consumer<ScreenState<Profile>> callback) {
-        auth.resource(() -> {
-            Response<Profile> response = auth.api().me().execute();
-            if (!response.isSuccessful()) return ApiErrors.from(response);
-            Profile value = response.body();
-            return value == null || value.id == null || value.id <= 0 ? ScreenState.error("Não foi possível confirmar seu perfil.") : ScreenState.success(value);
-        }, callback);
+        auth.screenResource(new ProfileDataRepository(auth.api())::load, callback);
     }
 
     public void saveProfile(Profile original, UpdateProfileRequest request, Consumer<ScreenState<Profile>> callback) {
@@ -71,7 +66,31 @@ public final class ProfileSettingsRepository {
         }, callback);
     }
 
-    public void save(ProfileSettingsData original, UpdateAddressRequest request, Consumer<ScreenState<ProfileSettingsData>> callback) {
+    public void saveName(ProfileSettingsData original, String name, Consumer<ScreenState<ProfileSettingsData>> callback) {
+        auth.resource(() -> {
+            ScreenState<PropertyResponse> selected = ownedProperty(original.property.id);
+            if (selected.status != ScreenState.Status.SUCCESS) return ScreenState.error(selected.message, selected.code, selected.retryAt);
+            PropertyResponse property = selected.data;
+            if (!Objects.equals(property.addressId, original.address.id)) return ScreenState.error("O imóvel mudou. Atualize os dados antes de editar.");
+            if (!Objects.equals(property.name, original.property.name) && !Objects.equals(property.name, name)) return ScreenState.error("O nome mudou em outra sessão. Atualize os dados antes de editar.");
+            if (Objects.equals(property.name, name)) return ScreenState.success(new ProfileSettingsData(property, original.address));
+            UpdatePropertyRequest request = new UpdatePropertyRequest();
+            request.name = name;
+            request.type = property.type;
+            request.classification = property.classification;
+            request.addressId = property.addressId;
+            request.organizationId = property.organizationId;
+            request.builtAreaM2 = property.builtAreaM2;
+            Response<PropertyResponse> response = auth.api().updateProperty(property.id, request).execute();
+            if (!response.isSuccessful()) return saveError(response, "Não foi possível salvar o nome da residência. ");
+            PropertyResponse saved = response.body();
+            if (saved == null || !Objects.equals(saved.id, property.id) || !Objects.equals(saved.name, name) || !Objects.equals(saved.addressId, original.address.id))
+                return ScreenState.error("O servidor não confirmou o nome da residência. Atualize os dados para conferir.");
+            return ScreenState.success(new ProfileSettingsData(saved, original.address));
+        }, callback);
+    }
+
+    public void saveAddress(ProfileSettingsData original, UpdateAddressRequest request, Consumer<ScreenState<ProfileSettingsData>> callback) {
         auth.resource(() -> {
             ScreenState<PropertyResponse> selected = ownedProperty(original.property.id);
             if (selected.status != ScreenState.Status.SUCCESS) return ScreenState.error(selected.message, selected.code, selected.retryAt);
@@ -80,14 +99,18 @@ public final class ProfileSettingsRepository {
             if (!current.isSuccessful()) return ApiErrors.from(current);
             AddressResponse value = current.body();
             if (value == null || !sameAddress(original.address, value)) return ScreenState.error("O endereço foi atualizado em outra sessão. Cancele a edição e atualize os dados.");
+            PropertyResponse property = selected.data;
+            if (Objects.equals(value.cep, request.cep) && Objects.equals(value.city, request.city) && Objects.equals(value.state, request.state)
+                && sameNumber(value.latitude, request.latitude) && sameNumber(value.longitude, request.longitude))
+                return ScreenState.success(new ProfileSettingsData(property, value));
             Response<AddressResponse> response = auth.api().updateAddress(original.address.id, request).execute();
-            if (!response.isSuccessful()) return ApiErrors.from(response);
+            if (!response.isSuccessful()) return saveError(response, "Não foi possível atualizar o endereço. ");
             AddressResponse saved = response.body();
             if (saved == null || !Objects.equals(saved.id, original.address.id) || !Objects.equals(saved.cep, request.cep)
                 || !Objects.equals(saved.city, request.city) || !Objects.equals(saved.state, request.state)
                 || !sameNumber(saved.latitude, request.latitude) || !sameNumber(saved.longitude, request.longitude))
-                return ScreenState.error("O servidor não confirmou todas as alterações. Atualize o endereço para conferir.");
-            return ScreenState.success(new ProfileSettingsData(selected.data, saved));
+                return ScreenState.error("O servidor não confirmou o endereço. Atualize os dados para conferir.");
+            return ScreenState.success(new ProfileSettingsData(property, saved));
         }, callback);
     }
 
@@ -105,6 +128,11 @@ public final class ProfileSettingsRepository {
     private boolean sameAddress(AddressResponse a, AddressResponse b) {
         return Objects.equals(a.cep, b.cep) && Objects.equals(a.city, b.city) && Objects.equals(a.state, b.state)
             && Objects.equals(a.regionId, b.regionId) && sameNumber(a.latitude, b.latitude) && sameNumber(a.longitude, b.longitude);
+    }
+
+    private ScreenState<ProfileSettingsData> saveError(Response<?> response, String context) {
+        ScreenState<ProfileSettingsData> error = ApiErrors.from(response);
+        return ScreenState.error(context + error.message, error.code, error.retryAt);
     }
 
     private boolean sameNumber(java.math.BigDecimal a, java.math.BigDecimal b) { return a == null ? b == null : b != null && a.compareTo(b) == 0; }

@@ -15,8 +15,6 @@
     <string name="home_today_label">Consumo hoje</string>
     <string name="home_month_label">Consumo este mês</string>
     <string name="home_cost_label">Custo previsto</string>
-    <string name="home_efficiency">Indicador EH e metas</string>
-    <string name="home_efficiency_pending">Indicador de eficiência ainda indisponível</string>
     <string name="home_no_data">Sem dados</string>
     <string name="home_monthly_goal">Meta mensal</string>
     <string name="home_view_more">Ver mais</string>
@@ -37,8 +35,6 @@
     <string name="home_account_title">Sua conta</string>
     <string name="home_liters">%1$s L</string>
     <string name="home_temperature_title">Relação temperatura x litros</string>
-    <string name="home_eh_scale">/100</string>
-    <string name="home_eh_accessibility">Indicador EH indisponível: é necessário receber a pontuação de 0 a 100 e a classificação.</string>
     <string name="home_temperature_empty">Sem dados de temperatura associados ao consumo.</string>
     <string name="home_goal_unavailable">Os dados da meta mensal ainda não foram disponibilizados.</string>
     <string name="home_suggestion_unavailable">A sugestão de meta ainda não foi disponibilizada.</string>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="20dp"
+    android:padding="16dp"
+    android:orientation="vertical"
+    android:background="@drawable/dash_card">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/main_icon_home"
+            android:tint="@color/auth_muted"
+            android:importantForAccessibility="no" />
+        <TextView
+            android:id="@+id/ranking_name"
+            style="@style/Home.Section"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:textStyle="bold"
+            android:accessibilityHeading="true" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:padding="12dp"
+            android:orientation="vertical"
+            android:background="@drawable/leak_blue_card">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/home_icon_drop"
+                android:tint="@color/white"
+                android:importantForAccessibility="no" />
+            <TextView
+                style="@style/Ranking.Caption"
+                android:layout_marginTop="8dp"
+                android:text="@string/ranking_efficiency_label" />
+            <TextView
+                android:id="@+id/ranking_efficiency"
+                style="@style/Ranking.Position" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:padding="12dp"
+            android:orientation="vertical"
+            android:background="@drawable/profile_group">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/home_icon_money"
+                android:importantForAccessibility="no" />
+            <TextView
+                style="@style/Ranking.Caption"
+                android:layout_marginTop="8dp"
+                android:text="@string/ranking_cost_label" />
+            <TextView
+                android:id="@+id/ranking_cost"
+                style="@style/Ranking.Position" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout style="@style/Ranking.MetricRow">
+        <TextView
+            style="@style/Ranking.MetricLabel"
+            android:text="@string/ranking_volume_label" />
+        <TextView
+            android:id="@+id/ranking_volume"
+            style="@style/Ranking.MetricValue" />
+    </LinearLayout>
+    <LinearLayout style="@style/Ranking.MetricRow">
+        <TextView
+            style="@style/Ranking.MetricLabel"
+            android:text="@string/ranking_total_cost_label" />
+        <TextView
+            android:id="@+id/ranking_total_cost"
+            style="@style/Ranking.MetricValue" />
+    </LinearLayout>
+    <LinearLayout style="@style/Ranking.MetricRow">
+        <TextView
+            style="@style/Ranking.MetricLabel"
+            android:text="@string/ranking_area_label" />
+        <TextView
+            android:id="@+id/ranking_area"
+            style="@style/Ranking.MetricValue" />
+    </LinearLayout>
+</LinearLayout>

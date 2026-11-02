@@ -1,5 +1,7 @@
 # Dados da Home
 
+> Atualização de escopo: por solicitação explícita da pessoa usuária, o indicador EH foi removido do mobile. Metas agora usam [SQLite por residência](METAS_SQLITE.md). A solicitação posterior de calcular recomendações foi implementada com estimativas locais descritas em [METAS_CALCULOS.md](METAS_CALCULOS.md); essas fórmulas são escolhas desta implementação, não um contrato de indicadores publicado pela API.
+
 O usuário vem de `GET /delta/auth/me`; os imóveis vêm de `GET /delta/user-properties/{userId}`. Não há ID fixo no aplicativo.
 
 | Informação exibida | Fonte |
@@ -14,4 +16,4 @@ Os totais usam as datas das leituras e o mês atual. Litros são convertidos par
 
 Ranking, hábitos e variação mensal não são mais consultados pela Home, pois esses blocos não pertencem à referência. As demais telas mantêm seus próprios dados.
 
-EH de 0 a 100, classificação, metas, recomendações e série de temperatura ainda precisam de contrato. Veja [HOME_DATA_REQUIRED.md](HOME_DATA_REQUIRED.md). O progresso de implementação e os limites de validação estão em [HOME_TODO.md](HOME_TODO.md).
+A série de temperatura ainda precisa de dados reais associados ao consumo. Metas e recomendações locais seguem os documentos acima. As referências antigas a EH, metas e recomendações sem fonte em [HOME_DATA_REQUIRED.md](HOME_DATA_REQUIRED.md) e [HOME_TODO.md](HOME_TODO.md) registram a etapa anterior.

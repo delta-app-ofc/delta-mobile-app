@@ -33,7 +33,7 @@ import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.view.activities.login.LoginActivity;
 
 @SuppressLint("CustomSplashScreen")
-public class SplashActivity extends AppCompatActivity {
+public class SplashActivity extends com.aula.delta_mobile_app.view.activities.ScreenFlowActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         SplashScreen.installSplashScreen(this);
@@ -53,8 +53,7 @@ public class SplashActivity extends AppCompatActivity {
             Intent entry = new Intent(this, restore ? com.aula.delta_mobile_app.view.activities.main.MainActivity.class : LoginActivity.class);
             if (restore)
                 entry.putExtra(com.aula.delta_mobile_app.view.activities.main.MainActivity.EXTRA_RESTORE_SESSION, true);
-            startActivity(entry);
-            finish();
+            openScreen(entry, true);
         });
     }
 

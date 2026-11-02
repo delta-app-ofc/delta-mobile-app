@@ -181,6 +181,8 @@ public final class ChatFragment extends Fragment {
     private void render(ChatState state) {
         if (state != null && !Objects.equals(current.account.data, state.account.data)) dismissNewChatDialog();
         current = state == null ? ChatState.empty() : state;
+        if (getActivity() instanceof com.aula.delta_mobile_app.view.activities.ScreenFlowActivity)
+            ((com.aula.delta_mobile_app.view.activities.ScreenFlowActivity) getActivity()).setScreenLoading(getView(), current.account.status == ScreenState.Status.IDLE || current.account.busy());
         if (input == null || adapter == null) return;
         rendering = true;
         if (!input.getText().toString().equals(current.draft)) {

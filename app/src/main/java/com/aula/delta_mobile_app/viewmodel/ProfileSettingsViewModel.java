@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.List;
 
 public final class ProfileSettingsViewModel extends AndroidViewModel {
+    private static final long PHOTO_TIMEOUT_MS = 180_000;
     public final MutableLiveData<ScreenState<Profile>> profile = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<ProfileSettingsData>> residence = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<Boolean>> saving = new MutableLiveData<>(ScreenState.idle());
@@ -35,9 +36,13 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
     private final SavedStateHandle saved;
     private final Observer<Boolean> sessionObserver;
     private long generation;
-    private int selection, photoRequest, cepRequest, sensorRequest;
+    private int selection, cepRequest, sensorRequest;
+    private volatile int photoRequest;
+    private Runnable photoTimeout;
     private Integer propertyId;
     private Integer sensorPropertyId;
+    private Integer photoUserId;
+    private File confirmedPhoto;
     private boolean cleared, cepLoading;
     public ResidentialDraft draft;
     public PersonalDraft personalDraft;
@@ -124,17 +129,25 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
 
     public void editResidence() {
         if (residence.getValue().status != ScreenState.Status.SUCCESS || saving.getValue().busy()) return;
-        if (draft == null) draft = new ResidentialDraft(residence.getValue().data.address);
+        if (draft == null) draft = new ResidentialDraft(residence.getValue().data);
     }
 
-    public void updateDraft(String cep, String city, String state) {
+    public void residenceUnavailable(ScreenState<?> error) {
+        selection++;
+        residence.setValue(ScreenState.error(error.message, error.code, error.retryAt));
+    }
+
+    public void updateDraft(String name, String cep, String city, String state) {
         if (draft == null) return;
+        draft.name = name;
         boolean changedCep = !draft.cep.equals(cep.replaceAll("\\D", ""));
         draft.cep = cep.replaceAll("\\D", "");
         draft.city = city;
         draft.state = state;
-        saved.set("residential_draft", new String[] { draft.cep, city, state });
+        saved.set("residential_draft", new String[] { name, draft.cep, city, state });
         if (changedCep) {
+            draft.city = "";
+            draft.state = "";
             cepRequest++;
             postal.cancel();
             cepLoading = false;
@@ -142,7 +155,7 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
         }
     }
 
-    public boolean dirty() { return draft != null && residence.getValue().status == ScreenState.Status.SUCCESS && draft.changed(residence.getValue().data.address); }
+    public boolean dirty() { return draft != null && residence.getValue().status == ScreenState.Status.SUCCESS && draft.changed(residence.getValue().data); }
 
     public void cancelEdit() {
         if (saving.getValue().busy()) return;
@@ -155,6 +168,8 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
         saving.setValue(ScreenState.idle());
     }
 
+    public boolean isConsultingCep() { return cepLoading; }
+
     public void lookupCep() {
         if (draft == null || !draft.cep.matches("[0-9]{8}")) return;
         String cep = draft.cep;
@@ -162,36 +177,50 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
         int request = ++cepRequest;
         long expected = generation;
         cepLoading = true;
-        cepMessage.setValue("Consultando CEP…");
+        cepMessage.setValue("");
         postal.getCep(cep, value -> main.post(() -> {
             if (!valid(expected) || request != cepRequest || draft == null || !cep.equals(draft.cep)) return;
             cepLoading = false;
             if (value.status == ScreenState.Status.SUCCESS) {
                 if (Objects.equals(draft.city, previousCity)) draft.city = value.data.city;
                 if (Objects.equals(draft.state, previousState)) draft.state = value.data.state;
-                saved.set("residential_draft", new String[] { draft.cep, draft.city, draft.state });
-                cepMessage.setValue("Cidade e estado preenchidos pelo CEP. Confira antes de salvar.");
+                saved.set("residential_draft", new String[] { draft.name, draft.cep, draft.city, draft.state });
+                cepMessage.setValue("");
             } else cepMessage.setValue(value.message);
         }));
     }
 
     public void saveResidence() {
         if (draft == null || saving.getValue().busy() || System.currentTimeMillis() < saving.getValue().retryAt || residence.getValue().status != ScreenState.Status.SUCCESS) return;
-        if (cepLoading) { saving.setValue(ScreenState.error("Aguarde a consulta de CEP terminar antes de salvar.")); return; }
-        String error = draft.validation();
+        if (draft.name == null || draft.name.trim().isEmpty()) { saving.setValue(ScreenState.error("Informe o nome da residência.")); return; }
         ProfileSettingsData original = residence.getValue().data;
-        if (error != null) { saving.setValue(ScreenState.error(error)); return; }
         long expected = generation;
         int request = selection;
+        String name = draft.name.trim();
+        boolean renamed = !Objects.equals(name, original.property.name);
         saving.setValue(ScreenState.loading());
-        repository.save(original, draft.request(original.address), value -> main.post(() -> {
+        repository.saveName(original, name, result -> main.post(() -> {
+            if (!valid(expected) || request != selection) return;
+            if (result.status != ScreenState.Status.SUCCESS) { saving.setValue(ScreenState.error(result.message, result.code, result.retryAt)); return; }
+            residence.setValue(result);
+            String error = cepLoading ? "A consulta do CEP ainda não terminou." : draft.validation();
+            if (error != null) {
+                saving.setValue(ScreenState.error((renamed ? "O nome da residência foi salvo, mas o endereço não foi atualizado. " : "O endereço não foi atualizado. ") + error));
+                return;
+            }
+            saveResidenceAddress(result.data, expected, request, renamed);
+        }));
+    }
+
+    private void saveResidenceAddress(ProfileSettingsData original, long expected, int request, boolean renamed) {
+        repository.saveAddress(original, draft.request(original.address), value -> main.post(() -> {
             if (!valid(expected) || request != selection) return;
             if (value.status == ScreenState.Status.SUCCESS) {
                 draft = null;
                 saved.remove("residential_draft");
                 residence.setValue(value);
                 saving.setValue(ScreenState.success(true));
-            } else saving.setValue(ScreenState.error(value.message, value.code, value.retryAt));
+            } else saving.setValue(ScreenState.error((renamed ? "O nome da residência foi salvo. " : "") + value.message, value.code, value.retryAt));
         }));
     }
 
@@ -199,24 +228,67 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
     public void captureUri(String uri) { saved.set("profile_capture_uri", uri); }
 
     public void preparePhoto(Uri uri) {
+        ScreenState<Profile> current = profile.getValue();
+        if (current.status != ScreenState.Status.SUCCESS || current.data.id == null || photo.getValue().busy()) return;
         long expected = generation;
         int request = ++photoRequest;
-        clearPhotoFile();
         photo.setValue(ScreenState.loading());
-        photos.prepare(uri, value -> main.post(() -> {
-            if (uri.toString().equals(captureUri())) clearCapture();
+        startPhotoTimeout(expected, request);
+        photos.upload(uri, current.data.id, () -> request == photoRequest && auth.hasSession() && auth.sessionGeneration() == expected, value -> main.post(() -> {
             if (!valid(expected) || request != photoRequest) { if (value.data != null) value.data.delete(); return; }
+            cancelPhotoTimeout();
+            if (uri.toString().equals(captureUri())) clearCapture();
+            if (value.status == ScreenState.Status.SUCCESS) { clearPhotoFile(); confirmedPhoto = value.data; photoUserId = current.data.id; }
+            photo.setValue(value);
+        }));
+    }
+
+    public void loadPhoto() {
+        ScreenState<Profile> current = profile.getValue();
+        if (current.status == ScreenState.Status.SUCCESS) loadPhoto(current.data, false);
+    }
+
+    public void loadPhoto(Profile current, boolean force) {
+        if (current == null || current.id == null || current.id <= 0 || photo.getValue().busy() || (!force && Objects.equals(photoUserId, current.id))) return;
+        photoUserId = current.id;
+        long expected = generation;
+        int request = ++photoRequest;
+        photo.setValue(ScreenState.loading());
+        startPhotoTimeout(expected, request);
+        photos.load(photoUserId, () -> request == photoRequest && auth.hasSession() && auth.sessionGeneration() == expected, value -> main.post(() -> {
+            if (!valid(expected) || request != photoRequest) { if (value.data != null) value.data.delete(); return; }
+            cancelPhotoTimeout();
+            if (value.status == ScreenState.Status.SUCCESS) { clearPhotoFile(); confirmedPhoto = value.data; }
+            if (value.status == ScreenState.Status.ERROR) photoUserId = null;
             photo.setValue(value);
         }));
     }
 
     public void discardPhoto() {
         photoRequest++;
-        clearPhotoFile();
-        photo.setValue(ScreenState.idle());
+        cancelPhotoTimeout();
+        photo.setValue(confirmedPhoto == null ? ScreenState.idle() : ScreenState.success(confirmedPhoto));
     }
 
-    private void clearPhotoFile() { File file = photo.getValue().data; if (file != null) file.delete(); }
+    private void startPhotoTimeout(long expected, int request) {
+        cancelPhotoTimeout();
+        photoTimeout = () -> {
+            if (!valid(expected) || request != photoRequest || !photo.getValue().busy()) return;
+            photoRequest++;
+            photoTimeout = null;
+            photoUserId = null;
+            clearCapture();
+            photo.setValue(ScreenState.error("A atualização da foto demorou demais. Tente novamente."));
+        };
+        main.postDelayed(photoTimeout, PHOTO_TIMEOUT_MS);
+    }
+
+    private void cancelPhotoTimeout() {
+        if (photoTimeout != null) main.removeCallbacks(photoTimeout);
+        photoTimeout = null;
+    }
+
+    private void clearPhotoFile() { if (confirmedPhoto != null) confirmedPhoto.delete(); confirmedPhoto = null; }
     private void clearCapture() {
         String uri = captureUri();
         if (uri != null) {
@@ -231,10 +303,12 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
         selection++;
         sensorRequest++;
         photoRequest++;
+        cancelPhotoTimeout();
         postal.cancel();
         cepLoading = false;
         main.removeCallbacksAndMessages(null);
         clearPhotoFile();
+        photoUserId = null;
         draft = null;
         personalDraft = null;
         propertyId = null;
@@ -252,6 +326,8 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
     @Override
     protected void onCleared() {
         cleared = true;
+        photoRequest++;
+        cancelPhotoTimeout();
         auth.session().removeObserver(sessionObserver);
         postal.cancel();
         photos.close();

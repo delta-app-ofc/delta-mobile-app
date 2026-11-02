@@ -6,6 +6,16 @@ import java.util.Objects;
 
 public final class ResidentialDraft {
     public String cep, city, state;
+    public String name;
+
+    public ResidentialDraft(ProfileSettingsData data) {
+        this(data.address);
+        name = value(data.property.name);
+    }
+
+    public boolean changed(ProfileSettingsData data) {
+        return changed(data.address) || !Objects.equals(name.trim(), value(data.property.name));
+    }
 
     public ResidentialDraft(AddressResponse address) {
         cep = value(address.cep);
@@ -18,6 +28,7 @@ public final class ResidentialDraft {
     }
 
     public String validation() {
+        if (name != null && name.trim().isEmpty()) return "Informe o nome da residência.";
         if (!cep.matches("[0-9]{8}")) return "Informe um CEP com oito dígitos.";
         if (city.trim().isEmpty() || city.length() > 60) return "Informe uma cidade válida, com até 60 caracteres.";
         if (state.trim().isEmpty() || state.length() > 30) return "Informe um estado válido.";

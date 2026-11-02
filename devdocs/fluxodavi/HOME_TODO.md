@@ -1,5 +1,7 @@
 # Home — implementação da referência enviada
 
+> Atualização de escopo: por solicitação explícita da pessoa usuária, o indicador EH foi removido do mobile. As referências a EH abaixo registram o planejamento/implementação anteriores e não constituem uma pendência de integração vigente. Metas agora usam armazenamento local sem SQLite, conforme [EH_NAVBAR_METAS_TODO.md](EH_NAVBAR_METAS_TODO.md); não há percentual ou recomendação inventada.
+
 Referência: [home.png](../../docs/references/home.png). Os números e o nome da imagem são exemplos visuais; a tela usa a conta autenticada e os dados reais.
 
 ## Estrutura e aparência

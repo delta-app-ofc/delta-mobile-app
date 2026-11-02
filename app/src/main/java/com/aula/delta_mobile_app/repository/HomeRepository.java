@@ -24,11 +24,11 @@ public final class HomeRepository {
     }
 
     public void me(Consumer<ScreenState<Profile>> callback) {
-        auth.resource(() -> ScreenState.success(auth.currentProfile()), callback);
+        auth.screenResource(() -> ScreenState.success(auth.currentProfile()), callback);
     }
 
     public void waterCost(Integer propertyId, BigDecimal liters, String date, Consumer<ScreenState<WaterCostResponse>> callback) {
-        auth.resource( () -> result(auth.api().waterCost(propertyId, liters.movePointLeft(3), date).execute()), callback);
+        auth.screenResource(() -> result(auth.api().waterCost(propertyId, liters.movePointLeft(3), date).execute()), callback);
     }
 
     public void monthlyVariation(Integer propertyId, Consumer<ScreenState<List<MonthlyVariationResponse>>> callback) {

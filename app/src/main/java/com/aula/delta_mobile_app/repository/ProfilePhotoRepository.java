@@ -13,12 +13,89 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public final class ProfilePhotoRepository {
+    public static final String PREFERENCES = "delta_profile_photos";
     private final Context context;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private final CloudinaryPhotoRepository cloudinary = new CloudinaryPhotoRepository(com.aula.delta_mobile_app.services.network.RetrofitClient.getCloudinaryService());
+    private final okhttp3.OkHttpClient images = com.aula.delta_mobile_app.services.network.RetrofitClient.createPublicImageClient();
 
     public ProfilePhotoRepository(Context context) { this.context = context.getApplicationContext(); }
 
-    public void prepare(Uri uri, Consumer<ScreenState<File>> callback) {
+    public void upload(Uri uri, int userId, java.util.function.BooleanSupplier active, Consumer<ScreenState<File>> callback) {
+        prepare(uri, value -> {
+            if (value.status != ScreenState.Status.SUCCESS) { callback.accept(value); return; }
+            File downloaded = null;
+            try {
+                if (!active.getAsBoolean()) return;
+                ScreenState<String> uploaded = cloudinary.upload(value.data);
+                if (uploaded.status != ScreenState.Status.SUCCESS) { callback.accept(ScreenState.error(uploaded.message, uploaded.code, uploaded.retryAt)); return; }
+                downloaded = download(uploaded.data);
+                if (!active.getAsBoolean()) { downloaded.delete(); return; }
+                if (!context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit().putString("user:" + userId, uploaded.data).commit())
+                    throw new java.io.IOException();
+                callback.accept(ScreenState.success(downloaded));
+                downloaded = null;
+            } catch (Exception failure) {
+                callback.accept(ScreenState.error("Não foi possível enviar e confirmar sua foto. Tente novamente."));
+            } finally {
+                value.data.delete();
+                if (downloaded != null) downloaded.delete();
+            }
+        });
+    }
+
+    public void load(int userId, java.util.function.BooleanSupplier active, Consumer<ScreenState<File>> callback) {
+        worker.execute(() -> {
+            File file = null;
+            try {
+                if (!active.getAsBoolean()) return;
+                String url = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).getString("user:" + userId, null);
+                if (url == null) { callback.accept(ScreenState.idle()); return; }
+                file = download(url);
+                if (!active.getAsBoolean()) { file.delete(); return; }
+                callback.accept(ScreenState.success(file));
+                file = null;
+            } catch (Exception failure) {
+                callback.accept(ScreenState.error("Não foi possível carregar sua foto. Tente novamente mais tarde."));
+            } finally { if (file != null) file.delete(); }
+        });
+    }
+
+    private File download(String url) throws java.io.IOException {
+        if (!CloudinaryPhotoRepository.validUrl(url)) throw new java.io.IOException();
+        File directory = new File(context.getCacheDir(), "profile");
+        if (!directory.exists() && !directory.mkdirs()) throw new java.io.IOException();
+        File file = File.createTempFile("remote-", ".jpg", directory);
+        try {
+            try (okhttp3.Response response = images.newCall(new okhttp3.Request.Builder().url(url).cacheControl(new okhttp3.CacheControl.Builder().noCache().noStore().build()).build()).execute()) {
+                if (!response.isSuccessful() || response.body() == null) throw new java.io.IOException();
+                try (InputStream input = response.body().byteStream(); FileOutputStream output = new FileOutputStream(file)) {
+                    byte[] buffer = new byte[8192];
+                    int read, total = 0;
+                    while ((read = input.read(buffer)) != -1) {
+                        total += read;
+                        if (total > 10 * 1024 * 1024) throw new java.io.IOException();
+                        output.write(buffer, 0, read);
+                    }
+                }
+            }
+            Bitmap bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(file), (decoder, info, source) -> {
+                int width = info.getSize().getWidth(), height = info.getSize().getHeight();
+                float scale = Math.min(1f, 1024f / Math.max(width, height));
+                decoder.setTargetSize(Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)));
+                decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE);
+            });
+            try (FileOutputStream output = new FileOutputStream(file)) {
+                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)) throw new java.io.IOException();
+            } finally { bitmap.recycle(); }
+            return file;
+        } catch (Exception failure) {
+            file.delete();
+            throw new java.io.IOException(failure);
+        }
+    }
+
+    private void prepare(Uri uri, Consumer<ScreenState<File>> callback) {
         worker.execute(() -> {
             File source = null, prepared = null;
             Bitmap bitmap = null;
@@ -45,7 +122,7 @@ public final class ProfilePhotoRepository {
                     decoder.setTargetSize(Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)));
                     decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE);
                 });
-                prepared = File.createTempFile("preview-", ".jpg", directory);
+                prepared = File.createTempFile("upload-", ".jpg", directory);
                 try (FileOutputStream output = new FileOutputStream(prepared)) {
                     if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)) throw new java.io.IOException();
                 }

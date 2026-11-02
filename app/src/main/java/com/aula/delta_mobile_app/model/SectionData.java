@@ -7,6 +7,15 @@ import java.util.*;
 public final class SectionData {
     private SectionData() {}
 
+    public static List<PropertyRankingResponse> rankings(List<PropertyRankingResponse> source, Set<Integer> properties) {
+        List<PropertyRankingResponse> result = new ArrayList<>();
+        if (source != null && properties != null)
+            for (PropertyRankingResponse row : source)
+                if (row != null && row.propertyId != null && row.propertyId > 0 && properties.contains(row.propertyId)) result.add(row);
+        result.sort(Comparator.comparing((PropertyRankingResponse row) -> row.rankEfficiency, Comparator.nullsLast(Comparator.naturalOrder())));
+        return result;
+    }
+
     public static List<UserPropertyResponse> properties(List<UserPropertyResponse> source, Integer user) {
         List<UserPropertyResponse> result = new ArrayList<>();
         if (source != null && user != null)

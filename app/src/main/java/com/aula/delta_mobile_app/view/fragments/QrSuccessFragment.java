@@ -18,6 +18,11 @@ public class QrSuccessFragment extends AuthFlowFragment {
         super.onViewCreated(view, savedInstanceState);
         setupHeader(view, 4, R.string.auth_qr_title, R.string.auth_qr_subtitle, R.string.auth_qr_description);
         view.findViewById(R.id.back_button).setVisibility(View.INVISIBLE);
-        view.findViewById(R.id.success_continue).setOnClickListener(v -> navigate(R.id.accountConfigFragment));
+        view.findViewById(R.id.success_continue).setOnClickListener(v -> {
+            if (getArguments() != null && getArguments().getBoolean("unitFlow", false)) {
+                androidx.navigation.NavController nav = androidx.navigation.fragment.NavHostFragment.findNavController(this);
+                if (!nav.popBackStack(R.id.unitsFragment, false)) nav.navigate(R.id.unitsFragment);
+            } else navigate(R.id.accountConfigFragment);
+        });
     }
 }

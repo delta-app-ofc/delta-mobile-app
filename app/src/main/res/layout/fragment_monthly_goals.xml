@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/profile_background"
+    android:fillViewport="true"
+    android:clipToPadding="false"
+    android:scrollbars="none">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="28dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="136dp">
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp">
+            <ImageButton
+                android:id="@+id/goal_back"
+                style="@style/Profile.IconButton"
+                android:layout_marginStart="-12dp"
+                android:src="@drawable/profile_back"
+                android:contentDescription="@string/goal_back" />
+            <ImageButton
+                android:id="@+id/goal_edit"
+                style="@style/Profile.IconButton"
+                android:layout_gravity="end"
+                android:src="@drawable/profile_edit"
+                android:contentDescription="@string/goal_edit" />
+        </FrameLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical">
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
+                android:background="@drawable/profile_blue_icon"
+                android:src="@drawable/home_icon_drop"
+                android:tint="@color/white"
+                android:importantForAccessibility="no" />
+            <TextView
+                style="@style/Profile.Title"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginStart="14dp"
+                android:text="@string/goal_title"
+                android:accessibilityHeading="true" />
+        </LinearLayout>
+        <TextView
+            style="@style/Home.Body"
+            android:layout_marginTop="16dp"
+            android:text="@string/goal_description"
+            android:textColor="@color/profile_muted" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:background="@drawable/profile_group">
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/main_icon_home"
+                android:tint="@color/auth_muted"
+                android:importantForAccessibility="no" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+                <TextView
+                    style="@style/Home.Caption"
+                    android:text="@string/goal_current_residence"
+                    android:textColor="@color/profile_muted" />
+                <TextView
+                    android:id="@+id/goal_property"
+                    style="@style/Home.Section"
+                    android:layout_marginTop="6dp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:padding="8dp"
+            android:gravity="center_vertical"
+            android:background="@drawable/profile_group">
+            <ImageButton
+                android:id="@+id/goal_previous"
+                style="@style/Profile.IconButton"
+                android:src="@drawable/profile_back"
+                android:contentDescription="@string/goal_previous" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/home_icon_calendar"
+                    android:tint="@color/auth_muted"
+                    android:importantForAccessibility="no" />
+                <TextView
+                    android:id="@+id/goal_month"
+                    style="@style/Home.Section"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center" />
+            </LinearLayout>
+            <ImageButton
+                android:id="@+id/goal_next"
+                style="@style/Profile.IconButton"
+                android:src="@drawable/profile_back"
+                android:rotation="180"
+                android:contentDescription="@string/goal_next" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:padding="20dp"
+            android:orientation="vertical"
+            android:background="@drawable/leak_blue_card">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/home_icon_drop"
+                    android:tint="@color/white"
+                    android:importantForAccessibility="no" />
+                <TextView
+                    style="@style/Home.Body"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    android:text="@string/goal_limit_label" />
+            </LinearLayout>
+            <TextView
+                android:id="@+id/goal_confirmed"
+                style="@style/Home.Body"
+                android:layout_marginTop="10dp"
+                android:textSize="26sp"
+                android:maxLines="1"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="10sp"
+                android:autoSizeMaxTextSize="26sp"
+                android:autoSizeStepGranularity="1sp"
+                android:textStyle="bold"
+                android:accessibilityLiveRegion="polite" />
+            <LinearLayout
+                android:id="@+id/goal_fields"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+                <TextView
+                    android:id="@+id/goal_amount_label"
+                    style="@style/Home.Body"
+                    android:labelFor="@id/goal_amount_input"
+                    android:text="@string/goal_amount" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/goal_amount_field"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:boxBackgroundColor="#1AFFFFFF"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxStrokeColor="@color/white"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeWidthFocused="2dp"
+                    app:hintEnabled="false"
+                    app:suffixText="@string/goal_liters_unit"
+                    app:suffixTextColor="@color/white">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/goal_amount_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="56dp"
+                        android:background="@null"
+                        android:hint="@string/goal_amount_example"
+                        android:inputType="numberDecimal"
+                        android:imeOptions="actionDone"
+                        android:maxLines="1"
+                        android:padding="14dp"
+                        android:saveEnabled="false"
+                        android:textColor="@color/white"
+                        android:textColorHint="#D9FFFFFF"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+            <TextView
+                android:id="@+id/goal_limit_hint"
+                style="@style/Home.Body"
+                android:layout_marginTop="12dp"
+                android:maxLines="1"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeMaxTextSize="14sp"
+                android:autoSizeStepGranularity="1sp"
+                android:text="@string/goal_limit_hint" />
+        </LinearLayout>
+        <com.aula.delta_mobile_app.view.StatusNoticeView
+            android:id="@+id/goal_notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/goal_save"
+            style="@style/Goal.PrimaryAction"
+            android:layout_width="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="24dp"
+            android:text="@string/goal_save" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/goal_retry"
+            style="@style/Profile.Action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/profile_retry" />
+    </LinearLayout>
+</ScrollView>

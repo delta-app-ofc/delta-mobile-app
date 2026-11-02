@@ -2,6 +2,8 @@
 
 Referência: [dash.png](../../docs/references/dash.png). Tela independente de Custos, acessada pelo ícone do cifrão. A Home original continua no ícone de casa e como destino inicial; preserva autenticação, seleção de imóvel, consumo, custo e os cinco destinos do menu.
 
+Atualização solicitada: custo previsto ampliado para altura mínima de 144 dp, padding de 16 dp e valor em 28 sp, com altura alinhada ao card da meta. Perfil e custo usam a fila de leitura com duas tarefas em paralelo, separada do monitoramento. O consumo inicial é enfileirado antes do monitoramento; atualizações periódicas preservam o conteúdo e não refazem consultas com dados idênticos. O custo confirmado/em andamento é reutilizado enquanto residência, litros e data não mudarem; erros respeitam Retry-After. O perfil do Dashboard é reutilizado durante a vida do ViewModel, com nova tentativa explícita preservada. Fontes: `fragment_dashboard.xml`, `DashboardFragment`, `HomeViewModel`, `HomeRepository`, `AuthRepository`. Compilação isolada e 12 testes de totais/prontidão passaram; não houve medição de latência nem validação visual no aparelho nesta alteração.
+
 ## Estrutura e aparência
 - [x] Fundo #222222, rolagem, margens laterais de 25 dp e espaço final para o menu flutuante.
 - [x] Cabeçalho com residência, nome real do imóvel, notificações e configurações.

@@ -27,6 +27,8 @@ public class WaterViewModel extends AndroidViewModel {
     private final AuthRepository auth;
     private final Handler main = new Handler(Looper.getMainLooper());
     private int epoch, selection;
+    private boolean refreshing;
+    private java.time.LocalDate consumptionDate;
 
     public WaterViewModel(Application application) {
         super(application);
@@ -58,11 +60,30 @@ public class WaterViewModel extends AndroidViewModel {
 
     public void select(Integer id) {
         propertyId = id;
+        refreshing = false;
+        loadConsumption(id, false);
+    }
+
+    public void refreshConsumption() {
+        if (propertyId == null || consumption.getValue().busy() || refreshing || System.currentTimeMillis() < consumption.getValue().retryAt) return;
+        refreshing = true;
+        loadConsumption(propertyId, true);
+    }
+
+    private void loadConsumption(Integer id, boolean silent) {
         int request = ++selection, attempt = epoch;
-        consumption.setValue(ScreenState.loading());
+        long generation = auth.sessionGeneration();
+        if (!silent) consumption.setValue(ScreenState.loading());
         auth.resource(() -> result(auth.api().consumptionDaily(id).execute()), value -> main.post(() -> {
-            if (attempt == epoch && request == selection)
+            if (attempt == epoch && request == selection && generation == auth.sessionGeneration()) {
+                refreshing = false;
+                ScreenState<List<ConsumptionDailyResponse>> current = consumption.getValue();
+                java.time.LocalDate today = java.time.LocalDate.now();
+                if (silent && value.status == ScreenState.Status.SUCCESS && current.status == ScreenState.Status.SUCCESS && today.equals(consumptionDate)
+                    && com.aula.delta_mobile_app.services.network.GsonProvider.getInstance().toJson(current.data).equals(com.aula.delta_mobile_app.services.network.GsonProvider.getInstance().toJson(value.data))) return;
+                if (value.status == ScreenState.Status.SUCCESS) consumptionDate = today;
                 consumption.setValue(value);
+            }
         }));
     }
 
@@ -153,6 +174,8 @@ public class WaterViewModel extends AndroidViewModel {
     }
 
     public void reset() {
+        refreshing = false;
+        consumptionDate = null;
         epoch++;
         selection++;
         propertyId = null;

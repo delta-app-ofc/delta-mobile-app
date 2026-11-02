@@ -24,7 +24,8 @@ public final class PersonalInformationFragment extends AuthFlowFragment implemen
     private ProfileSettingsViewModel model;
     private ProfileFormField name, email, phone, birthDate;
     private StatusNoticeView notice;
-    private View edit, save, cancel, retry;
+    private android.widget.ImageView edit;
+    private View save;
     private boolean rendering;
 
     public PersonalInformationFragment() { super(R.layout.fragment_personal_information); }
@@ -33,12 +34,15 @@ public final class PersonalInformationFragment extends AuthFlowFragment implemen
     public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         super.onViewCreated(view, state);
         setScreenColor(R.color.profile_background);
+        showLoading(true);
         model = new ViewModelProvider(requireActivity()).get(ProfileSettingsViewModel.class);
         LinearLayout body = view.findViewById(R.id.profile_content);
         name = new ProfileFormField(requireContext(), R.string.profile_name, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         email = new ProfileFormField(requireContext(), R.string.profile_email, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
         phone = new ProfileFormField(requireContext(), R.string.profile_phone, InputType.TYPE_CLASS_PHONE);
         birthDate = new ProfileFormField(requireContext(), R.string.profile_birth_date, InputType.TYPE_CLASS_DATETIME | InputType.TYPE_DATETIME_VARIATION_DATE);
+        for (ProfileFormField field : new ProfileFormField[] { name, email, phone, birthDate }) field.useOutlinedBox();
+        for (ProfileFormField field : new ProfileFormField[] { name, email, phone }) field.setEditableHighlightEnabled(true);
         body.addView(name);
         body.addView(email);
         body.addView(phone);
@@ -51,12 +55,18 @@ public final class PersonalInformationFragment extends AuthFlowFragment implemen
             email.setError(model.personalDraft.error("email"));
             phone.setError(model.personalDraft.error("phone"));
             birthDate.setError(model.personalDraft.error("birthDate"));
-            if (model.personalDraft.validation() == null) model.saveProfile();
+            if (model.personalDraft.validation() == null) {
+                androidx.core.view.WindowCompat.getInsetsController(requireActivity().getWindow(), view).hide(androidx.core.view.WindowInsetsCompat.Type.ime());
+                View focused = view.findFocus();
+                if (focused != null) focused.clearFocus();
+                model.saveProfile();
+            }
         });
-        cancel = action(body, R.string.profile_cancel, () -> model.cancelProfile());
-        retry = action(body, R.string.profile_retry, () -> model.loadProfile(true));
         edit = view.findViewById(R.id.profile_edit);
-        edit.setOnClickListener(v -> model.editProfile());
+        edit.setOnClickListener(v -> {
+            if (model.personalDraft == null) model.editProfile();
+            else model.cancelProfile();
+        });
         view.findViewById(R.id.profile_back).setOnClickListener(v -> leaveProfile(this::back));
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
             @Override public void handleOnBackPressed() { leaveProfile(PersonalInformationFragment.this::back); }
@@ -68,12 +78,11 @@ public final class PersonalInformationFragment extends AuthFlowFragment implemen
                 model.personalDraft.name = name.value();
                 model.personalDraft.email = email.value();
                 model.personalDraft.phone = phone.value();
-                model.personalDraft.birthDate = birthDate.value();
                 for (ProfileFormField field : new ProfileFormField[] { name, email, phone, birthDate }) field.setError(null);
             }
             @Override public void afterTextChanged(Editable s) {}
         };
-        for (ProfileFormField field : new ProfileFormField[] { name, email, phone, birthDate }) field.input.addTextChangedListener(watcher);
+        for (ProfileFormField field : new ProfileFormField[] { name, email, phone }) field.input.addTextChangedListener(watcher);
         model.profile.observe(getViewLifecycleOwner(), value -> render());
         model.savingProfile.observe(getViewLifecycleOwner(), value -> render());
         model.loadProfile(true);
@@ -85,23 +94,25 @@ public final class PersonalInformationFragment extends AuthFlowFragment implemen
         ScreenState<Profile> loaded = model.profile.getValue();
         ScreenState<Boolean> mutation = model.savingProfile.getValue();
         boolean ready = loaded.status == ScreenState.Status.SUCCESS;
+        showLoading(loaded.status == ScreenState.Status.IDLE || loaded.busy() || mutation.busy());
         boolean editing = model.personalDraft != null;
         if (!editing) for (ProfileFormField field : new ProfileFormField[] { name, email, phone, birthDate }) field.setError(null);
         PersonalDraft values = editing ? model.personalDraft : ready ? new PersonalDraft(loaded.data) : null;
         name.value(values == null ? "" : values.name);
         email.value(values == null ? "" : values.email);
         phone.value(values == null ? "" : values.phone);
-        birthDate.value(values == null ? "" : values.birthDate);
-        for (ProfileFormField field : new ProfileFormField[] { name, email, phone, birthDate }) field.editable(editing && !mutation.busy());
-        edit.setEnabled(ready && !editing && !mutation.busy());
+        birthDate.value(formatBirthDate(values == null ? null : values.birthDate));
+        for (ProfileFormField field : new ProfileFormField[] { name, email, phone, birthDate }) {
+            field.setVisibility(ready ? View.VISIBLE : View.GONE);
+            field.editable(field != birthDate && editing && !mutation.busy());
+        }
+        edit.setEnabled(ready && !mutation.busy());
+        edit.setImageResource(editing ? R.drawable.profile_edit_cancel : R.drawable.profile_edit);
+        edit.setContentDescription(getString(editing ? R.string.profile_cancel_edit : R.string.profile_edit_personal));
         save.setVisibility(editing ? View.VISIBLE : View.GONE);
-        cancel.setVisibility(editing ? View.VISIBLE : View.GONE);
         save.setEnabled(!mutation.busy());
-        cancel.setEnabled(!mutation.busy());
-        retry.setVisibility(loaded.status == ScreenState.Status.ERROR || (!editing && ready) ? View.VISIBLE : View.GONE);
         notice.setText(loaded.busy() ? getString(R.string.profile_loading) : loaded.status == ScreenState.Status.ERROR ? loaded.message
-            : mutation.busy() ? getString(R.string.profile_personal_saving) : mutation.status == ScreenState.Status.ERROR ? mutation.message
-            : mutation.status == ScreenState.Status.SUCCESS ? getString(R.string.profile_personal_saved) : "");
+            : mutation.busy() ? getString(R.string.profile_personal_saving) : mutation.status == ScreenState.Status.ERROR ? mutation.message : "");
         rendering = false;
     }
 
@@ -109,9 +120,21 @@ public final class PersonalInformationFragment extends AuthFlowFragment implemen
         MaterialButton button = new MaterialButton(requireContext());
         button.setText(label);
         button.setAllCaps(false);
+        button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF2F60D3));
+        button.setTextColor(0xFFFFFFFF);
+        button.setCornerRadius(Math.round(24 * getResources().getDisplayMetrics().density));
         button.setOnClickListener(v -> action.run());
-        parent.addView(button, new LinearLayout.LayoutParams(-2, -2));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, -2);
+        params.gravity = android.view.Gravity.END;
+        params.topMargin = Math.round(16 * getResources().getDisplayMetrics().density);
+        parent.addView(button, params);
         return button;
+    }
+
+    private String formatBirthDate(String value) {
+        if (value == null || value.trim().isEmpty()) return getString(R.string.profile_missing);
+        try { return java.time.LocalDate.parse(value).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/uuuu")); }
+        catch (java.time.format.DateTimeParseException failure) { return getString(R.string.profile_missing); }
     }
 
     @Override
@@ -126,7 +149,8 @@ public final class PersonalInformationFragment extends AuthFlowFragment implemen
     public void onDestroyView() {
         name = email = phone = birthDate = null;
         notice = null;
-        edit = save = cancel = retry = null;
+        edit = null;
+        save = null;
         super.onDestroyView();
     }
 }

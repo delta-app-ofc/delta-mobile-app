@@ -13,7 +13,6 @@ import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.ApiModels.UserPropertyResponse;
 import com.aula.delta_mobile_app.model.HomeDashboard;
 import com.aula.delta_mobile_app.model.ScreenState;
-import com.aula.delta_mobile_app.view.HomeEfficiencyView;
 import com.aula.delta_mobile_app.view.HomeTemperatureChart;
 import com.aula.delta_mobile_app.view.activities.main.MainActivity;
 import com.aula.delta_mobile_app.viewmodel.*;
@@ -27,6 +26,17 @@ import java.util.*;
 public class HomeFragment extends AuthFlowFragment {
     private boolean loadingCheckPosted;
     private Integer selectedProperty;
+    private HomeViewModel homeModel;
+    private ProfileSettingsViewModel profileModel;
+    private WaterViewModel waterModel;
+    private final android.os.Handler refreshHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable refreshConsumption = new Runnable() {
+        @Override public void run() {
+            if (!isResumed() || waterModel == null) return;
+            waterModel.refreshConsumption();
+            refreshHandler.postDelayed(this, 60000);
+        }
+    };
 
     public HomeFragment() {
         super(R.layout.fragment_home);
@@ -37,14 +47,29 @@ public class HomeFragment extends AuthFlowFragment {
         super.onViewCreated(view, state);
         setScreenColor(R.color.home_background);
         WaterViewModel water = new ViewModelProvider(requireActivity()).get(WaterViewModel.class);
+        waterModel = water;
         HomeViewModel home = new ViewModelProvider(this).get(HomeViewModel.class);
-        view.setVisibility(View.INVISIBLE);
+        homeModel = home;
+        profileModel = new ViewModelProvider(requireActivity()).get(ProfileSettingsViewModel.class);
+        android.widget.ImageView avatar = view.findViewById(R.id.home_avatar);
+        profileModel.photo.observe(getViewLifecycleOwner(), value -> {
+            if (value.status == ScreenState.Status.SUCCESS) {
+                avatar.setPadding(0, 0, 0, 0);
+                avatar.setImageURI(android.net.Uri.fromFile(value.data));
+            } else if (value.status == ScreenState.Status.IDLE) {
+                int padding = Math.round(9 * getResources().getDisplayMetrics().density);
+                avatar.setPadding(padding, padding, padding, padding);
+                avatar.setImageResource(R.drawable.home_icon_person);
+            }
+        });
+        home.user.observe(getViewLifecycleOwner(), value -> {
+            if (value.status == ScreenState.Status.SUCCESS) profileModel.loadPhoto(value.data, true);
+        });
         setHomeLoading(true);
         selectedProperty = null;
         TextView apiStatus = view.findViewById(R.id.home_api_status);
         apiStatus.setText("");
 
-        ((HomeEfficiencyView) view.findViewById(R.id.home_efficiency_gauge)).setScore(null, null);
         ((HomeTemperatureChart) view.findViewById(R.id.home_chart)).setPoints(Collections.emptyList());
         water.properties.observe(getViewLifecycleOwner(), value -> {
             apiStatus.setText("");
@@ -89,19 +114,18 @@ public class HomeFragment extends AuthFlowFragment {
         home.name().observe(getViewLifecycleOwner(), name -> ((TextView) view.findViewById(R.id.home_greeting)).setText(name == null || name.trim().isEmpty()
             ? getString(R.string.home_greeting_default) : getString(R.string.home_greeting, name.trim().split("\\s+")[0])));
         apiStatus.setOnClickListener(v -> {
-            view.setVisibility(View.INVISIBLE);
-            setHomeLoading(true);
+                setHomeLoading(true);
             home.loadProfile();
             if (water.properties.getValue().status != ScreenState.Status.SUCCESS || selectedProperty == null) water.loadProperties();
             else water.select(selectedProperty);
         });
         view.findViewById(R.id.home_goal).setOnClickListener(v -> navigate(R.id.monthlyGoalsFragment));
-        view.findViewById(R.id.home_goal_suggestion).setOnClickListener(v -> new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.home_suggestion)
-            .setMessage(R.string.home_suggestion_unavailable).setPositiveButton(android.R.string.ok, null).show());
         view.findViewById(R.id.home_notifications).setOnClickListener(v -> Toast.makeText(requireContext(), R.string.home_notifications_empty, Toast.LENGTH_SHORT).show());
         view.findViewById(R.id.home_settings).setOnClickListener(v -> navigate(R.id.profileSettingsFragment));
+        view.findViewById(R.id.home_avatar_action).setOnClickListener(v -> navigate(R.id.profileSettingsFragment));
         if (water.properties.getValue().status == ScreenState.Status.IDLE) water.loadProperties();
         home.loadProfile();
+        com.aula.delta_mobile_app.view.MonthlyGoalCard.bind(this, view, home, water);
 
         Observer<Object> readiness = ignored -> {
             if (loadingCheckPosted) return;
@@ -113,7 +137,6 @@ public class HomeFragment extends AuthFlowFragment {
                 boolean needsCost = water.consumption.getValue().status == ScreenState.Status.SUCCESS && summary != null && summary.monthLiters != null;
                 boolean ready = HomeLoadState.ready(home.user.getValue(), water.properties.getValue(), selectedProperty != null, water.consumption.getValue(),
                     home.cost.getValue(), needsCost);
-                view.setVisibility(ready ? View.VISIBLE : View.INVISIBLE);
                 setHomeLoading(!ready);
             });
         };
@@ -144,23 +167,38 @@ public class HomeFragment extends AuthFlowFragment {
             dialog.dismiss();
             Integer id = links.get(item).propertyId;
             if (Objects.equals(id, selectedProperty)) return;
-            view.setVisibility(View.INVISIBLE);
-            setHomeLoading(true);
+                setHomeLoading(true);
             selectedProperty = id;
             home.selectProperty(id);
             water.select(id);
         }).setNegativeButton(android.R.string.cancel, null).show();
     }
 
-    private void setHomeLoading(boolean loading) {
-        if (getActivity() instanceof MainActivity)
-            ((MainActivity) requireActivity()).setHomeLoading(loading);
+    private void setHomeLoading(boolean loading) { showLoading(loading); }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshHandler.removeCallbacks(refreshConsumption);
+        refreshConsumption.run();
+        if (homeModel != null && profileModel != null && homeModel.user.getValue().status == ScreenState.Status.SUCCESS)
+            profileModel.loadPhoto(homeModel.user.getValue().data, true);
+    }
+
+    @Override
+    public void onPause() {
+        refreshHandler.removeCallbacks(refreshConsumption);
+        super.onPause();
     }
 
     @Override
     public void onDestroyView() {
         setHomeLoading(false);
         loadingCheckPosted = false;
+        homeModel = null;
+        profileModel = null;
+        waterModel = null;
+        refreshHandler.removeCallbacks(refreshConsumption);
         super.onDestroyView();
     }
 

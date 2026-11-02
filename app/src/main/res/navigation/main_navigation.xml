@@ -78,7 +78,7 @@
     </fragment>
     <fragment
         android:id="@+id/monthlyGoalsFragment"
-        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.MonthlyGoalsFragment"
         android:label="Metas">
         <argument
             android:name="title"
@@ -88,6 +88,19 @@
             android:name="screen"
             app:argType="string"
             android:defaultValue="goals" />
+    </fragment>
+    <fragment
+        android:id="@+id/rankingFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:label="@string/ranking_title">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Ranking das minhas unidades" />
+        <argument
+            android:name="screen"
+            app:argType="string"
+            android:defaultValue="ranking" />
     </fragment>
     <fragment
         android:id="@+id/leakDetectionFragment"
@@ -139,4 +152,12 @@
         android:id="@+id/residentialInformationFragment"
         android:name="com.aula.delta_mobile_app.view.fragments.ResidentialInformationFragment"
         android:label="@string/profile_residential_title" />
+    <fragment
+        android:id="@+id/unitsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.UnitsFragment"
+        android:label="@string/profile_units" />
+    <fragment
+        android:id="@+id/newUnitFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.NewUnitFragment"
+        android:label="@string/units_new" />
 </navigation>

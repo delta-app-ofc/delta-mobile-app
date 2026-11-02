@@ -63,8 +63,8 @@ public class LoginFragment extends AuthFlowFragment {
             if (leavingLogin) return;
             if (value.status == ScreenState.Status.SUCCESS) {
                 leavingLogin = true;
-                view.setVisibility(View.INVISIBLE);
                 showLoading(true);
+                view.setVisibility(View.INVISIBLE);
                 boolean completed = Boolean.TRUE.equals(value.data);
                 model.consume();
                 password.setText("");
@@ -76,8 +76,8 @@ public class LoginFragment extends AuthFlowFragment {
                 }
                 return;
             }
-            view.setVisibility(value.busy() ? View.INVISIBLE : View.VISIBLE);
             showLoading(value.busy());
+            view.setVisibility(value.busy() ? View.INVISIBLE : View.VISIBLE);
             showStatus(status, next, value);
             if (value.busy()) status.setText("");
             user.setEnabled(!value.busy());

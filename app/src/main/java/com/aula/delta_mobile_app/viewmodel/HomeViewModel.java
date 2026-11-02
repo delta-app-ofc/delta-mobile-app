@@ -27,6 +27,8 @@ public class HomeViewModel extends AndroidViewModel {
     private final HomeRepository repository;
     private Integer propertyId;
     private int selection, costRequest;
+    private java.math.BigDecimal costLiters;
+    private LocalDate costDate;
 
     public HomeViewModel(Application app) {
         super(app);
@@ -46,12 +48,16 @@ public class HomeViewModel extends AndroidViewModel {
         propertyId = id;
         selection++;
         costRequest++;
+        costLiters = null;
+        costDate = null;
         cost.setValue(ScreenState.idle());
         dashboard.setValue(HomeDashboard.unavailable());
     }
 
     public void clearReadings() {
         costRequest++;
+        costLiters = null;
+        costDate = null;
         cost.setValue(ScreenState.idle());
         dashboard.setValue(HomeDashboard.unavailable());
     }
@@ -61,32 +67,42 @@ public class HomeViewModel extends AndroidViewModel {
         for (ConsumptionDailyResponse reading : readings)
             if (reading != null && Objects.equals(propertyId, reading.propertyId))
                 selected.add(reading);
-        HomeDashboard summary = HomeDashboard.from(selected, LocalDate.now());
+        LocalDate today = LocalDate.now();
+        HomeDashboard summary = HomeDashboard.from(selected, today);
         dashboard.setValue(summary);
+        ScreenState<WaterCostResponse> currentCost = cost.getValue();
+        if (costLiters != null && summary.monthLiters != null && costLiters.compareTo(summary.monthLiters) == 0 && today.equals(costDate)
+            && (currentCost.busy() || currentCost.status == ScreenState.Status.SUCCESS || System.currentTimeMillis() < currentCost.retryAt)) return;
         costRequest++;
         if (propertyId == null || summary.monthLiters == null) {
             cost.setValue(ScreenState.idle());
             return;
         }
+        costLiters = summary.monthLiters;
+        costDate = today;
         if (summary.monthLiters.signum() == 0) {
             WaterCostResponse zero = new WaterCostResponse();
             zero.propertyId = propertyId;
             zero.consumptionM3 = java.math.BigDecimal.ZERO;
             zero.estimatedCost = java.math.BigDecimal.ZERO;
-            zero.referenceDate = LocalDate.now().toString();
+            zero.referenceDate = today.toString();
             cost.setValue(ScreenState.success(zero));
             return;
         }
         int attempt = selection, request = costRequest;
         cost.setValue(ScreenState.loading());
-        repository.waterCost(propertyId, summary.monthLiters, LocalDate.now().toString(), value -> main.post(() -> {
+        repository.waterCost(propertyId, summary.monthLiters, today.toString(), value -> main.post(() -> {
             if (attempt == selection && request == costRequest)
                 cost.setValue(value);
         }));
     }
 
     public void loadProfile() {
-        if (user.getValue().busy()) return;
+        loadProfile(true);
+    }
+
+    public void loadProfile(boolean force) {
+        if (user.getValue().busy() || (!force && user.getValue().status == ScreenState.Status.SUCCESS)) return;
         user.setValue(ScreenState.loading());
         repository.me(value -> main.post(() -> {
             user.setValue(value);

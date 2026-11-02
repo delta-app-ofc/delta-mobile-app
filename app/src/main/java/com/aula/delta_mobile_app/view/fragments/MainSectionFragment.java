@@ -34,10 +34,20 @@ public class MainSectionFragment extends AuthFlowFragment {
     }
 
     @Override
+    public View onCreateView(@NonNull android.view.LayoutInflater inflater, @Nullable android.view.ViewGroup container, @Nullable Bundle state) {
+        if (getArguments() != null && "ranking".equals(getArguments().getString("screen"))) return inflater.inflate(R.layout.fragment_ranking, container, false);
+        return super.onCreateView(inflater, container, state);
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         super.onViewCreated(view, state);
         setScreenColor(R.color.home_background);
         screen = requireArguments().getString("screen", "consumption");
+        if (screen.equals("ranking")) {
+            setScreenColor(R.color.profile_background);
+            view.findViewById(R.id.profile_back).setOnClickListener(v -> back());
+        }
         cards = view.findViewById(R.id.section_cards);
         status = view.findViewById(R.id.section_status);
         water = new ViewModelProvider(requireActivity()).get(WaterViewModel.class);
@@ -48,13 +58,14 @@ public class MainSectionFragment extends AuthFlowFragment {
         Spinner property = view.findViewById(R.id.section_property);
         View retry = view.findViewById(R.id.section_retry);
         boolean readings = screen.equals("consumption") || screen.equals("costs");
-        property.setVisibility(readings ? View.VISIBLE : View.GONE);
+        if (property != null) property.setVisibility(readings ? View.VISIBLE : View.GONE);
         if (readings) {
             subtitle.setText(screen.equals("costs") ? "Custo previsto e histórico de contas" : "Acompanhe as leituras do seu imóvel");
             water.properties.observe(getViewLifecycleOwner(), value -> {
+                updateLoading();
                 property.setEnabled(value.status == ScreenState.Status.SUCCESS && !value.data.isEmpty());
                 if (value.status != ScreenState.Status.SUCCESS) {
-                    show(value.displayMessage());
+                    show(value.message);
                     return;
                 }
                 if (value.data.isEmpty()) {
@@ -90,11 +101,13 @@ public class MainSectionFragment extends AuthFlowFragment {
                 });
             });
             if (water.propertyId != null) home.selectProperty(water.propertyId);
-            water.consumption.observe(getViewLifecycleOwner(), this::renderReadings);
+            water.consumption.observe(getViewLifecycleOwner(), value -> { renderReadings(value); updateLoading(); });
             home.cost.observe(getViewLifecycleOwner(), value -> {
+                updateLoading();
                 if (screen.equals("costs")) renderCosts();
             });
             sections.bills.observe(getViewLifecycleOwner(), value -> {
+                updateLoading();
                 if (screen.equals("costs")) renderCosts();
             });
             retry.setOnClickListener(v -> {
@@ -106,20 +119,16 @@ public class MainSectionFragment extends AuthFlowFragment {
                 water.loadProperties();
             if (screen.equals("costs")) sections.loadBills();
         } else if (screen.equals("ranking")) {
-            subtitle.setText("Compare a eficiência das suas unidades");
+            subtitle.setText(R.string.ranking_subtitle);
             sections.rankings.observe(getViewLifecycleOwner(), value -> {
+                updateLoading();
                 cards.removeAllViews();
-                show(value.displayMessage());
+                show(value.message);
                 if (value.status != ScreenState.Status.SUCCESS) return;
-                if (value.data.isEmpty())
-                    card("Ainda não há dados de ranking para suas unidades.", false);
-                for (PropertyRankingResponse row : value.data)
-                    card((row.rankEfficiency == null ? "—" : row.rankEfficiency + "º") + " · " + (row.propertyName == null ? "Imóvel " + row.propertyId : row.propertyName)
-                    + "\nConsumo total: " + number(row.totalLiters) + " L\nCusto total: " + money(row.totalCost) + "\nConsumo por área: " + number(row.litersPerM2) + " L/m²",
-                    false);
+                if (value.data.isEmpty()) show(getString(R.string.ranking_empty));
+                for (PropertyRankingResponse row : value.data) rankingCard(row);
             });
-            retry.setOnClickListener(v -> sections.loadRankings());
-            sections.loadRankings();
+            if (sections.rankings.getValue().status == ScreenState.Status.IDLE || sections.rankings.getValue().status == ScreenState.Status.ERROR) sections.loadRankings();
         } else {
             retry.setVisibility(View.GONE);
             subtitle.setText(screen.equals("chat") ? "Monitore cada gota com mais precisão." : "Planeje seu consumo de água");
@@ -127,6 +136,22 @@ public class MainSectionFragment extends AuthFlowFragment {
                 : "As metas mensais ainda não estão disponíveis para esta conta.", false);
             action("Organizar minha rotina", () -> navigate(R.id.goalsFragment));
         }
+    }
+
+    private void updateLoading() {
+        if (screen.equals("ranking")) {
+            ScreenState<?> ranking = sections.rankings.getValue();
+            showLoading(ranking.status == ScreenState.Status.IDLE || ranking.busy());
+            return;
+        }
+        ScreenState<List<UserPropertyResponse>> properties = water.properties.getValue();
+        boolean loading = properties.status == ScreenState.Status.IDLE || properties.busy();
+        if (properties.status == ScreenState.Status.SUCCESS && !properties.data.isEmpty()) {
+            ScreenState<?> consumption = water.consumption.getValue();
+            loading |= consumption.status == ScreenState.Status.IDLE || consumption.busy() || home.cost.getValue().busy();
+        }
+        if (screen.equals("costs")) loading |= sections.bills.getValue().status == ScreenState.Status.IDLE || sections.bills.getValue().busy();
+        showLoading(loading);
     }
 
     private void renderReadings(ScreenState<List<ConsumptionDailyResponse>> value) {
@@ -137,7 +162,7 @@ public class MainSectionFragment extends AuthFlowFragment {
             return;
         }
         cards.removeAllViews();
-        show(value.displayMessage());
+        show(value.message);
         if (value.status != ScreenState.Status.SUCCESS) {
             leakEntry();
             return;
@@ -183,10 +208,10 @@ public class MainSectionFragment extends AuthFlowFragment {
         if (cost.status == ScreenState.Status.SUCCESS)
             card("Referência: " + date(cost.data.referenceDate) + "\nConsumo tarifado: " + number(cost.data.consumptionM3) + " m³\nTarifa: " + money(cost.data.ratePerM3) + "/m³",
             false);
-        if (!cost.displayMessage().isEmpty()) messages.add(cost.displayMessage());
+        if (!cost.message.isEmpty()) messages.add(cost.message);
         ScreenState<List<ConsumptionDailyResponse>> readings = water.consumption.getValue();
-        if (readings.status != ScreenState.Status.SUCCESS && !readings.displayMessage().isEmpty())
-            messages.add(readings.displayMessage());
+        if (readings.status != ScreenState.Status.SUCCESS && !readings.message.isEmpty())
+            messages.add(readings.message);
         action("Cadastrar conta de água", () -> navigate(R.id.accountConfigFragment));
         action("Comparar minhas unidades", () -> navigate(R.id.rankingFragment));
         card("Histórico de contas da sua conta", false);
@@ -195,8 +220,19 @@ public class MainSectionFragment extends AuthFlowFragment {
             if (bills.data.isEmpty()) card("Nenhuma conta cadastrada.", false);
             for (LastWaterBillResponse row : bills.data)
                 card(date(row.month) + "\n" + money(row.totalValue) + " · " + number(row.m3Value) + " m³", false);
-        } else if (!bills.displayMessage().isEmpty()) messages.add(bills.displayMessage());
+        } else if (!bills.message.isEmpty()) messages.add(bills.message);
         show(String.join("\n", messages));
+    }
+
+    private void rankingCard(PropertyRankingResponse row) {
+        View card = getLayoutInflater().inflate(R.layout.item_ranking_card, cards, false);
+        ((TextView) card.findViewById(R.id.ranking_name)).setText(row.propertyName == null || row.propertyName.trim().isEmpty() ? getString(R.string.ranking_property, row.propertyId) : row.propertyName);
+        ((TextView) card.findViewById(R.id.ranking_efficiency)).setText(row.rankEfficiency == null ? getString(R.string.home_pending_metric) : getString(R.string.ranking_position, row.rankEfficiency));
+        ((TextView) card.findViewById(R.id.ranking_cost)).setText(row.rankCost == null ? getString(R.string.home_pending_metric) : getString(R.string.ranking_position, row.rankCost));
+        ((TextView) card.findViewById(R.id.ranking_volume)).setText(row.totalLiters == null ? getString(R.string.home_pending_metric) : getString(R.string.home_liters, number(row.totalLiters)));
+        ((TextView) card.findViewById(R.id.ranking_total_cost)).setText(money(row.totalCost));
+        ((TextView) card.findViewById(R.id.ranking_area)).setText(row.litersPerM2 == null ? getString(R.string.home_pending_metric) : getString(R.string.ranking_liters_area, number(row.litersPerM2)));
+        cards.addView(card);
     }
 
     private TextView card(String text, boolean blue) {

@@ -120,4 +120,6 @@
     <string name="auth_home_title">Bem-vindo ao Delta</string>
     <string name="auth_home_meter">Configurar hidrômetro</string>
     <string name="auth_logout">Sair da conta</string>
+    <string name="auth_show_password">Mostrar senha</string>
+    <string name="auth_hide_password">Ocultar senha</string>
 </resources>

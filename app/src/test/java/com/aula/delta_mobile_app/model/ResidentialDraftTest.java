@@ -8,6 +8,21 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ResidentialDraftTest {
+    @Test
+    public void nameChangesAreDetectedWithoutChangingConfirmedProperty() {
+        com.aula.delta_mobile_app.model.ApiModels.PropertyResponse property = new com.aula.delta_mobile_app.model.ApiModels.PropertyResponse();
+        property.name = "Casa";
+        ProfileSettingsData original = new ProfileSettingsData(property, address());
+        ResidentialDraft draft = new ResidentialDraft(original);
+        assertFalse(draft.changed(original));
+        draft.name = "Apartamento";
+        assertTrue(draft.changed(original));
+        assertEquals("Casa", property.name);
+        assertNull(draft.validation());
+        draft.name = " ";
+        assertNotNull(draft.validation());
+    }
+
     private AddressResponse address() {
         AddressResponse value = new AddressResponse();
         value.id = 10;
