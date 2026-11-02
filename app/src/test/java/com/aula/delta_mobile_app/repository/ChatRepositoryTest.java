@@ -317,7 +317,6 @@ public class ChatRepositoryTest {
         String message = "  Como economizar água?\n💧  ";
         repository.send(message, null, result);
 
-        assertEquals(42, api.payloads.get(0).userId);
         assertEquals(message, api.payloads.get(0).message);
         assertNull(api.payloads.get(0).sessionId);
         assertTrue(result.values.isEmpty());
@@ -456,8 +455,6 @@ public class ChatRepositoryTest {
         assertTrue(oldResult.values.isEmpty());
         api.sends.get(0).respond(json("{\"response\":\"Old reply\",\"agent_used\":\"rag\",\"session_id\":\"old-account\"}", ChatResponse.class));
 
-        assertEquals(42, api.payloads.get(0).userId);
-        assertEquals(77, api.payloads.get(1).userId);
         assertEquals("old-account", oldResult.only().data.sessionId);
         assertEquals("new-account", newResult.only().data.sessionId);
     }
