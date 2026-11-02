@@ -70,7 +70,7 @@ public final class AbnormalConsumptionChart extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         float d = getResources().getDisplayMetrics().density;
-        float left = 8 * d, right = getWidth() - 8 * d, top = 12 * d, bottom = getHeight() - 26 * d;
+        float left = 8 * d, right = getWidth() - 8 * d, top = 12 * d + 12 * getResources().getDisplayMetrics().scaledDensity, bottom = getHeight() - 26 * d;
         if (right <= left || bottom <= top) return;
         paint.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
         paint.setTextSize(11 * getResources().getDisplayMetrics().scaledDensity);
@@ -113,6 +113,7 @@ public final class AbnormalConsumptionChart extends View {
                 paint.setColor(0xFFE9ECF3);
                 paint.setTextAlign(Paint.Align.CENTER);
                 canvas.drawText(values.get(i).label, left + slot * (i + .5f), bottom + 20 * d, paint);
+                drawValue(canvas, values.get(i).liters, left + slot * (i + .5f), y - 6 * d, slot * .9f, Paint.Align.CENTER);
             }
         } else {
             if (baseline != null) {
@@ -143,9 +144,10 @@ public final class AbnormalConsumptionChart extends View {
                 paint.setStyle(Paint.Style.FILL);
                 paint.setColor(anomaly == null ? 0xFF719CEC : 0xFFE43F56);
                 canvas.drawCircle(x, y, 2 * d, paint);
+                drawValue(canvas, value, x, y - 7 * d, (right - left) / (i == 0 || i == 6 ? 12 : 7), i == 0 ? Paint.Align.LEFT : i == 6 ? Paint.Align.RIGHT : Paint.Align.CENTER);
                 if (day.equals(anomaly)) {
                     paint.setTextAlign(Paint.Align.CENTER);
-                    canvas.drawText("anomalia →", Math.max(left + 38 * d, Math.min(right - 38 * d, x)), Math.max(top + 12 * d, y - 10 * d), paint);
+                    canvas.drawText("anomalia →", Math.max(left + 38 * d, Math.min(right - 38 * d, x)), Math.min(bottom - 4 * d, y + 18 * d), paint);
                 }
             }
             paint.setStyle(Paint.Style.STROKE);
@@ -159,6 +161,20 @@ public final class AbnormalConsumptionChart extends View {
                 canvas.drawText(data.reference.minusDays(6 - i * 3).format(DateTimeFormatter.ofPattern("dd/MM")), left + (right - left) * i / 2, bottom + 20 * d, paint);
             }
         }
+    }
+
+    private void drawValue(Canvas canvas, BigDecimal value, float x, float y, float width, Paint.Align align) {
+        float size = paint.getTextSize();
+        int color = paint.getColor();
+        paint.setColor(0xFFE9ECF3);
+        paint.setTextAlign(align);
+        paint.setTextSize(10 * getResources().getDisplayMetrics().scaledDensity);
+        String label = number(value);
+        float measured = paint.measureText(label);
+        if (measured > width && measured > 0) paint.setTextSize(paint.getTextSize() * width / measured);
+        canvas.drawText(label, x, Math.max(-paint.ascent(), y), paint);
+        paint.setTextSize(size);
+        paint.setColor(color);
     }
 
     private String number(BigDecimal value) {

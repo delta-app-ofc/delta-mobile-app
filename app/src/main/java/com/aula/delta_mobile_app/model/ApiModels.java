@@ -212,18 +212,6 @@ public final class ApiModels {
         public String referenceDate;
     }
 
-    public static class PropertyRankingResponse {
-        public Integer propertyId;
-        public String propertyName;
-        public BigDecimal totalLiters;
-        public BigDecimal totalCost;
-        public BigDecimal litersPerM2;
-        public Long rankEfficiency;
-        public Long rankCost;
-        public Long consumptionQuartile;
-        public Double consumptionPercentRank;
-    }
-
     public static class MonthlyVariationResponse {
         public Integer propertyId;
         public String propertyName;

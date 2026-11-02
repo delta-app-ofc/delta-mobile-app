@@ -4,6 +4,8 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.LinearGradient;
+import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -13,20 +15,20 @@ public class FloatingMenuBackground extends View {
 
     public FloatingMenuBackground(Context context, AttributeSet attrs) {
         super(context, attrs);
-        paint.setColor(0xB3363636);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         float d = getResources().getDisplayMetrics().density;
-        float top = 30 * d, radius = 24 * d, center = w / 2f;
+        float top = 36 * d, radius = 28 * d, center = w / 2f;
+        paint.setShader(new LinearGradient(0, top, w, h, 0xFF252C36, 0xFF303333, Shader.TileMode.CLAMP));
         float shoulder = Math.min(68 * d, w * .22f);
         path.reset();
         path.moveTo(radius, top);
         path.lineTo(center - shoulder, top);
-        path.cubicTo(center - shoulder * .65f, top, center - shoulder * .45f, top + 18 * d, center, top + 18 * d);
-        path.cubicTo(center + shoulder * .45f, top + 18 * d, center + shoulder * .65f, top, center + shoulder, top);
+        path.cubicTo(center - shoulder * .65f, top, center - shoulder * .45f, top + 20 * d, center, top + 20 * d);
+        path.cubicTo(center + shoulder * .45f, top + 20 * d, center + shoulder * .65f, top, center + shoulder, top);
         path.lineTo(w - radius, top);
         path.quadTo(w, top, w, top + radius);
         path.lineTo(w, h - radius);

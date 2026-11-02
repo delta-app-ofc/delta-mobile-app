@@ -13,7 +13,6 @@ import com.aula.delta_mobile_app.model.LeakMonitoringData;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.view.LeakFlowChart;
 import com.aula.delta_mobile_app.viewmodel.*;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 public final class LeakDetectionFragment extends AuthFlowFragment {
     private LeakMonitoringViewModel monitoring;
@@ -28,6 +27,19 @@ public final class LeakDetectionFragment extends AuthFlowFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle saved) {
         super.onViewCreated(view, saved);
         setScreenColor(R.color.home_background);
+        view.findViewById(R.id.leak_back).setOnClickListener(v -> back());
+        View eventScroll = view.findViewById(R.id.leak_event_scroll);
+        eventScroll.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            LinearLayout cards = view.findViewById(R.id.leak_events);
+            int width = Math.round((right - left) * 0.85f);
+            for (int i = 0; i < cards.getChildCount(); i++) {
+                View card = cards.getChildAt(i);
+                if (width > 0 && card.getLayoutParams().width != width) {
+                    card.getLayoutParams().width = width;
+                    card.requestLayout();
+                }
+            }
+        });
         monitoring = new ViewModelProvider(requireActivity()).get(LeakMonitoringViewModel.class);
         WaterViewModel water = new ViewModelProvider(requireActivity()).get(WaterViewModel.class);
         int argument = getArguments() == null ? 0 : getArguments().getInt("propertyId", 0);
@@ -36,7 +48,6 @@ public final class LeakDetectionFragment extends AuthFlowFragment {
         view.setVisibility(View.INVISIBLE);
         view.findViewById(R.id.leak_action_valve).setOnClickListener(v -> guide(R.string.leak_check_valve, R.string.leak_valve_guide));
         view.findViewById(R.id.leak_action_pipes).setOnClickListener(v -> guide(R.string.leak_check_pipes, R.string.leak_pipes_guide));
-        view.findViewById(R.id.leak_action_alerts).setOnClickListener(v -> guide(R.string.leak_disable_alerts, R.string.leak_alerts_unavailable));
         view.findViewById(R.id.leak_hourly).setOnClickListener(v -> openAnalysis(R.id.leakHourlyFragment));
         view.findViewById(R.id.leak_abnormal).setOnClickListener(v -> openAnalysis(R.id.leakAbnormalFragment));
         monitoring.state().observe(getViewLifecycleOwner(), value -> {
@@ -91,7 +102,8 @@ public final class LeakDetectionFragment extends AuthFlowFragment {
     }
 
     private void addCard(LinearLayout parent, View card) {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(188), -2);
+        int width = ((View) parent.getParent()).getWidth();
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(width > 0 ? Math.round(width * 0.85f) : dp(280), -2);
         params.setMarginEnd(dp(24));
         parent.addView(card, params);
     }
@@ -119,7 +131,7 @@ public final class LeakDetectionFragment extends AuthFlowFragment {
     }
 
     private void guide(int title, int message) {
-        new MaterialAlertDialogBuilder(requireContext()).setTitle(title).setMessage(message).setPositiveButton(android.R.string.ok, null).show();
+        InformationDialogFragment.show(getChildFragmentManager(), getString(title), getString(message));
     }
 
     private int dp(int value) {

@@ -9,7 +9,6 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.SavedStateHandle;
 import com.aula.delta_mobile_app.model.AuthModels.Profile;
-import com.aula.delta_mobile_app.model.ApiModels.DeviceResponse;
 import com.aula.delta_mobile_app.model.ProfileSettingsData;
 import com.aula.delta_mobile_app.model.PersonalDraft;
 import com.aula.delta_mobile_app.model.ResidentialDraft;
@@ -17,7 +16,6 @@ import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.repository.*;
 import java.io.File;
 import java.util.Objects;
-import java.util.List;
 
 public final class ProfileSettingsViewModel extends AndroidViewModel {
     private static final long PHOTO_TIMEOUT_MS = 180_000;
@@ -25,7 +23,6 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
     public final MutableLiveData<ScreenState<ProfileSettingsData>> residence = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<Boolean>> saving = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<Boolean>> savingProfile = new MutableLiveData<>(ScreenState.idle());
-    public final MutableLiveData<ScreenState<List<DeviceResponse>>> sensors = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<File>> photo = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<String> cepMessage = new MutableLiveData<>("");
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -36,11 +33,10 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
     private final SavedStateHandle saved;
     private final Observer<Boolean> sessionObserver;
     private long generation;
-    private int selection, cepRequest, sensorRequest;
+    private int selection, cepRequest;
     private volatile int photoRequest;
     private Runnable photoTimeout;
     private Integer propertyId;
-    private Integer sensorPropertyId;
     private Integer photoUserId;
     private File confirmedPhoto;
     private boolean cleared, cepLoading;
@@ -60,15 +56,6 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
 
     public void loadProfile() {
         loadProfile(false);
-    }
-
-    public void loadSensors(Integer id) {
-        if (Objects.equals(sensorPropertyId, id) && sensors.getValue().busy()) return;
-        sensorPropertyId = id;
-        int request = ++sensorRequest;
-        long expected = generation;
-        sensors.setValue(ScreenState.loading());
-        repository.sensors(id, value -> main.post(() -> { if (valid(expected) && request == sensorRequest) sensors.setValue(value); }));
     }
 
     public void loadProfile(boolean force) {
@@ -301,7 +288,6 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
     private void reset() {
         generation = auth.sessionGeneration();
         selection++;
-        sensorRequest++;
         photoRequest++;
         cancelPhotoTimeout();
         postal.cancel();
@@ -319,7 +305,6 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
         photo.setValue(ScreenState.idle());
         saving.setValue(ScreenState.idle());
         savingProfile.setValue(ScreenState.idle());
-        sensors.setValue(ScreenState.idle());
         cepMessage.setValue("");
     }
 

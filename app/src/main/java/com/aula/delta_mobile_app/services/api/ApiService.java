@@ -161,9 +161,6 @@ public interface ApiService {
     @GET("delta/analytics/consumption-daily/{propertyId}")
     Call<List<ConsumptionDailyResponse>> consumptionDaily(@Path("propertyId") int propertyId);
 
-    @GET("delta/analytics/property-ranking")
-    Call<List<PropertyRankingResponse>> propertyRanking();
-
     @GET("delta/analytics/monthly-variation/{propertyId}")
     Call<List<MonthlyVariationResponse>> monthlyVariation(@Path("propertyId") int propertyId);
 

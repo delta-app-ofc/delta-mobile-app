@@ -12,7 +12,7 @@ Referência: [home.png](../../docs/references/home.png). Os números e o nome da
 - [x] Preservar o nome real do usuário, avatar, alertas e configurações.
 - [x] Manter ícones de alertas e configurações legíveis em botões de 48 dp.
 - [x] Retirar o seletor de imóvel do corpo da Home; preservar a troca de imóvel nas configurações.
-- [x] Retirar ranking, mês de referência do ranking, hábitos, variação mensal, histórico por data e botão de medidor do corpo da Home. O medidor continua nas configurações.
+- [x] Retirar ranking, mês de referência do ranking, hábitos, variação mensal, histórico por data e botão de medidor do corpo da Home. O cadastro do medidor permanece no cadastro inicial e na criação de unidade.
 
 ## Informações gerais
 

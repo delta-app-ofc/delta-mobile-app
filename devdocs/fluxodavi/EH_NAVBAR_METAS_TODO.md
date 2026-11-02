@@ -38,12 +38,12 @@ Diagnóstico inicial: o shell liga os cinco ícones aos destinos e combina back 
 - [ ] Reproduzir cada falha antes de alterar a navegação; registrar tela de origem, ícone tocado, resultado atual e resultado esperado.
 - [ ] Testar os ícones de Vazamentos, Custos, Início, Chat e Rotina a partir das abas e de suas telas internas.
 - [x] Corrigir os casos em que o toque não navega ou a restauração mantém o usuário em uma tela diferente da esperada.
-- [ ] Conferir retorno à Home e troca de aba a partir de Configurações, informações pessoais/residenciais, Ranking e Metas.
+- [ ] Conferir retorno à Home e troca de aba a partir de Configurações, informações pessoais/residenciais e Metas.
 - [x] Diferenciar menu intencionalmente oculto de falha: revisar os fluxos de QR, configuração de conta, teclado e restauração de sessão.
 - [x] Revisar sobreposições de loading, estado selecionado dos ícones e áreas de toque.
 - [x] Preservar os avisos de alterações não salvas e as proteções durante salvamento; não contornar esses controles para fazer o ícone responder.
 - [x] Evitar destinos duplicados com toques repetidos e manter um comportamento coerente do botão Voltar.
-- [x] Manter a navbar sem ícone de ranking; o ranking já possui acessos fora dela.
+- [x] Manter a navbar sem ícone de ranking; a funcionalidade de ranking foi removida do aplicativo.
 
 Critérios de aceite:
 
@@ -107,7 +107,7 @@ Ordem sugerida: remover EH → corrigir navbar → implementar metas → executa
 - Navbar: `MainNavigation.open()` leva ao destino raiz do ícone sem restaurar uma pilha com telas internas; toques no destino atual não acrescentam cópias. O destaque inclui telas internas. O shell rejeita pedidos de loading de uma View que não seja a tela atual. A edição residencial não permite abandonar uma gravação em andamento.
 - Metas: tela dedicada com seleção de imóvel e mês, edição/cancelamento, validação e confirmação de gravação. O repositório confirma identidade e vínculo antes de ler/gravar e rejeita sobrescrita de uma meta alterada desde a abertura. O ViewModel conserva o rascunho durante sua vida e descarta respostas de sessão antiga.
 - Home e Dashboard: leem o mesmo armazenamento para o usuário/imóvel e mês atual; atualizam ao receber o contexto e ao retomar a tela. Não há barra ou percentual fictício de meta.
-- Testes isolados: **26 aprovados**, incluindo `MonthlyGoalTest`, `MonthlyGoalsRepositoryTest`, `SectionDataTest` e regressão `RankingRepositoryTest`, com serviços substituídos. Não houve gravação em API de produção.
+- Testes isolados: **26 aprovados**, incluindo `MonthlyGoalTest`, `MonthlyGoalsRepositoryTest`, `SectionDataTest`, com serviços substituídos. Não houve gravação em API de produção.
 - Compilação suplementar: as 121 fontes Java principais e os novos testes instrumentados compilaram com dependências do cache e `R` auxiliar; todos os recursos passaram por `aapt2 compile`. Essas verificações não substituem build/lint Android nem comprovam equivalência visual.
 - Wrapper: `:app:assembleDebug :app:testDebugUnitTest :app:lintDebug` foi executado, mas falhou antes das tarefas com `Unable to establish loopback connection`. Tentativas com seletor alternativo e daemon isolado também falharam; nenhuma configuração global de Java/Gradle foi alterada.
 - Preparados e compilados, porém **não executados**: `MainNavigationInstrumentedTest` e `MonthlyGoalStorageInstrumentedTest`. O segundo usa as preferências do pacote de teste, sem limpar metas/sessão do app da pessoa usuária.

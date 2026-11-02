@@ -49,7 +49,7 @@ public class WaterViewModel extends AndroidViewModel {
             Integer user = auth.currentProfile().id;
             Response<List<UserPropertyResponse>> response = auth.api().listUserProperties(user).execute();
             if (!response.isSuccessful()) return ApiErrors.<List<UserPropertyResponse>>from(response);
-            if (response.body() == null) return ScreenState.<List<UserPropertyResponse>>error("O servidor não confirmou suas unidades.");
+            if (response.body() == null) return ScreenState.<List<UserPropertyResponse>>error("O servidor não confirmou suas residências.");
             return ScreenState.success(SectionData.properties(response.body(), user));
         }, value -> main.post(() -> {
             if (attempt != epoch || generation != auth.sessionGeneration() || !auth.hasSession()) return;

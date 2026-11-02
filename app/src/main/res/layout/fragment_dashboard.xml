@@ -19,31 +19,30 @@
             android:layout_height="wrap_content"
             android:minHeight="48dp"
             android:gravity="center_vertical">
-            <ImageView
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:padding="8dp"
-                android:background="@drawable/home_circle"
-                android:src="@drawable/main_icon_home"
-                android:importantForAccessibility="no" />
+            <ImageButton
+                android:id="@+id/dash_back"
+                style="@style/Profile.IconButton"
+                android:src="@drawable/profile_back"
+                android:contentDescription="@string/profile_back" />
             <LinearLayout
                 android:layout_width="0dp"
-                android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:gravity="end|center_vertical"
                 android:orientation="vertical">
-                <TextView
-                    style="@style/Dash.Muted"
-                    android:text="@string/dash_residence" />
-                <TextView android:id="@+id/home_greeting" style="@style/Home.Body" android:textStyle="bold" android:text="@string/dash_property"/>
-</LinearLayout>
-                <ImageButton
-                    android:id="@+id/home_notifications"
-                    style="@style/Home.HeaderAction"
-                    android:src="@drawable/home_icon_bell"
-                    android:contentDescription="@string/home_notifications" />
-                <ImageButton android:id="@+id/home_settings" style="@style/Home.HeaderAction" android:src="@drawable/home_icon_settings" android:contentDescription="@string/home_settings"/>
-</LinearLayout>
+                    <TextView
+                        style="@style/Dash.Muted"
+                        android:gravity="end"
+                        android:text="@string/dash_residence" />
+                    <TextView
+                        android:id="@+id/home_greeting"
+                        style="@style/Home.Body"
+                        android:gravity="end"
+                        android:textStyle="bold"
+                        android:text="@string/dash_property" />
+            </LinearLayout>
+        </LinearLayout>
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

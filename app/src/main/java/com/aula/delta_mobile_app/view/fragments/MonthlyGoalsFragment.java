@@ -42,6 +42,13 @@ public final class MonthlyGoalsFragment extends AuthFlowFragment implements Prof
         water = new ViewModelProvider(requireActivity()).get(WaterViewModel.class);
         amount = view.findViewById(R.id.goal_amount_field);
         amountInput = view.findViewById(R.id.goal_amount_input);
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(view, (root, insets) -> {
+            View actions = root.findViewById(R.id.goal_actions);
+            int bottom = Math.round((insets.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) ? 8 : 136) * getResources().getDisplayMetrics().density);
+            actions.setPadding(actions.getPaddingLeft(), actions.getPaddingTop(), actions.getPaddingRight(), bottom);
+            return insets;
+        });
+        androidx.core.view.ViewCompat.requestApplyInsets(view);
         amountInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -95,6 +102,7 @@ public final class MonthlyGoalsFragment extends AuthFlowFragment implements Prof
 
     private void hideKeyboard(View view) {
         amountInput.clearFocus();
+        view.requestFocus();
         androidx.core.view.WindowCompat.getInsetsController(requireActivity().getWindow(), view).hide(androidx.core.view.WindowInsetsCompat.Type.ime());
     }
 
@@ -118,9 +126,14 @@ public final class MonthlyGoalsFragment extends AuthFlowFragment implements Prof
         boolean future = model.month.isAfter(currentMonth);
         boolean editing = model.draft != null && !past;
         boolean busy = loaded.busy() || saving.busy();
+        if (!editing && amountInput.hasFocus()) hideKeyboard(view);
+        View content = view.findViewById(R.id.goal_content);
+        content.setPadding(content.getPaddingLeft(), content.getPaddingTop(), content.getPaddingRight(), Math.round((editing ? 16 : 136) * getResources().getDisplayMetrics().density));
+        view.findViewById(R.id.goal_actions).setVisibility(editing ? View.VISIBLE : View.GONE);
         showLoading(loaded.status == ScreenState.Status.IDLE || busy);
         MonthlyGoalContext context = loaded.data;
-        ((TextView) view.findViewById(R.id.goal_month)).setText(model.month.format(DateTimeFormatter.ofPattern("MMMM 'de' uuuu", locale)));
+        String monthLabel = model.month.format(DateTimeFormatter.ofPattern("MMMM uuuu", locale));
+        ((TextView) view.findViewById(R.id.goal_month)).setText(monthLabel.substring(0, 1).toUpperCase(locale) + monthLabel.substring(1));
         ((TextView) view.findViewById(R.id.goal_property)).setText(!ready ? ""
             : context.property.propertyName == null ? getString(R.string.goal_property, context.property.propertyId) : context.property.propertyName);
         amount.setVisibility(editing ? View.VISIBLE : View.GONE);
@@ -158,9 +171,9 @@ public final class MonthlyGoalsFragment extends AuthFlowFragment implements Prof
     @Override
     public void leaveProfile(Runnable action) {
         if (model.saving.getValue().busy()) return;
-        if (!model.dirty()) { model.cancel(); action.run(); return; }
+        if (!model.dirty()) { hideKeyboard(requireView()); model.cancel(); action.run(); return; }
         new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.profile_discard_title).setMessage(R.string.profile_discard_message)
-            .setNegativeButton(R.string.profile_keep_editing, null).setPositiveButton(R.string.profile_discard, (dialog, which) -> { model.cancel(); action.run(); }).show();
+            .setNegativeButton(R.string.profile_keep_editing, null).setPositiveButton(R.string.profile_discard, (dialog, which) -> { hideKeyboard(requireView()); model.cancel(); action.run(); }).show();
     }
 
     @Override public void onDestroyView() { amount = null; amountInput = null; super.onDestroyView(); }

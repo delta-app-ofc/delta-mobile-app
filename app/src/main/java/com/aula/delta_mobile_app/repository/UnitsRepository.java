@@ -26,19 +26,29 @@ public final class UnitsRepository {
         if (me.body() == null || me.body().id == null || me.body().id <= 0) return ScreenState.error("Não foi possível confirmar sua conta.");
         Response<List<UserPropertyResponse>> links = api.listUserProperties(me.body().id).execute();
         if (!links.isSuccessful()) return ApiErrors.from(links);
-        if (links.body() == null) return ScreenState.error("Não foi possível confirmar suas unidades.");
+        if (links.body() == null) return ScreenState.error("Não foi possível confirmar suas residências.");
         List<UnitSummary> result = new ArrayList<>();
         for (UserPropertyResponse link : SectionData.properties(links.body(), me.body().id)) {
+            AddressResponse address = null;
+            try {
+                Response<PropertyResponse> property = api.getProperty(link.propertyId).execute();
+                if (property.isSuccessful() && property.body() != null && Objects.equals(property.body().id, link.propertyId) && property.body().addressId != null) {
+                    Response<AddressResponse> location = api.getAddress(property.body().addressId).execute();
+                    if (location.isSuccessful() && location.body() != null && Objects.equals(location.body().id, property.body().addressId)) address = location.body();
+                    else if (location.errorBody() != null) location.errorBody().close();
+                } else if (property.errorBody() != null) property.errorBody().close();
+            } catch (IOException unavailable) { }
             BigDecimal liters = null;
             try {
                 Response<List<ConsumptionDailyResponse>> readings = api.consumptionDaily(link.propertyId).execute();
                 if (readings.isSuccessful() && readings.body() != null) {
                     List<ConsumptionDailyResponse> owned = new ArrayList<>();
                     for (ConsumptionDailyResponse reading : readings.body()) if (reading != null && Objects.equals(reading.propertyId, link.propertyId)) owned.add(reading);
-                    liters = HomeDashboard.from(owned, today).monthLiters;
+                    HomeDashboard consumption = HomeDashboard.from(owned, today);
+                    if (consumption.hasMonthReading) liters = consumption.monthLiters;
                 } else if (readings.errorBody() != null) readings.errorBody().close();
             } catch (IOException unavailable) { }
-            result.add(new UnitSummary(link, liters));
+            result.add(new UnitSummary(link, liters, address));
         }
         return ScreenState.success(result);
     }
@@ -51,15 +61,15 @@ public final class UnitsRepository {
         if (me.body() == null || me.body().id == null || me.body().id <= 0) return ScreenState.error("Não foi possível confirmar sua conta.");
         if (progress.userId != null && !progress.userId.equals(me.body().id)) return ScreenState.error("A conta mudou. Reabra o cadastro.");
         progress.userId = me.body().id;
-        if (progress.addressUncertain || progress.propertyUncertain) return ScreenState.error("O cadastro anterior não foi confirmado. Confira a lista de Unidades antes de iniciar outro cadastro.");
+        if (progress.addressUncertain || progress.propertyUncertain) return ScreenState.error("O cadastro anterior não foi confirmado. Confira a lista de Residências antes de iniciar outro cadastro.");
         if (progress.addressId == null) {
             progress.addressUncertain = true;
             Response<AddressResponse> address = api.createAddress(draft.address()).execute();
             if (!address.isSuccessful()) {
                 if (address.code() < 500) progress.addressUncertain = false;
-                return ApiErrors.from(address);
+                return creationError(address, "Não foi possível cadastrar o endereço. ");
             }
-            if (address.body() == null || address.body().id == null || address.body().id <= 0) return ScreenState.error("O endereço não foi confirmado. Confira suas unidades antes de tentar novamente.");
+            if (address.body() == null || address.body().id == null || address.body().id <= 0) return ScreenState.error("O endereço não foi confirmado. Confira suas residências antes de tentar novamente.");
             progress.addressId = address.body().id;
             progress.addressUncertain = false;
         }
@@ -67,17 +77,22 @@ public final class UnitsRepository {
         Response<PropertyResponse> property = api.createProperty(draft.property(progress.userId, progress.addressId)).execute();
         if (!property.isSuccessful()) {
             if (property.code() < 500) progress.propertyUncertain = false;
-            return ApiErrors.from(property);
+            return creationError(property, "Não foi possível cadastrar a residência. ");
         }
         PropertyResponse created = property.body();
         if (created == null || created.id == null || created.id <= 0 || !Objects.equals(created.addressId, progress.addressId))
-            return ScreenState.error("O servidor não confirmou a unidade. Confira a lista antes de tentar novamente.");
+            return ScreenState.error("O servidor não confirmou a residência. Confira a lista antes de tentar novamente.");
         Response<List<UserPropertyResponse>> links = api.listUserProperties(progress.userId).execute();
         if (!links.isSuccessful()) return ApiErrors.from(links);
         if (links.body() == null || SectionData.properties(links.body(), progress.userId).stream().noneMatch(link -> Objects.equals(link.propertyId, created.id)))
-            return ScreenState.error("A unidade foi criada, mas o vínculo com sua conta não foi confirmado. Reabra Unidades para conferir.");
+            return ScreenState.error("A residência foi criada, mas o vínculo com sua conta não foi confirmado. Reabra Residências para conferir.");
         progress.propertyUncertain = false;
         return ScreenState.success(created);
+    }
+
+    private <T> ScreenState<T> creationError(Response<?> response, String stage) {
+        ScreenState<T> error = ApiErrors.from(response);
+        return ScreenState.error(stage + error.message, error.code, error.retryAt);
     }
 
     public ScreenState<Boolean> delete(int propertyId) throws IOException {
@@ -87,7 +102,7 @@ public final class UnitsRepository {
         Response<List<UserPropertyResponse>> links = api.listUserProperties(me.body().id).execute();
         if (!links.isSuccessful()) return ApiErrors.from(links);
         if (links.body() == null || SectionData.properties(links.body(), me.body().id).stream().noneMatch(link -> Objects.equals(link.propertyId, propertyId)))
-            return ScreenState.error("Esta unidade não está associada à sua conta.");
+            return ScreenState.error("Esta residência não está associada à sua conta.");
         Response<Void> response = api.deleteProperty(propertyId).execute();
         if (!response.isSuccessful()) return ApiErrors.from(response);
         return ScreenState.success(true);

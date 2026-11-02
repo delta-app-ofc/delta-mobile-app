@@ -1,19 +1,22 @@
 <resources>
-    <string name="units_new">Nova unidade</string>
-    <string name="units_add">Adicionar unidade</string>
-    <string name="units_select">Selecionar</string>
-    <string name="units_current">Unidade atual</string>
-    <string name="units_delete">Excluir unidade</string>
-    <string name="units_delete_action">Excluir</string>
-    <string name="units_delete_title">Excluir unidade?</string>
-    <string name="units_delete_message">Deseja excluir “%1$s”? Depois de excluir, não será possível recuperar a unidade.</string>
-    <string name="units_empty">Você ainda não tem unidades cadastradas.</string>
+    <string name="units_new">Nova residência</string>
+    <string name="units_add">Adicionar residência</string>
+    <string name="units_select">Toque para selecionar</string>
+    <string name="units_current">Residência atual</string>
+    <string name="units_delete">Excluir residência</string>
+    <string name="units_delete_action">Excluir residência</string>
+    <string name="units_city_unavailable">Cidade indisponível</string>
+    <string name="units_location">%1$s • %2$s</string>
+    <string name="units_delete_title">Excluir residência?</string>
+    <string name="units_delete_message">Deseja excluir “%1$s”? Depois de excluir, não será possível recuperar a residência.</string>
+    <string name="units_empty">Você ainda não tem residências cadastradas.</string>
     <string name="units_monthly_volume">Consumo no mês: %1$s L</string>
     <string name="units_volume_unavailable">Consumo do mês indisponível</string>
-    <string name="units_type">Tipo de unidade</string>
+    <string name="units_type">Tipo de residência</string>
     <string name="units_category">Categoria residencial</string>
     <string name="units_choose">Selecione uma opção</string>
     <string name="units_continue">Continuar</string>
+    <string name="units_save_error">Não foi possível salvar a residência</string>
     <string-array name="units_types">
         <item>Casa</item>
         <item>Prédio</item>

@@ -39,4 +39,8 @@
     <string name="home_goal_unavailable">Os dados da meta mensal ainda não foram disponibilizados.</string>
     <string name="home_suggestion_unavailable">A sugestão de meta ainda não foi disponibilizada.</string>
     <string name="home_select_property">Selecionar imóvel</string>
+    <string name="home_goal_consumed_caption">da meta\nconsumida</string>
+    <string name="home_goal_progress_missing_goal">Defina uma\nmeta mensal</string>
+    <string name="home_goal_progress_missing_consumption">Consumo\nindisponível</string>
+    <string name="home_goal_progress_description">%1$s da meta mensal consumida</string>
 </resources>

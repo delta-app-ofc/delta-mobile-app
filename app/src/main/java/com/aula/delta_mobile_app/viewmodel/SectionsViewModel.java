@@ -10,7 +10,6 @@ import androidx.lifecycle.MutableLiveData;
 import com.aula.delta_mobile_app.model.ApiModels.*;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.repository.AuthRepository;
-import com.aula.delta_mobile_app.repository.RankingRepository;
 import com.aula.delta_mobile_app.services.network.ApiErrors;
 
 import retrofit2.Response;
@@ -19,28 +18,14 @@ import java.util.*;
 
 public class SectionsViewModel extends AndroidViewModel {
     public final MutableLiveData<ScreenState<List<LastWaterBillResponse>>> bills = new MutableLiveData<>(ScreenState.idle());
-    public final MutableLiveData<ScreenState<List<PropertyRankingResponse>>> rankings = new MutableLiveData<>(ScreenState.idle());
     private final AuthRepository auth;
     private final Handler main = new Handler(Looper.getMainLooper());
-    private final RankingRepository rankingRepository;
-    private int billsRequest, rankingsRequest;
+    private int billsRequest;
     private boolean cleared;
 
     public SectionsViewModel(Application app) {
         super(app);
         auth = AuthRepository.getInstance(app);
-        rankingRepository = new RankingRepository(auth.api());
-    }
-
-    public void loadRankings() {
-        ScreenState<List<PropertyRankingResponse>> state = rankings.getValue();
-        if (state.busy() || System.currentTimeMillis() < state.retryAt || cleared) return;
-        int request = ++rankingsRequest;
-        long generation = auth.sessionGeneration();
-        rankings.setValue(ScreenState.loading());
-        auth.resource(rankingRepository::load, value -> main.post(() -> {
-            if (!cleared && request == rankingsRequest && generation == auth.sessionGeneration() && auth.hasSession()) rankings.setValue(value);
-        }));
     }
 
     public void loadBills() {
@@ -63,7 +48,6 @@ public class SectionsViewModel extends AndroidViewModel {
     @Override
     protected void onCleared() {
         cleared = true;
-        rankingsRequest++;
         billsRequest++;
         main.removeCallbacksAndMessages(null);
     }

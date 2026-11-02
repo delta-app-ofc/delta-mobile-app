@@ -41,8 +41,11 @@ public final class MonthlyGoalCard {
             guidance.run();
             TextView amount = view.findViewById(R.id.home_goal_value);
             TextView reference = view.findViewById(R.id.home_goal_reference);
-            TextView property = view.findViewById(R.id.home_goal_property);
-            if (property != null) property.setText("");
+            TextView residence = view.findViewById(R.id.home_goal_property);
+            if (residence != null) {
+                residence.setText("");
+                residence.setVisibility(View.GONE);
+            }
             Locale locale = new Locale("pt", "BR");
             YearMonth month = YearMonth.now();
             reference.setText(fragment.getString(R.string.goal_local_month, month.format(DateTimeFormatter.ofPattern("MMMM/uuuu", locale))));
@@ -57,7 +60,10 @@ public final class MonthlyGoalCard {
             for (UserPropertyResponse link : water.properties.getValue().data)
                 if (link != null && profile.data.id.equals(link.userId) && link.propertyId != null && link.propertyId.equals(water.propertyId)) {
                     owned = true;
-                    if (property != null) property.setText(link.propertyName == null || link.propertyName.trim().isEmpty() ? fragment.getString(R.string.goal_property, link.propertyId) : link.propertyName);
+                    if (residence != null) {
+                        residence.setText(link.propertyName == null || link.propertyName.trim().isEmpty() ? fragment.getString(R.string.goal_property, link.propertyId) : link.propertyName);
+                        residence.setVisibility(View.VISIBLE);
+                    }
                     break;
                 }
             if (!owned) return;
@@ -72,7 +78,8 @@ public final class MonthlyGoalCard {
                     BigDecimal liters = storage.read(userId, propertyId, month);
                     loaded = liters;
                     NumberFormat format = NumberFormat.getNumberInstance(locale);
-                    format.setMaximumFractionDigits(2);
+                    format.setMaximumFractionDigits(0);
+                    format.setRoundingMode(java.math.RoundingMode.FLOOR);
                     text = liters == null ? resources.getString(R.string.goal_not_set) : resources.getString(R.string.home_liters, format.format(liters));
                 } catch (RuntimeException failure) { text = resources.getString(R.string.goal_read_error); }
                 String result = text;
@@ -99,10 +106,13 @@ public final class MonthlyGoalCard {
     }
 
     static void renderGuidance(View view, BigDecimal goal, com.aula.delta_mobile_app.model.HomeDashboard dashboard, java.time.LocalDate today) {
+        HomeGoalProgressView progress = view.findViewById(R.id.home_goal_progress_ring);
+        if (progress != null) progress.setValues(goal, dashboard == null ? null : dashboard.monthLiters);
         com.aula.delta_mobile_app.model.MonthlyGoalGuidance result = com.aula.delta_mobile_app.model.MonthlyGoalGuidance.calculate(goal, dashboard == null ? null : dashboard.monthLiters, today);
         TextView daily = view.findViewById(R.id.home_daily_limit), reduction = view.findViewById(R.id.home_reduction), savings = view.findViewById(R.id.home_savings);
         TextView title = view.findViewById(R.id.home_goal_guidance_title);
         if (title == null || daily == null || reduction == null || savings == null) return;
+        reduction.setTextColor(0xFFFFFFFF);
         title.setText(result != null && result.exceeded ? R.string.goal_exceeded : R.string.home_stay_on_target);
         if (result == null) {
             daily.setText(R.string.home_pending_metric);
@@ -111,9 +121,12 @@ public final class MonthlyGoalCard {
             return;
         }
         NumberFormat format = NumberFormat.getNumberInstance(new Locale("pt", "BR"));
-        format.setMaximumFractionDigits(2);
+        format.setMaximumFractionDigits(0);
+        format.setRoundingMode(java.math.RoundingMode.FLOOR);
         daily.setText(view.getResources().getString(R.string.goal_daily_liters, format.format(result.dailyLiters)));
         reduction.setText(view.getResources().getString(R.string.goal_reduction_percent, format.format(result.reductionPercent)));
+        int reductionPercent = result.reductionPercent.setScale(0, java.math.RoundingMode.FLOOR).intValue();
+        reduction.setTextColor(reductionPercent <= 20 ? 0xFFA5FFD6 : reductionPercent <= 70 ? 0xFFFFF3A6 : 0xFFFFC1C7);
         savings.setText(view.getResources().getString(R.string.goal_monthly_savings, format.format(result.savingsLiters)));
     }
 }

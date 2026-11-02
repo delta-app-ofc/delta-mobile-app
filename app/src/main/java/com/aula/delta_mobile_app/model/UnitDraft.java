@@ -12,7 +12,7 @@ public final class UnitDraft {
     public String validation() {
         if (name.trim().isEmpty() || name.trim().length() > 100) return "Informe um nome de até 100 caracteres.";
         if (!cep.matches("[0-9]{8}") || !cep.equals(confirmedCep) || city.trim().isEmpty() || state.trim().isEmpty()) return "Consulte um CEP válido antes de continuar.";
-        if (!Arrays.asList(TYPES).contains(type)) return "Selecione o tipo da unidade.";
+        if (!Arrays.asList(TYPES).contains(type)) return "Selecione o tipo da residência.";
         if (!Arrays.asList(CATEGORIES).contains(classification)) return "Selecione a categoria residencial.";
         return null;
     }

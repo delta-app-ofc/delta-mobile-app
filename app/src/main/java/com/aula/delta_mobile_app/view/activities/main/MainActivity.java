@@ -63,7 +63,7 @@ public class MainActivity extends com.aula.delta_mobile_app.view.activities.Scre
             updateLoading();
             for (int i = 0; i < buttons.length; i++) {
                 View button = findViewById(buttons[i]);
-                boolean selected = buttons[i] == MainNavigation.tab(destination.getId());
+                boolean selected = buttons[i] == R.id.menu_home ? destination.getId() == R.id.homeFragment : buttons[i] == MainNavigation.tab(destination.getId());
                 button.setSelected(selected);
                 button.setAlpha(selected ? 1f : .55f);
             }

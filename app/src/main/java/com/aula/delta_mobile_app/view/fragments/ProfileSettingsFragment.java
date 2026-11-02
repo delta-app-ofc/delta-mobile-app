@@ -19,19 +19,17 @@ import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProvider;
 import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.ApiModels.UserPropertyResponse;
-import com.aula.delta_mobile_app.model.ApiModels.DeviceResponse;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.viewmodel.*;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.File;
-import java.util.List;
 
 public final class ProfileSettingsFragment extends AuthFlowFragment implements ProfileNavigationGuard {
     private ProfileSettingsViewModel model;
     private WaterViewModel water;
     private ImageView avatar;
     private TextView greeting, notice, residenceName;
-    private View identitySection, firstSection, secondSection;
+    private View identitySection, firstSection;
     private ActivityResultLauncher<Uri> camera;
     private ActivityResultLauncher<PickVisualMediaRequest> gallery;
     private ActivityResultLauncher<String> permission;
@@ -132,11 +130,6 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
         row(first, R.string.profile_residential_title, R.drawable.main_icon_home, () -> leaveProfile(() -> navigate(R.id.residentialInformationFragment)));
         divider(first);
         row(first, R.string.profile_units, R.drawable.profile_icon_units, this::units);
-        LinearLayout second = group(body);
-        secondSection = second;
-        row(second, R.string.profile_sensors, R.drawable.home_icon_bell, this::sensors);
-        divider(second);
-        row(second, R.string.ranking_title, R.drawable.main_icon_consumption, () -> leaveProfile(() -> navigate(R.id.rankingFragment)));
         model.profile.observe(getViewLifecycleOwner(), value -> {
             if (value.status == ScreenState.Status.SUCCESS) {
                 String name = value.data.name == null ? "" : value.data.name.trim();
@@ -177,7 +170,6 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
         showLoading(profile.status == ScreenState.Status.IDLE || profile.busy() || properties.status == ScreenState.Status.IDLE || properties.busy() || photo.busy());
         identitySection.setVisibility(ready ? View.VISIBLE : View.GONE);
         firstSection.setVisibility(ready ? View.VISIBLE : View.GONE);
-        secondSection.setVisibility(ready ? View.VISIBLE : View.GONE);
         String propertyName = "";
         if (ready && water.properties.getValue().data != null) {
             for (UserPropertyResponse link : water.properties.getValue().data) {
@@ -232,34 +224,6 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
 
     private void units() {
         leaveProfile(() -> navigate(R.id.unitsFragment));
-    }
-
-    private void sensors() {
-        Integer propertyId = water.propertyId;
-        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.profile_sensors)
-            .setMessage(R.string.profile_loading).setNegativeButton(R.string.profile_cancel, null)
-            .setNeutralButton(R.string.profile_retry, null);
-        if (propertyId != null) builder.setPositiveButton(R.string.profile_link_sensor, (d, which) -> navigate(R.id.qrScanFragment));
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
-        androidx.lifecycle.Observer<ScreenState<List<DeviceResponse>>> observer = value -> {
-            if (value.busy()) dialog.setMessage(getString(R.string.profile_loading));
-            else if (value.status == ScreenState.Status.ERROR) dialog.setMessage(value.message);
-            else if (value.status == ScreenState.Status.SUCCESS) {
-                StringBuilder text = new StringBuilder();
-                for (DeviceResponse device : value.data) {
-                    if (text.length() > 0) text.append("\n\n");
-                    text.append(device.deviceId == null ? getString(R.string.profile_missing) : device.deviceId).append("\n")
-                        .append(getString(device.isActive == null ? R.string.profile_sensor_unknown : device.isActive ? R.string.profile_sensor_active : R.string.profile_sensor_inactive));
-                }
-                dialog.setMessage(text.length() == 0 ? getString(R.string.profile_sensors_empty) : text.toString());
-            }
-            if (dialog.isShowing()) dialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL).setEnabled(!value.busy());
-        };
-        dialog.setOnDismissListener(d -> model.sensors.removeObserver(observer));
-        dialog.show();
-        dialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL).setOnClickListener(v -> model.loadSensors(propertyId));
-        model.loadSensors(propertyId);
-        model.sensors.observe(getViewLifecycleOwner(), observer);
     }
 
     private LinearLayout group(LinearLayout parent) {
@@ -321,5 +285,5 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
         if (!model.photo.getValue().busy()) action.run();
     }
 
-    @Override public void onDestroyView() { avatar = null; greeting = notice = residenceName = null; identitySection = firstSection = secondSection = null; shownPhoto = null; super.onDestroyView(); }
+    @Override public void onDestroyView() { avatar = null; greeting = notice = residenceName = null; identitySection = firstSection = null; shownPhoto = null; super.onDestroyView(); }
 }

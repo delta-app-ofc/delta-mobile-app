@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/auth_dialog_background"
+    android:fillViewport="false">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+        <TextView
+            android:id="@+id/information_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/auth_blue"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:accessibilityHeading="true" />
+        <TextView
+            android:id="@+id/information_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/auth_manual_field"
+            android:padding="14dp"
+            android:textColor="#484848"
+            android:textSize="14sp"
+            android:lineSpacingExtra="5dp" />
+        <Button
+            android:id="@+id/information_close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="132dp"
+            android:minHeight="48dp"
+            android:layout_gravity="end"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/auth_button_blue"
+            android:backgroundTint="@null"
+            android:gravity="center"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="10dp"
+            android:text="@string/information_close"
+            android:textAllCaps="false"
+            android:textColor="@color/auth_white"
+            android:textSize="14sp"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+</ScrollView>

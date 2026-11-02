@@ -14,7 +14,6 @@ import com.aula.delta_mobile_app.model.AbnormalConsumptionData.*;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.view.AbnormalConsumptionChart;
 import com.aula.delta_mobile_app.viewmodel.*;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
@@ -41,8 +40,7 @@ public final class AbnormalConsumptionFragment extends AuthFlowFragment {
         Integer property = id > 0 ? id : new ViewModelProvider(requireActivity()).get(WaterViewModel.class).propertyId;
         view.findViewById(R.id.abnormal_back).setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
         view.findViewById(R.id.abnormal_retry).setOnClickListener(v -> model.load(property, true));
-        view.findViewById(R.id.abnormal_summary).setOnClickListener(v -> new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.abnormal_unavailable)
-            .setMessage(R.string.abnormal_missing_message).setPositiveButton(android.R.string.ok, null).show());
+        view.findViewById(R.id.abnormal_summary).setOnClickListener(v -> InformationDialogFragment.show(getChildFragmentManager(), getString(R.string.abnormal_unavailable), getString(R.string.abnormal_missing_message)));
         int[] tabs = {R.id.abnormal_tab_week, R.id.abnormal_tab_month, R.id.abnormal_tab_year};
         for (int i = 0; i < tabs.length; i++) {
             final Period period = Period.values()[i];
@@ -62,7 +60,7 @@ public final class AbnormalConsumptionFragment extends AuthFlowFragment {
                 return;
             }
             TextView notice = view.findViewById(R.id.abnormal_notice);
-            notice.setText(state.status == ScreenState.Status.ERROR ? state.displayMessage() : "");
+            notice.setText(state.status == ScreenState.Status.ERROR ? state.message : "");
             view.findViewById(R.id.abnormal_retry).setVisibility(state.status == ScreenState.Status.ERROR ? View.VISIBLE : View.GONE);
             ((AbnormalConsumptionChart) view.findViewById(R.id.abnormal_history_chart)).setHistory(state.status == ScreenState.Status.SUCCESS ? state.data : null);
             comparison(view);
@@ -120,8 +118,7 @@ public final class AbnormalConsumptionFragment extends AuthFlowFragment {
                 message.append(getString(R.string.abnormal_day_value, day.format(format), LeakHelper.number(state.data.day(day), 0))).append("\n");
             }
         } else message.append(getString(R.string.abnormal_graph_unavailable));
-        new MaterialAlertDialogBuilder(requireContext()).setTitle(comparison ? R.string.abnormal_comparison : R.string.abnormal_history).setMessage(message.toString().trim())
-            .setPositiveButton(android.R.string.ok, null).show();
+        InformationDialogFragment.show(getChildFragmentManager(), getString(comparison ? R.string.abnormal_comparison : R.string.abnormal_history), message.toString().trim());
     }
 
     @Override

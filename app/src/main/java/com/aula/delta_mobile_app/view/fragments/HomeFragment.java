@@ -46,6 +46,20 @@ public class HomeFragment extends AuthFlowFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         super.onViewCreated(view, state);
         setScreenColor(R.color.home_background);
+        android.widget.LinearLayout overview = view.findViewById(R.id.home_goal_overview);
+        overview.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            float density = getResources().getDisplayMetrics().density;
+            boolean compact = (right - left) / density < 320 || getResources().getConfiguration().fontScale > 1.25f;
+            int orientation = compact ? android.widget.LinearLayout.VERTICAL : android.widget.LinearLayout.HORIZONTAL;
+            if (overview.getOrientation() == orientation) return;
+            overview.setOrientation(orientation);
+            View ring = overview.findViewById(R.id.home_goal_progress_ring), goal = overview.findViewById(R.id.home_goal);
+            android.widget.LinearLayout.LayoutParams ringParams = new android.widget.LinearLayout.LayoutParams(compact ? -1 : 0, Math.round(190 * density), compact ? 0 : 1);
+            ringParams.setMarginEnd(compact ? 0 : Math.round(12 * density));
+            ringParams.bottomMargin = compact ? Math.round(12 * density) : 0;
+            ring.setLayoutParams(ringParams);
+            goal.setLayoutParams(new android.widget.LinearLayout.LayoutParams(compact ? -1 : 0, compact ? -2 : -1, compact ? 0 : 1));
+        });
         WaterViewModel water = new ViewModelProvider(requireActivity()).get(WaterViewModel.class);
         waterModel = water;
         HomeViewModel home = new ViewModelProvider(this).get(HomeViewModel.class);
@@ -120,7 +134,6 @@ public class HomeFragment extends AuthFlowFragment {
             else water.select(selectedProperty);
         });
         view.findViewById(R.id.home_goal).setOnClickListener(v -> navigate(R.id.monthlyGoalsFragment));
-        view.findViewById(R.id.home_notifications).setOnClickListener(v -> Toast.makeText(requireContext(), R.string.home_notifications_empty, Toast.LENGTH_SHORT).show());
         view.findViewById(R.id.home_settings).setOnClickListener(v -> navigate(R.id.profileSettingsFragment));
         view.findViewById(R.id.home_avatar_action).setOnClickListener(v -> navigate(R.id.profileSettingsFragment));
         if (water.properties.getValue().status == ScreenState.Status.IDLE) water.loadProperties();
@@ -205,14 +218,16 @@ public class HomeFragment extends AuthFlowFragment {
     private String liters(BigDecimal value) {
         if (value == null) return getString(R.string.home_pending_metric);
         NumberFormat format = NumberFormat.getNumberInstance(new Locale("pt", "BR"));
-        format.setMaximumFractionDigits(1);
+        format.setMaximumFractionDigits(0);
+        format.setRoundingMode(java.math.RoundingMode.FLOOR);
         return getString(R.string.home_liters, format.format(value));
     }
 
     private String money(BigDecimal value) {
         NumberFormat format = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
         format.setMinimumFractionDigits(0);
-        format.setMaximumFractionDigits(2);
+        format.setMaximumFractionDigits(0);
+        format.setRoundingMode(java.math.RoundingMode.FLOOR);
         return format.format(value).replace("\u00a0", "").replace(" ", "");
     }
 }

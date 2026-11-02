@@ -10,7 +10,6 @@ import androidx.lifecycle.ViewModelProvider;
 import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.*;
 import com.aula.delta_mobile_app.viewmodel.*;
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.text.NumberFormat;
 import java.util.*;
@@ -63,13 +62,18 @@ public final class UnitsFragment extends AuthFlowFragment implements ProfileNavi
             View card = getLayoutInflater().inflate(R.layout.item_unit, cards, false);
             String name = unit.property.propertyName == null || unit.property.propertyName.trim().isEmpty() ? getString(R.string.goal_property, unit.property.propertyId) : unit.property.propertyName;
             ((TextView) card.findViewById(R.id.unit_name)).setText(name);
+            String city = unit.address == null || unit.address.city == null ? "" : unit.address.city.trim();
+            String state = unit.address == null || unit.address.state == null ? "" : unit.address.state.trim();
+            ((TextView) card.findViewById(R.id.unit_location)).setText(city.isEmpty() ? getString(R.string.units_city_unavailable) : state.isEmpty() ? city : getString(R.string.units_location, city, state));
             ((TextView) card.findViewById(R.id.unit_consumption)).setText(unit.monthlyLiters == null ? getString(R.string.units_volume_unavailable) : getString(R.string.units_monthly_volume, format.format(unit.monthlyLiters)));
             boolean selected = Objects.equals(water.propertyId, unit.property.propertyId);
-            if (selected) card.setBackgroundResource(R.drawable.home_goal_background);
-            MaterialButton select = card.findViewById(R.id.unit_select);
+            card.setBackgroundResource(selected ? R.drawable.units_card_selected : R.drawable.units_card_background);
+            TextView select = card.findViewById(R.id.unit_select);
             select.setText(selected ? R.string.units_current : R.string.units_select);
-            select.setEnabled(!busy && !selected);
-            select.setOnClickListener(v -> {
+            card.setEnabled(!busy);
+            card.setSelected(selected);
+            card.setOnClickListener(v -> {
+                if (busy || selected) return;
                 water.select(unit.property.propertyId);
                 new ViewModelProvider(requireActivity()).get(ProfileSettingsViewModel.class).loadResidence(unit.property.propertyId, true);
                 render(view);

@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.text.*;
 import android.view.View;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,7 +38,9 @@ public final class NewUnitFragment extends AuthFlowFragment implements ProfileNa
         type = field(R.string.units_type, InputType.TYPE_CLASS_TEXT);
         category = field(R.string.units_category, InputType.TYPE_CLASS_TEXT);
         name.input.setFilters(new InputFilter[] { new InputFilter.LengthFilter(100) });
-        cep.input.setFilters(new InputFilter[] { new InputFilter.LengthFilter(8) });
+        cep.input.setKeyListener(android.text.method.DigitsKeyListener.getInstance("0123456789-"));
+        cep.input.setRawInputType(InputType.TYPE_CLASS_NUMBER);
+        cep.input.setFilters(new InputFilter[] { new InputFilter.LengthFilter(9) });
         for (ProfileFormField field : new ProfileFormField[] { name, type, category, cep, city, state }) fields.addView(field);
         name.setEditableHighlightEnabled(true);
         cep.setEditableHighlightEnabled(true);
@@ -57,27 +58,45 @@ public final class NewUnitFragment extends AuthFlowFragment implements ProfileNa
             @Override public void afterTextChanged(Editable value) { }
         };
         name.input.addTextChangedListener(watcher);
-        cep.input.addTextChangedListener(watcher);
         cep.input.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
+            @Override public void afterTextChanged(Editable value) {
                 if (rendering) return;
+                int cursor = Math.max(0, cep.input.getSelectionStart());
+                int digitsBeforeCursor = value.subSequence(0, Math.min(cursor, value.length())).toString().replaceAll("\\D", "").length();
+                String digits = value.toString().replaceAll("\\D", "");
+                model.update(name.value(), digits.substring(0, Math.min(8, digits.length())));
+                cep.input.setSelection(Math.min(cep.value().length(), digitsBeforeCursor + (digitsBeforeCursor > 5 ? 1 : 0)));
                 debounce.removeCallbacks(lookup);
-                if (s.toString().matches("[0-9]{8}")) debounce.postDelayed(lookup, 600);
+                if (model.draft.cep.matches("[0-9]{8}") && !model.draft.cep.equals(model.draft.confirmedCep)) debounce.postDelayed(lookup, 600);
             }
-            @Override public void afterTextChanged(Editable value) { }
         });
         view.findViewById(R.id.unit_continue).setOnClickListener(v -> {
             androidx.core.view.WindowCompat.getInsetsController(requireActivity().getWindow(), view).hide(androidx.core.view.WindowInsetsCompat.Type.ime());
             View focused = view.findFocus();
             if (focused != null) focused.clearFocus();
             model.update(name.value(), cep.value());
+            name.setError(null); type.setError(null); category.setError(null);
+            String error = model.draft.validation();
+            if (error != null) {
+                UnitDraft draft = model.draft;
+                if (draft.name.trim().isEmpty() || draft.name.trim().length() > 100) name.setError(error);
+                else if (!draft.cep.matches("[0-9]{8}") || !draft.cep.equals(draft.confirmedCep) || draft.city.trim().isEmpty() || draft.state.trim().isEmpty()) cep.setError(error);
+                else if (!Arrays.asList(UnitDraft.TYPES).contains(draft.type)) type.setError(error);
+                else category.setError(error);
+                return;
+            }
             model.create();
         });
         model.changes.observe(getViewLifecycleOwner(), value -> render(view));
         model.postalState.observe(getViewLifecycleOwner(), value -> render(view));
         model.creation.observe(getViewLifecycleOwner(), value -> {
             render(view);
+            if (value.status == ScreenState.Status.ERROR) {
+                new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.units_save_error).setMessage(value.message)
+                    .setPositiveButton(android.R.string.ok, null).show();
+            }
             if (value.status != ScreenState.Status.SUCCESS) return;
             int propertyId = value.data.id;
             WaterViewModel water = new ViewModelProvider(requireActivity()).get(WaterViewModel.class);
@@ -101,9 +120,12 @@ public final class NewUnitFragment extends AuthFlowFragment implements ProfileNa
 
     private void selector(ProfileFormField field, boolean chooseType) {
         field.input.setTextIsSelectable(false);
-        field.input.setFocusable(true);
-        field.input.setFocusableInTouchMode(true);
+        field.input.setFocusable(false);
+        field.input.setFocusableInTouchMode(false);
+        field.input.setCursorVisible(false);
+        field.input.setShowSoftInputOnFocus(false);
         field.input.setOnClickListener(v -> choose(chooseType));
+        field.setOnClickListener(v -> choose(chooseType));
         field.setEndIconMode(com.google.android.material.textfield.TextInputLayout.END_ICON_CUSTOM);
         field.setEndIconDrawable(android.R.drawable.arrow_down_float);
         field.setEndIconContentDescription(R.string.units_choose);
@@ -112,6 +134,10 @@ public final class NewUnitFragment extends AuthFlowFragment implements ProfileNa
 
     private void choose(boolean chooseType) {
         if (model.busy()) return;
+        View view = requireView();
+        androidx.core.view.WindowCompat.getInsetsController(requireActivity().getWindow(), view).hide(androidx.core.view.WindowInsetsCompat.Type.ime());
+        View focused = view.findFocus();
+        if (focused != null) focused.clearFocus();
         String[] values = chooseType ? UnitDraft.TYPES : UnitDraft.CATEGORIES;
         String[] labels = getResources().getStringArray(chooseType ? R.array.units_types : R.array.units_categories);
         String current = chooseType ? model.draft.type : model.draft.classification;
@@ -129,17 +155,21 @@ public final class NewUnitFragment extends AuthFlowFragment implements ProfileNa
         boolean busy = model.creation.getValue().busy();
         showLoading(busy);
         UnitDraft draft = model.draft;
-        name.value(draft.name); cep.value(draft.cep); city.value(draft.city); state.value(draft.state);
         name.editable(!busy); cep.editable(!busy && !model.addressLocked());
+        if (!busy && !model.addressLocked()) {
+            cep.input.setKeyListener(android.text.method.DigitsKeyListener.getInstance("0123456789-"));
+            cep.input.setRawInputType(InputType.TYPE_CLASS_NUMBER);
+        }
+        name.value(draft.name); cep.value(draft.cep.length() > 5 ? draft.cep.substring(0, 5) + "-" + draft.cep.substring(5) : draft.cep); city.value(draft.city); state.value(draft.state);
         int typeIndex = Arrays.asList(UnitDraft.TYPES).indexOf(draft.type), categoryIndex = Arrays.asList(UnitDraft.CATEGORIES).indexOf(draft.classification);
         type.value(typeIndex < 0 ? "" : getResources().getStringArray(R.array.units_types)[typeIndex]);
         category.value(categoryIndex < 0 ? "" : getResources().getStringArray(R.array.units_categories)[categoryIndex]);
         type.input.setHint(typeIndex < 0 ? getString(R.string.units_choose) : null);
         category.input.setHint(categoryIndex < 0 ? getString(R.string.units_choose) : null);
         type.input.setEnabled(!busy); category.input.setEnabled(!busy);
+        type.setEnabled(!busy); category.setEnabled(!busy);
         view.findViewById(R.id.unit_consulting).setVisibility(model.postalState.getValue().busy() ? View.VISIBLE : View.GONE);
         cep.setError(model.postalState.getValue().status == ScreenState.Status.ERROR ? model.postalState.getValue().message : null);
-        ((TextView) view.findViewById(R.id.units_notice)).setText(model.creation.getValue().status == ScreenState.Status.ERROR ? model.creation.getValue().message : "");
         view.findViewById(R.id.unit_continue).setEnabled(!busy && !model.postalState.getValue().busy());
         rendering = false;
     }

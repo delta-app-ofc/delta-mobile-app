@@ -116,8 +116,7 @@ public class DashboardFragment extends AuthFlowFragment {
             else water.select(selectedProperty);
         });
         view.findViewById(R.id.home_goal).setOnClickListener(v -> navigate(R.id.monthlyGoalsFragment));
-        view.findViewById(R.id.home_notifications).setOnClickListener(v -> ((android.widget.ScrollView) view).smoothScrollTo(0, view.findViewById(R.id.dash_leak_alert).getTop()));
-        view.findViewById(R.id.home_settings).setOnClickListener(v -> navigate(R.id.profileSettingsFragment));
+        view.findViewById(R.id.dash_back).setOnClickListener(v -> back());
         if (water.properties.getValue().status == ScreenState.Status.IDLE) water.loadProperties();
         home.loadProfile(false);
         com.aula.delta_mobile_app.view.MonthlyGoalCard.bind(this, view, home, water);

@@ -8,12 +8,13 @@
     <string name="goal_local">Meta salva neste aparelho</string>
     <string name="goal_current_residence">Residência atual</string>
     <string name="goal_limit_label">Seu limite para o mês</string>
-    <string name="goal_limit_hint">Defina sua meta em litros e acompanhe pela tela inicial.</string>
+    <string name="goal_limit_hint">Acompanhe sua meta em litros na tela inicial.</string>
     <string name="goal_past_not_set">A meta de %1$s não foi definida</string>
     <string name="goal_current_reference">Meta do mês atual: %1$s L</string>
     <string name="goal_current_not_set">A meta do mês atual não foi definida</string>
     <string name="goal_amount">Limite mensal em litros</string>
     <string name="goal_amount_example">Ex.: 50000</string>
+    <string name="goal_new_amount_hint">Digite a nova meta</string>
     <string name="goal_liters_unit">L</string>
     <string name="goal_edit">Definir ou editar meta</string>
     <string name="goal_save">Salvar meta</string>

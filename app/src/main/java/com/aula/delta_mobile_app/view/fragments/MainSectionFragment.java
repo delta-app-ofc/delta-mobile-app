@@ -34,20 +34,10 @@ public class MainSectionFragment extends AuthFlowFragment {
     }
 
     @Override
-    public View onCreateView(@NonNull android.view.LayoutInflater inflater, @Nullable android.view.ViewGroup container, @Nullable Bundle state) {
-        if (getArguments() != null && "ranking".equals(getArguments().getString("screen"))) return inflater.inflate(R.layout.fragment_ranking, container, false);
-        return super.onCreateView(inflater, container, state);
-    }
-
-    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle state) {
         super.onViewCreated(view, state);
         setScreenColor(R.color.home_background);
         screen = requireArguments().getString("screen", "consumption");
-        if (screen.equals("ranking")) {
-            setScreenColor(R.color.profile_background);
-            view.findViewById(R.id.profile_back).setOnClickListener(v -> back());
-        }
         cards = view.findViewById(R.id.section_cards);
         status = view.findViewById(R.id.section_status);
         water = new ViewModelProvider(requireActivity()).get(WaterViewModel.class);
@@ -118,17 +108,6 @@ public class MainSectionFragment extends AuthFlowFragment {
             if (water.properties.getValue().status == ScreenState.Status.IDLE)
                 water.loadProperties();
             if (screen.equals("costs")) sections.loadBills();
-        } else if (screen.equals("ranking")) {
-            subtitle.setText(R.string.ranking_subtitle);
-            sections.rankings.observe(getViewLifecycleOwner(), value -> {
-                updateLoading();
-                cards.removeAllViews();
-                show(value.message);
-                if (value.status != ScreenState.Status.SUCCESS) return;
-                if (value.data.isEmpty()) show(getString(R.string.ranking_empty));
-                for (PropertyRankingResponse row : value.data) rankingCard(row);
-            });
-            if (sections.rankings.getValue().status == ScreenState.Status.IDLE || sections.rankings.getValue().status == ScreenState.Status.ERROR) sections.loadRankings();
         } else {
             retry.setVisibility(View.GONE);
             subtitle.setText(screen.equals("chat") ? "Monitore cada gota com mais precisão." : "Planeje seu consumo de água");
@@ -139,11 +118,6 @@ public class MainSectionFragment extends AuthFlowFragment {
     }
 
     private void updateLoading() {
-        if (screen.equals("ranking")) {
-            ScreenState<?> ranking = sections.rankings.getValue();
-            showLoading(ranking.status == ScreenState.Status.IDLE || ranking.busy());
-            return;
-        }
         ScreenState<List<UserPropertyResponse>> properties = water.properties.getValue();
         boolean loading = properties.status == ScreenState.Status.IDLE || properties.busy();
         if (properties.status == ScreenState.Status.SUCCESS && !properties.data.isEmpty()) {
@@ -213,7 +187,6 @@ public class MainSectionFragment extends AuthFlowFragment {
         if (readings.status != ScreenState.Status.SUCCESS && !readings.message.isEmpty())
             messages.add(readings.message);
         action("Cadastrar conta de água", () -> navigate(R.id.accountConfigFragment));
-        action("Comparar minhas unidades", () -> navigate(R.id.rankingFragment));
         card("Histórico de contas da sua conta", false);
         ScreenState<List<LastWaterBillResponse>> bills = sections.bills.getValue();
         if (bills.status == ScreenState.Status.SUCCESS) {
@@ -222,17 +195,6 @@ public class MainSectionFragment extends AuthFlowFragment {
                 card(date(row.month) + "\n" + money(row.totalValue) + " · " + number(row.m3Value) + " m³", false);
         } else if (!bills.message.isEmpty()) messages.add(bills.message);
         show(String.join("\n", messages));
-    }
-
-    private void rankingCard(PropertyRankingResponse row) {
-        View card = getLayoutInflater().inflate(R.layout.item_ranking_card, cards, false);
-        ((TextView) card.findViewById(R.id.ranking_name)).setText(row.propertyName == null || row.propertyName.trim().isEmpty() ? getString(R.string.ranking_property, row.propertyId) : row.propertyName);
-        ((TextView) card.findViewById(R.id.ranking_efficiency)).setText(row.rankEfficiency == null ? getString(R.string.home_pending_metric) : getString(R.string.ranking_position, row.rankEfficiency));
-        ((TextView) card.findViewById(R.id.ranking_cost)).setText(row.rankCost == null ? getString(R.string.home_pending_metric) : getString(R.string.ranking_position, row.rankCost));
-        ((TextView) card.findViewById(R.id.ranking_volume)).setText(row.totalLiters == null ? getString(R.string.home_pending_metric) : getString(R.string.home_liters, number(row.totalLiters)));
-        ((TextView) card.findViewById(R.id.ranking_total_cost)).setText(money(row.totalCost));
-        ((TextView) card.findViewById(R.id.ranking_area)).setText(row.litersPerM2 == null ? getString(R.string.home_pending_metric) : getString(R.string.ranking_liters_area, number(row.litersPerM2)));
-        cards.addView(card);
     }
 
     private TextView card(String text, boolean blue) {

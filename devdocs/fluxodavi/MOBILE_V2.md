@@ -9,7 +9,7 @@ API utilizada: `https://delta-api-postgres.onrender.com/`. As rotas foram verifi
 - Home: fundo `#1B1D1E`, título e espaçamentos ajustados; navegação flutuante sobre o conteúdo, com espaço inferior para acessar os últimos controles. Ícones, fundo do menu e ilustração de rotina exportados do Figma e guardados em `drawable-nodpi`.
 - Consumo: seleção de imóvel do usuário, totais de hoje e do mês, gráfico e últimas leituras via `/delta/analytics/consumption-daily/{propertyId}`. Respostas de outra seleção são descartadas pelo `WaterViewModel` existente.
 - Custos: previsão via `/delta/property/{propertyId}/watercost`, referência, tarifa, volume em m³, histórico de contas filtrado pelo usuário e acesso ao formulário existente para cadastrar/atualizar a conta de água.
-- Ranking de unidades: consulta a `/delta/analytics/property-ranking`, filtrada pelos imóveis associados ao usuário. Mostra posição, consumo, custo e consumo por área retornados pela API, com acesso pela tela de Custos.
+- Configurações: informações pessoais, informações residenciais e unidades. O vínculo de sensores permanece no cadastro inicial e na criação de unidade.
 - Rotina: consulta, criação, edição e exclusão confirmada de hábitos por `/delta/habits/{userId}`. Os IDs vêm do catálogo já existente. Frequência e dias são validados, e a propriedade do registro é conferida antes de editar ou excluir.
 - Menu: Consumo, Custos, Início, Gluh Helper e Rotina. Os cartões de meta da Home abrem um destino próprio. O menu fica oculto no leitor QR e no formulário de conta de água.
 

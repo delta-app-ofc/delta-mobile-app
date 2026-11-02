@@ -16,7 +16,7 @@ public final class MainNavigation {
     public static int tab(int destination) {
         if (destination == R.id.leakDetectionFragment || destination == R.id.consumptionFragment || destination == R.id.leakHourlyFragment
             || destination == R.id.leakAbnormalFragment) return R.id.menu_consumption;
-        if (destination == R.id.costsFragment || destination == R.id.costsHistoryFragment || destination == R.id.rankingFragment) return R.id.menu_costs;
+        if (destination == R.id.costsFragment || destination == R.id.costsHistoryFragment) return R.id.menu_costs;
         if (destination == R.id.tipsFragment) return R.id.menu_tips;
         if (destination == R.id.goalsFragment) return R.id.menu_goals;
         return R.id.menu_home;

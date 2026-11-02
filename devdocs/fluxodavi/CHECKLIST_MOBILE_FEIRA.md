@@ -7,7 +7,7 @@ Implementado significa alteração presente no código. Não equivale a aceite c
 | Remover indicador EH | Implementado | Regressão visual geral junto às demais telas. |
 | Tela simples de meta mensal, com consulta e edição | Implementado | Validar edição, cancelamento, teclado, troca do mês e reabertura no aparelho. Vinculada à residência atual. |
 | Corrigir ícones e navegação da navbar | Parcial | Rotas corrigidas e falha do card compartilhado Home/Dashboard corrigida. Executar a matriz de navegação e Voltar em aparelho. |
-| Remover ranking da navbar | Implementado | Navbar usa consumo/vazamentos, custos, Home, chat e rotina. Ranking permanece acessível nas configurações. |
+| Remover ranking da navbar | Implementado | Navbar usa consumo/vazamentos, custos, Home, chat e rotina. As configurações não oferecem comparação de unidades nem consulta de sensores. |
 | Aplicar alterações da Ana no protótipo | Pendente de referência | Receber o protótipo atualizado ou a lista de alterações e comparar com o mobile. |
 | SQLite e demais requisitos mobile | Parcial | Metas usam SQLite por usuário/residência/mês, com migração das metas antigas. Validar persistência/migração no Android e revisar a rubrica oficial. Notificações ainda não implementadas. |
 | API de clima | Pendente | Integrar dados reais; o gráfico temperatura × litros não está populado. |
@@ -31,7 +31,7 @@ Implementado significa alteração presente no código. Não equivale a aceite c
 - [ ] Foto: câmera/galeria, envio, reentrada na Home, falha de rede e isolamento entre contas.
 - [ ] Metas: edição/cancelamento, persistência após reiniciar, migração, meses e residências diferentes.
 - [ ] Cálculos: consumo zero, aumento do consumo, meta atingida/ultrapassada e virada do mês.
-- [ ] Consumo, custo, histórico, ranking e ausência de dados; respostas de erro e rede lenta/offline.
+- [ ] Consumo, custo, histórico e ausência de dados; respostas de erro e rede lenta/offline.
 - [ ] Rotação, fonte ampliada, tela pequena/grande e conteúdo acima da navbar/teclado.
 - [ ] Conferência item a item da rubrica oficial e do protótipo atualizado.
 

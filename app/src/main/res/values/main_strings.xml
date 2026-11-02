@@ -5,4 +5,7 @@
     <string name="main_tips">Gluh Helper</string>
     <string name="main_goals">Rotina</string>
     <string name="main_section_pending">Esta seção será implementada em breve.</string>
+    <string name="menu_leaks">Vazamento</string>
+    <string name="menu_consumption_label">Consumo</string>
+    <string name="menu_chat">Gluh AI</string>
 </resources>

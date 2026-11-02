@@ -4,8 +4,7 @@
     <string name="profile_residential_title">Informações residenciais</string>
     <string name="profile_residence_name">Nome da residência</string>
     <string name="profile_consulting">Consultando...</string>
-    <string name="profile_units">Unidades</string>
-    <string name="profile_sensors">Sensores cadastrados</string>
+    <string name="profile_units">Residências</string>
     <string name="profile_edit_photo">Alterar foto de perfil</string>
     <string name="profile_photo_unavailable">Não foi possível enviar sua foto. O serviço de fotos está indisponível no momento.</string>
     <string name="profile_edit_personal">Editar informações pessoais</string>
@@ -45,11 +44,6 @@
     <string name="profile_camera_denied">Permita o uso da câmera ou escolha uma foto da galeria.</string>
     <string name="profile_camera_unavailable">Não foi possível abrir a câmera. Escolha uma foto da galeria.</string>
     <string name="profile_select_property">Selecione o imóvel</string>
-    <string name="profile_link_sensor">Vincular medidor</string>
-    <string name="profile_sensors_empty">Nenhum sensor cadastrado neste imóvel.</string>
-    <string name="profile_sensor_active">Cadastro ativo</string>
-    <string name="profile_sensor_inactive">Cadastro inativo</string>
-    <string name="profile_sensor_unknown">Situação do cadastro não informada</string>
     <string name="profile_discard_title">Descartar alterações?</string>
     <string name="profile_discard_message">As alterações ainda não foram salvas.</string>
     <string name="profile_keep_editing">Continuar editando</string>

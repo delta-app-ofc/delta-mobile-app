@@ -40,7 +40,7 @@ public final class ProfileSettingsRepository {
 
     public void residence(Integer propertyId, Consumer<ScreenState<ProfileSettingsData>> callback) {
         auth.resource(() -> {
-            if (propertyId == null) return ScreenState.error("Selecione um imóvel em Unidades para consultar o endereço.");
+            if (propertyId == null) return ScreenState.error("Selecione um imóvel em Residências para consultar o endereço.");
             ScreenState<PropertyResponse> selected = ownedProperty(propertyId);
             if (selected.status != ScreenState.Status.SUCCESS) return ScreenState.error(selected.message, selected.code, selected.retryAt);
             if (selected.data.addressId == null) return ScreenState.error("Este imóvel não possui endereço cadastrado.");
@@ -49,20 +49,6 @@ public final class ProfileSettingsRepository {
             AddressResponse address = response.body();
             if (address == null || !Objects.equals(address.id, selected.data.addressId)) return ScreenState.error("Não foi possível confirmar o endereço deste imóvel.");
             return ScreenState.success(new ProfileSettingsData(selected.data, address));
-        }, callback);
-    }
-
-    public void sensors(Integer propertyId, Consumer<ScreenState<List<DeviceResponse>>> callback) {
-        auth.resource(() -> {
-            if (propertyId == null) return ScreenState.error("Selecione um imóvel em Unidades para consultar os sensores.");
-            ScreenState<PropertyResponse> selected = ownedProperty(propertyId);
-            if (selected.status != ScreenState.Status.SUCCESS) return ScreenState.error(selected.message, selected.code, selected.retryAt);
-            Response<List<DeviceResponse>> response = auth.api().listDevices().execute();
-            if (!response.isSuccessful()) return ApiErrors.from(response);
-            if (response.body() == null) return ScreenState.error("O servidor não confirmou a lista de sensores.");
-            List<DeviceResponse> devices = new java.util.ArrayList<>();
-            for (DeviceResponse device : response.body()) if (device != null && Objects.equals(device.propertyId, propertyId)) devices.add(device);
-            return ScreenState.success(devices);
         }, callback);
     }
 

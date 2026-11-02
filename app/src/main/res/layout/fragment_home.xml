@@ -16,7 +16,8 @@
         android:paddingBottom="128dp">
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
             android:gravity="center_vertical">
             <FrameLayout
                 android:id="@+id/home_avatar_action"
@@ -49,13 +50,16 @@
                     style="@style/Home.Body"
                     android:text="@string/home_greeting_default"
                     android:textStyle="bold" />
-                <TextView style="@style/Home.Caption" android:text="@string/home_welcome" android:textColor="#AAAAAA" />
+                <TextView
+                    android:id="@+id/home_goal_property"
+                    style="@style/Home.Caption"
+                    android:layout_marginTop="3dp"
+                    android:drawableStart="@drawable/home_goal_property_icon"
+                    android:drawablePadding="4dp"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/white"
+                    android:visibility="gone" />
         </LinearLayout>
-                <ImageButton
-                    android:id="@+id/home_notifications"
-                    style="@style/Home.HeaderAction"
-                    android:src="@drawable/home_icon_bell"
-                    android:contentDescription="@string/home_notifications" />
                 <ImageButton android:id="@+id/home_settings" style="@style/Home.HeaderAction" android:src="@drawable/home_icon_settings" android:contentDescription="@string/home_settings" />
     </LinearLayout>
                 <TextView
@@ -156,60 +160,90 @@
                                             android:layout_marginTop="12dp"
                                             android:accessibilityLiveRegion="polite"
                                             android:visibility="gone" />
-                                        <LinearLayout
-                                            android:id="@+id/home_goal"
-                                            android:layout_width="match_parent"
-                                            android:layout_height="wrap_content"
-                                            android:layout_marginTop="18dp"
-                                            android:minHeight="108dp"
-                                            android:padding="20dp"
-                                            android:orientation="vertical"
-                                            android:background="@drawable/home_goal_background"
-                                            android:clickable="true"
-                                            android:focusable="true"
-                                            android:foreground="?attr/selectableItemBackground"
-                                            android:contentDescription="@string/home_goal_action">
-                                            <LinearLayout
-                                                android:layout_width="match_parent"
-                                                android:layout_height="wrap_content"
-                                                android:gravity="center_vertical"
-                                                android:orientation="horizontal">
-                                                <ImageView
-                                                    android:layout_width="28dp"
-                                                    android:layout_height="28dp"
-                                                    android:src="@drawable/home_icon_drop"
-                                                    android:tint="@color/white"
-                                                    android:importantForAccessibility="no" />
-                                                <TextView
-                                                    android:id="@+id/home_goal_property"
-                                                    style="@style/Home.Section"
-                                                    android:layout_width="0dp"
-                                                    android:layout_weight="1"
-                                                    android:layout_marginStart="10dp"
-                                                    android:textStyle="bold" />
-                                            </LinearLayout>
-                                            <TextView
-                                                style="@style/Home.Body"
-                                                android:layout_marginTop="12dp"
-                                                android:text="@string/goal_limit_label" />
-                                            <TextView
-                                                android:id="@+id/home_goal_value"
-                                                style="@style/Home.Body"
-                                                android:layout_marginTop="10dp"
-                                                android:textSize="26sp"
-                                                android:textStyle="bold"
-                                                android:accessibilityLiveRegion="polite"
-                                                android:text="@string/goal_not_set" />
-                                            <TextView
-                                                android:id="@+id/home_goal_reference"
-                                                style="@style/Home.Body"
-                                                android:layout_marginTop="10dp"
-                                                android:textColor="@color/white" />
-                                            <TextView
-                                                style="@style/Home.Body"
-                                                android:layout_marginTop="12dp"
-                                                android:text="@string/home_view_more" />
-                                        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/home_goal_overview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+            <com.aula.delta_mobile_app.view.HomeGoalProgressView
+                android:id="@+id/home_goal_progress_ring"
+                android:layout_width="0dp"
+                android:layout_height="190dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="12dp"
+                android:accessibilityLiveRegion="polite" />
+            <LinearLayout
+                android:id="@+id/home_goal"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:minHeight="190dp"
+                android:padding="12dp"
+                android:orientation="vertical"
+                android:background="@drawable/home_monthly_goal_background"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:contentDescription="@string/home_goal_action">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/home_icon_target"
+                        android:tint="@color/white"
+                        android:importantForAccessibility="no" />
+                    <TextView
+                        style="@style/Home.Section"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:text="@string/goal_title"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <TextView
+                    style="@style/Home.Body"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/goal_limit_label" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:minHeight="72dp"
+                    android:gravity="center_vertical"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/home_goal_value"
+                        style="@style/Home.Body"
+                        android:textColor="#3073ED"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="18sp"
+                        android:autoSizeMaxTextSize="32sp"
+                        android:autoSizeStepGranularity="1sp"
+                        android:maxLines="2"
+                        android:accessibilityLiveRegion="polite"
+                        android:text="@string/goal_not_set" />
+                    <TextView
+                        android:id="@+id/home_goal_reference"
+                        style="@style/Home.Caption"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/white" />
+                </LinearLayout>
+                <TextView
+                    style="@style/Home.Body"
+                    android:gravity="end"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/home_view_more" />
+            </LinearLayout>
+        </LinearLayout>
                                                     <LinearLayout
                                                         android:layout_width="match_parent"
                                                         android:layout_height="wrap_content"

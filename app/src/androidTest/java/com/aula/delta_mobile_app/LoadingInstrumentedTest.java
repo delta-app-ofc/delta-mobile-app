@@ -22,6 +22,16 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class LoadingInstrumentedTest {
     @Test
+    public void splashStartsVisibleWithoutLoadingOverlay() {
+        try (ActivityScenario<com.aula.delta_mobile_app.view.activities.splash.SplashActivity> scenario = ActivityScenario.launch(com.aula.delta_mobile_app.view.activities.splash.SplashActivity.class)) {
+            scenario.onActivity(activity -> {
+                org.junit.Assert.assertTrue(activity.findViewById(R.id.delta_splash).isShown());
+                org.junit.Assert.assertNull(activity.findViewById(R.id.screen_flow_loading));
+            });
+        }
+    }
+
+    @Test
     public void loadingAppearsAndClosesOnErrorInBothFlows() throws Exception {
         try (ActivityScenario<LoginActivity> scenario = ActivityScenario.launch(LoginActivity.class)) {
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();

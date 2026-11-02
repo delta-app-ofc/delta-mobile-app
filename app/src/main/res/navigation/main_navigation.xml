@@ -90,19 +90,6 @@
             android:defaultValue="goals" />
     </fragment>
     <fragment
-        android:id="@+id/rankingFragment"
-        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
-        android:label="@string/ranking_title">
-        <argument
-            android:name="title"
-            app:argType="string"
-            android:defaultValue="Ranking das minhas unidades" />
-        <argument
-            android:name="screen"
-            app:argType="string"
-            android:defaultValue="ranking" />
-    </fragment>
-    <fragment
         android:id="@+id/leakDetectionFragment"
         android:name="com.aula.delta_mobile_app.view.fragments.LeakDetectionFragment"
         android:label="@string/leak_title">

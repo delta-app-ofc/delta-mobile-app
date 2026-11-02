@@ -63,11 +63,6 @@
                 android:layout_marginStart="8dp"
                 android:text="@string/profile_consulting" />
         </LinearLayout>
-        <com.aula.delta_mobile_app.view.StatusNoticeView
-            android:id="@+id/units_notice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone" />
         <com.google.android.material.button.MaterialButton
             android:id="@+id/unit_continue"
             android:layout_width="match_parent"
