@@ -101,21 +101,6 @@ public class MainSectionFragment extends AuthFlowFragment {
             });
             if (water.properties.getValue().status == ScreenState.Status.IDLE)
                 water.loadProperties();
-        } else if (screen.equals("ranking")) {
-            subtitle.setText("Compare a eficiência das suas unidades");
-            sections.rankings.observe(getViewLifecycleOwner(), value -> {
-                cards.removeAllViews();
-                show(value.displayMessage());
-                if (value.status != ScreenState.Status.SUCCESS) return;
-                if (value.data.isEmpty())
-                    card("Ainda não há dados de ranking para suas unidades.", false);
-                for (PropertyRankingResponse row : value.data)
-                    card((row.rankEfficiency == null ? "—" : row.rankEfficiency + "º") + " · " + (row.propertyName == null ? "Imóvel " + row.propertyId : row.propertyName)
-                    + "\nConsumo total: " + number(row.totalLiters) + " L\nCusto total: " + money(row.totalCost) + "\nConsumo por área: " + number(row.litersPerM2) + " L/m²",
-                    false);
-            });
-            retry.setOnClickListener(v -> sections.loadRankings());
-            sections.loadRankings();
         } else if (screen.equals("routine")) {
             subtitle.setText("Monitore e otimize sua rotina hídrica");
             sections.habits.observe(getViewLifecycleOwner(), this::renderRoutine);
@@ -127,9 +112,8 @@ public class MainSectionFragment extends AuthFlowFragment {
             sections.loadHabits();
         } else {
             retry.setVisibility(View.GONE);
-            subtitle.setText(screen.equals("chat") ? "Monitore cada gota com mais precisão." : "Planeje seu consumo de água");
-            card(screen.equals("chat") ? "O Gluh Helper ainda não está conectado. Acompanhe seu consumo e" + " organize seus hábitos na Rotina."
-                : "As metas mensais ainda não estão disponíveis para esta conta.", false);
+            subtitle.setText("Planeje seu consumo de água");
+            card("As metas mensais ainda não estão disponíveis para esta conta.", false);
             action("Organizar minha rotina", () -> navigate(R.id.goalsFragment));
         }
     }

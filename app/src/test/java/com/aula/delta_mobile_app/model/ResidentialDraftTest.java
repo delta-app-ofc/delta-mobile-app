@@ -34,12 +34,11 @@ public class ResidentialDraftTest {
     public void retainsCoordinatesOnlyForUnchangedPostalCode() {
         AddressResponse confirmed = address();
         ResidentialDraft draft = new ResidentialDraft(confirmed);
-        assertEquals(confirmed.latitude, draft.request(confirmed, 5).latitude);
+        assertEquals(confirmed.latitude, draft.request(confirmed).latitude);
         draft.cep = "01001000";
-        UpdateAddressRequest request = draft.request(confirmed, 8);
+        UpdateAddressRequest request = draft.request(confirmed);
         assertNull(request.latitude);
         assertNull(request.longitude);
-        assertEquals(Integer.valueOf(8), request.regionId);
     }
 
     @Test
@@ -62,10 +61,10 @@ public class ResidentialDraftTest {
     public void requestContainsOnlyFieldsSupportedByApi() {
         AddressResponse confirmed = address();
         ResidentialDraft draft = new ResidentialDraft(confirmed);
-        com.google.gson.JsonObject json = GsonProvider.getInstance().toJsonTree(draft.request(confirmed, 5)).getAsJsonObject();
-        assertEquals(6, json.size());
+        com.google.gson.JsonObject json = GsonProvider.getInstance().toJsonTree(draft.request(confirmed)).getAsJsonObject();
+        assertEquals(5, json.size());
         assertTrue(json.has("cep"));
-        assertTrue(json.has("regionId"));
+        assertFalse(json.has("regionId"));
         assertFalse(json.has("number"));
         assertFalse(json.has("street"));
         assertFalse(json.has("userId"));

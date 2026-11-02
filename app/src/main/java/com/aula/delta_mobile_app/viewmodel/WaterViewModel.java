@@ -9,6 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.aula.delta_mobile_app.model.ApiModels.*;
 import com.aula.delta_mobile_app.model.ScreenState;
+import com.aula.delta_mobile_app.model.SectionData;
 import com.aula.delta_mobile_app.repository.AuthRepository;
 import com.aula.delta_mobile_app.services.network.ApiErrors;
 
@@ -40,9 +41,18 @@ public class WaterViewModel extends AndroidViewModel {
     public void loadProperties() {
         if (properties.getValue().busy()) return;
         int attempt = epoch;
+        long generation = auth.sessionGeneration();
         properties.setValue(ScreenState.loading());
-        auth.resource(() -> result(auth.api().listUserProperties(auth.currentProfile().id).execute()), value -> main.post(() -> {
-            if (attempt == epoch) properties.setValue(value);
+        auth.resource(() -> {
+            Integer user = auth.currentProfile().id;
+            Response<List<UserPropertyResponse>> response = auth.api().listUserProperties(user).execute();
+            if (!response.isSuccessful()) return ApiErrors.<List<UserPropertyResponse>>from(response);
+            if (response.body() == null) return ScreenState.<List<UserPropertyResponse>>error("O servidor não confirmou suas unidades.");
+            return ScreenState.success(SectionData.properties(response.body(), user));
+        }, value -> main.post(() -> {
+            if (attempt != epoch || generation != auth.sessionGeneration() || !auth.hasSession()) return;
+            if (value.status == ScreenState.Status.SUCCESS) propertyId = SectionData.selectedProperty(value.data, propertyId);
+            properties.setValue(value);
         }));
     }
 

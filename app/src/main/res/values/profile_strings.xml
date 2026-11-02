@@ -4,7 +4,6 @@
     <string name="profile_residential_title">Informações residenciais</string>
     <string name="profile_units">Unidades</string>
     <string name="profile_sensors">Sensores cadastrados</string>
-    <string name="profile_performance">Minha performance</string>
     <string name="profile_edit_photo">Alterar foto de perfil</string>
     <string name="profile_edit_personal">Editar informações pessoais</string>
     <string name="profile_edit_residential">Editar informações residenciais</string>
@@ -18,6 +17,9 @@
     <string name="profile_email">E-mail</string>
     <string name="profile_password">Senha</string>
     <string name="profile_phone">Telefone</string>
+    <string name="profile_birth_date">Nascimento (AAAA-MM-DD)</string>
+    <string name="profile_personal_saving">Salvando informações pessoais…</string>
+    <string name="profile_personal_saved">Informações pessoais salvas.</string>
     <string name="profile_change_password">Alterar senha</string>
     <string name="profile_protected_password">Senha protegida. A senha atual não pode ser exibida.</string>
     <string name="profile_missing">Não informado</string>
@@ -27,7 +29,6 @@
     <string name="profile_number">Número</string>
     <string name="profile_district">Bairro</string>
     <string name="profile_street">Rua</string>
-    <string name="profile_personal_unsupported">A API atual permite consultar nome e e-mail, mas ainda não oferece edição pessoal, telefone ou alteração de senha.</string>
     <string name="profile_address_partial">Número, bairro e rua ainda não estão disponíveis na API. É possível editar CEP, cidade e estado.</string>
     <string name="profile_password_unsupported">A alteração de senha ainda não está disponível na API.</string>
     <string name="profile_upload_unsupported">A foto está apenas na prévia. O envio ao Cloudinary depende de autorização de upload e associação da foto ao perfil pelo backend, ainda não disponíveis na API.</string>
@@ -40,8 +41,10 @@
     <string name="profile_camera_unavailable">Não foi possível abrir a câmera. Escolha uma foto da galeria.</string>
     <string name="profile_select_property">Selecione o imóvel</string>
     <string name="profile_link_sensor">Vincular medidor</string>
-    <string name="profile_sensors_unavailable">A listagem de sensores cadastrados ainda não possui uma tela disponível. Você pode vincular um medidor ao imóvel selecionado.</string>
-    <string name="profile_performance_unavailable">A visão individual de performance ainda não está disponível.</string>
+    <string name="profile_sensors_empty">Nenhum sensor cadastrado neste imóvel.</string>
+    <string name="profile_sensor_active">Cadastro ativo</string>
+    <string name="profile_sensor_inactive">Cadastro inativo</string>
+    <string name="profile_sensor_unknown">Situação do cadastro não informada</string>
     <string name="profile_discard_title">Descartar alterações?</string>
     <string name="profile_discard_message">As alterações ainda não foram salvas.</string>
     <string name="profile_keep_editing">Continuar editando</string>

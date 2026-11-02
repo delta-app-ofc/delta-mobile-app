@@ -16,14 +16,38 @@ public final class ProfileSettingsRepository {
     public ProfileSettingsRepository(AuthRepository auth) { this.auth = auth; }
 
     public void profile(Consumer<ScreenState<Profile>> callback) {
-        auth.resource(() -> ScreenState.success(auth.currentProfile()), callback);
+        auth.resource(() -> {
+            Response<Profile> response = auth.api().me().execute();
+            if (!response.isSuccessful()) return ApiErrors.from(response);
+            Profile value = response.body();
+            return value == null || value.id == null || value.id <= 0 ? ScreenState.error("Não foi possível confirmar seu perfil.") : ScreenState.success(value);
+        }, callback);
+    }
+
+    public void saveProfile(Profile original, UpdateProfileRequest request, Consumer<ScreenState<Profile>> callback) {
+        auth.resource(() -> {
+            Response<Profile> loaded = auth.api().me().execute();
+            if (!loaded.isSuccessful()) return ApiErrors.from(loaded);
+            Profile current = loaded.body();
+            if (current == null) return ScreenState.error("Não foi possível confirmar seu perfil.");
+            if (!Objects.equals(current.id, original.id) || !Objects.equals(current.name, original.name) || !Objects.equals(current.email, original.email)
+                || !Objects.equals(current.phone, original.phone) || !Objects.equals(current.birthDate, original.birthDate))
+                return ScreenState.error("O perfil mudou em outra sessão. Cancele a edição e atualize os dados.");
+            Response<Profile> response = auth.api().updateProfile(request).execute();
+            if (!response.isSuccessful()) return ApiErrors.from(response);
+            Profile value = response.body();
+            if (value == null || !Objects.equals(value.id, original.id) || !Objects.equals(value.name, request.name) || !Objects.equals(value.email, request.email)
+                || !Objects.equals(value.phone, request.phone) || !Objects.equals(value.birthDate, request.birthDate))
+                return ScreenState.error("O servidor não confirmou todas as alterações. Atualize o perfil para conferir.");
+            return ScreenState.success(value);
+        }, callback);
     }
 
     public void residence(Integer propertyId, Consumer<ScreenState<ProfileSettingsData>> callback) {
         auth.resource(() -> {
             if (propertyId == null) return ScreenState.error("Selecione um imóvel em Unidades para consultar o endereço.");
             ScreenState<PropertyResponse> selected = ownedProperty(propertyId);
-            if (selected.status != ScreenState.Status.SUCCESS) return ScreenState.error(selected.message, selected.code, 0);
+            if (selected.status != ScreenState.Status.SUCCESS) return ScreenState.error(selected.message, selected.code, selected.retryAt);
             if (selected.data.addressId == null) return ScreenState.error("Este imóvel não possui endereço cadastrado.");
             Response<AddressResponse> response = auth.api().getAddress(selected.data.addressId).execute();
             if (!response.isSuccessful()) return ApiErrors.from(response);
@@ -33,10 +57,24 @@ public final class ProfileSettingsRepository {
         }, callback);
     }
 
+    public void sensors(Integer propertyId, Consumer<ScreenState<List<DeviceResponse>>> callback) {
+        auth.resource(() -> {
+            if (propertyId == null) return ScreenState.error("Selecione um imóvel em Unidades para consultar os sensores.");
+            ScreenState<PropertyResponse> selected = ownedProperty(propertyId);
+            if (selected.status != ScreenState.Status.SUCCESS) return ScreenState.error(selected.message, selected.code, selected.retryAt);
+            Response<List<DeviceResponse>> response = auth.api().listDevices().execute();
+            if (!response.isSuccessful()) return ApiErrors.from(response);
+            if (response.body() == null) return ScreenState.error("O servidor não confirmou a lista de sensores.");
+            List<DeviceResponse> devices = new java.util.ArrayList<>();
+            for (DeviceResponse device : response.body()) if (device != null && Objects.equals(device.propertyId, propertyId)) devices.add(device);
+            return ScreenState.success(devices);
+        }, callback);
+    }
+
     public void save(ProfileSettingsData original, UpdateAddressRequest request, Consumer<ScreenState<ProfileSettingsData>> callback) {
         auth.resource(() -> {
             ScreenState<PropertyResponse> selected = ownedProperty(original.property.id);
-            if (selected.status != ScreenState.Status.SUCCESS) return ScreenState.error(selected.message, selected.code, 0);
+            if (selected.status != ScreenState.Status.SUCCESS) return ScreenState.error(selected.message, selected.code, selected.retryAt);
             if (!Objects.equals(selected.data.addressId, original.address.id)) return ScreenState.error("O endereço do imóvel mudou. Atualize os dados antes de editar.");
             Response<AddressResponse> current = auth.api().getAddress(original.address.id).execute();
             if (!current.isSuccessful()) return ApiErrors.from(current);
@@ -46,7 +84,7 @@ public final class ProfileSettingsRepository {
             if (!response.isSuccessful()) return ApiErrors.from(response);
             AddressResponse saved = response.body();
             if (saved == null || !Objects.equals(saved.id, original.address.id) || !Objects.equals(saved.cep, request.cep)
-                || !Objects.equals(saved.city, request.city) || !Objects.equals(saved.state, request.state) || !Objects.equals(saved.regionId, request.regionId)
+                || !Objects.equals(saved.city, request.city) || !Objects.equals(saved.state, request.state)
                 || !sameNumber(saved.latitude, request.latitude) || !sameNumber(saved.longitude, request.longitude))
                 return ScreenState.error("O servidor não confirmou todas as alterações. Atualize o endereço para conferir.");
             return ScreenState.success(new ProfileSettingsData(selected.data, saved));

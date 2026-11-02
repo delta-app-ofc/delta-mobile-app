@@ -421,6 +421,7 @@ public final class ChatFragment extends Fragment {
             boolean empty = !state.showIntroduction && history != null && history.history.status == ScreenState.Status.SUCCESS && history.history.data.isEmpty() && state.messages.isEmpty();
             holder.itemView.findViewById(R.id.chat_waiting).setVisibility(busy || empty ? View.VISIBLE : View.GONE);
             ((ViewGroup) text.getParent()).getChildAt(0).setVisibility(busy ? View.VISIBLE : View.GONE);
+            text.setVisibility(closing || loadingHistory || empty || state.account.busy() ? View.VISIBLE : View.GONE);
             text.setText(closing ? R.string.chat_closing : loadingHistory ? R.string.chat_history_loading : empty ? R.string.chat_history_empty : state.account.busy() ? R.string.chat_preparing : R.string.chat_waiting);
             ScreenState<?> failure = state.account.status == ScreenState.Status.ERROR ? state.account : state.showIntroduction ? ScreenState.idle() : state.sending;
             String message = failure.status == ScreenState.Status.ERROR ? failure.message : "";

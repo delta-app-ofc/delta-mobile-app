@@ -6,6 +6,10 @@ import java.util.List;
 public final class ApiModels {
     private ApiModels() {}
 
+    public static class UpdateProfileRequest {
+        public String name, email, phone, birthDate;
+    }
+
     public static class UpdateUserPropertyRequest {
         public Integer propertyId;
     }
@@ -102,7 +106,6 @@ public final class ApiModels {
     }
 
     public static class UpdateAddressRequest {
-        public Integer regionId;
         public String cep;
         public String city;
         public String state;
@@ -185,28 +188,6 @@ public final class ApiModels {
         public BigDecimal ratePerM3;
         public BigDecimal estimatedCost;
         public String referenceDate;
-    }
-
-    public static class ResidentialEfficiencyRankingResponse {
-        public Integer userId;
-        public String personName;
-        public String referenceMonth;
-        public BigDecimal m3Value;
-        public BigDecimal totalValue;
-        public Long rankEfficiency;
-        public Double consumptionPercentRank;
-    }
-
-    public static class PropertyRankingResponse {
-        public Integer propertyId;
-        public String propertyName;
-        public BigDecimal totalLiters;
-        public BigDecimal totalCost;
-        public BigDecimal litersPerM2;
-        public Long rankEfficiency;
-        public Long rankCost;
-        public Long consumptionQuartile;
-        public Double consumptionPercentRank;
     }
 
     public static class MonthlyVariationResponse {

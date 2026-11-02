@@ -52,9 +52,8 @@ public final class ChatMessageAdapter extends ListAdapter<ChatMessage, ChatMessa
         holder.content.setContentDescription(holder.itemView.getContext().getString(R.string.chat_message_accessibility,
             holder.itemView.getContext().getString(author), message.content));
         if (holder.status != null) {
-            int status = message.status == ScreenState.Status.LOADING ? R.string.chat_message_sending : R.string.chat_message_failed;
-            boolean visible = message.status == ScreenState.Status.LOADING || message.status == ScreenState.Status.ERROR;
-            holder.status.setText(visible ? holder.itemView.getContext().getString(status) : "");
+            boolean visible = message.status == ScreenState.Status.ERROR;
+            holder.status.setText(visible ? holder.itemView.getContext().getString(R.string.chat_message_failed) : "");
             holder.status.setVisibility(visible ? View.VISIBLE : View.GONE);
         }
     }

@@ -24,12 +24,11 @@ public final class ResidentialDraft {
         return null;
     }
 
-    public UpdateAddressRequest request(AddressResponse original, Integer regionId) {
+    public UpdateAddressRequest request(AddressResponse original) {
         UpdateAddressRequest request = new UpdateAddressRequest();
         request.cep = cep;
         request.city = city.trim();
         request.state = state.trim();
-        request.regionId = regionId;
         if (Objects.equals(cep, original.cep)) {
             request.latitude = original.latitude;
             request.longitude = original.longitude;

@@ -45,14 +45,9 @@ public final class ResidentialInformationFragment extends AuthFlowFragment imple
         cep = new ProfileFormField(requireContext(), R.string.profile_cep, InputType.TYPE_CLASS_NUMBER);
         state = new ProfileFormField(requireContext(), R.string.profile_state, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
         city = new ProfileFormField(requireContext(), R.string.profile_city, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
-        ProfileFormField number = new ProfileFormField(requireContext(), R.string.profile_number, InputType.TYPE_CLASS_TEXT);
-        ProfileFormField district = new ProfileFormField(requireContext(), R.string.profile_district, InputType.TYPE_CLASS_TEXT);
-        ProfileFormField street = new ProfileFormField(requireContext(), R.string.profile_street, InputType.TYPE_CLASS_TEXT);
         pair(body, cep, state);
-        pair(body, city, number);
-        body.addView(district);
-        body.addView(street);
-        notice = new TextView(requireContext());
+        body.addView(city);
+        notice = new com.aula.delta_mobile_app.view.StatusNoticeView(requireContext());
         notice.setTextAppearance(R.style.Profile_Body);
         notice.setTextColor(0xFFB0B2B3);
         notice.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
@@ -92,7 +87,25 @@ public final class ResidentialInformationFragment extends AuthFlowFragment imple
         model.residence.observe(getViewLifecycleOwner(), value -> render());
         model.saving.observe(getViewLifecycleOwner(), value -> render());
         model.cepMessage.observe(getViewLifecycleOwner(), value -> render());
-        model.loadResidence(water.propertyId, false);
+        water.properties.observe(getViewLifecycleOwner(), value -> {
+            if (value.status == ScreenState.Status.SUCCESS) {
+                if (water.propertyId == null && value.data != null) {
+                    for (com.aula.delta_mobile_app.model.ApiModels.UserPropertyResponse link : value.data) {
+                        if (link != null && link.propertyId != null) { water.propertyId = link.propertyId; break; }
+                    }
+                }
+                model.loadResidence(water.propertyId, false);
+            } else if (value.status == ScreenState.Status.ERROR) {
+                notice.setText(value.message);
+                retry.setVisibility(View.VISIBLE);
+            } else if (value.busy() && water.propertyId == null) notice.setText(R.string.profile_loading);
+        });
+        retry.setOnClickListener(v -> leaveProfile(() -> {
+            if (water.properties.getValue().status != ScreenState.Status.SUCCESS) water.loadProperties();
+            else model.loadResidence(water.propertyId, true);
+        }));
+        if (water.propertyId != null) model.loadResidence(water.propertyId, false);
+        if (water.properties.getValue().status == ScreenState.Status.IDLE) water.loadProperties();
     }
 
     private void syncDraft() { if (model.draft != null) model.updateDraft(cep.value(), city.value(), state.value()); }

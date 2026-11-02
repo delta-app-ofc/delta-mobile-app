@@ -9,17 +9,22 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.SavedStateHandle;
 import com.aula.delta_mobile_app.model.AuthModels.Profile;
+import com.aula.delta_mobile_app.model.ApiModels.DeviceResponse;
 import com.aula.delta_mobile_app.model.ProfileSettingsData;
+import com.aula.delta_mobile_app.model.PersonalDraft;
 import com.aula.delta_mobile_app.model.ResidentialDraft;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.repository.*;
 import java.io.File;
 import java.util.Objects;
+import java.util.List;
 
 public final class ProfileSettingsViewModel extends AndroidViewModel {
     public final MutableLiveData<ScreenState<Profile>> profile = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<ProfileSettingsData>> residence = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<Boolean>> saving = new MutableLiveData<>(ScreenState.idle());
+    public final MutableLiveData<ScreenState<Boolean>> savingProfile = new MutableLiveData<>(ScreenState.idle());
+    public final MutableLiveData<ScreenState<List<DeviceResponse>>> sensors = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<File>> photo = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<String> cepMessage = new MutableLiveData<>("");
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -28,13 +33,14 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
     private final ProfilePhotoRepository photos;
     private final PostalCodeRepository postal = new PostalCodeRepository();
     private final SavedStateHandle saved;
-    private final SignupOptions catalog;
     private final Observer<Boolean> sessionObserver;
     private long generation;
-    private int selection, photoRequest, cepRequest;
+    private int selection, photoRequest, cepRequest, sensorRequest;
     private Integer propertyId;
+    private Integer sensorPropertyId;
     private boolean cleared, cepLoading;
     public ResidentialDraft draft;
+    public PersonalDraft personalDraft;
 
     public ProfileSettingsViewModel(Application app, SavedStateHandle saved) {
         super(app);
@@ -42,20 +48,63 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
         auth = AuthRepository.getInstance(app);
         repository = new ProfileSettingsRepository(auth);
         photos = new ProfilePhotoRepository(app);
-        catalog = SignupOptions.load(app);
         generation = auth.sessionGeneration();
         sessionObserver = valid -> { if (!auth.hasSession() || generation != auth.sessionGeneration()) reset(); };
         auth.session().observeForever(sessionObserver);
     }
 
     public void loadProfile() {
-        if (profile.getValue().busy() || profile.getValue().status == ScreenState.Status.SUCCESS) return;
+        loadProfile(false);
+    }
+
+    public void loadSensors(Integer id) {
+        if (Objects.equals(sensorPropertyId, id) && sensors.getValue().busy()) return;
+        sensorPropertyId = id;
+        int request = ++sensorRequest;
+        long expected = generation;
+        sensors.setValue(ScreenState.loading());
+        repository.sensors(id, value -> main.post(() -> { if (valid(expected) && request == sensorRequest) sensors.setValue(value); }));
+    }
+
+    public void loadProfile(boolean force) {
+        if (personalDraft != null || savingProfile.getValue().busy() || profile.getValue().busy() || (!force && profile.getValue().status == ScreenState.Status.SUCCESS)) return;
         long expected = generation;
         profile.setValue(ScreenState.loading());
         repository.profile(value -> main.post(() -> { if (valid(expected)) profile.setValue(value); }));
     }
 
+    public void editProfile() {
+        if (profile.getValue().status != ScreenState.Status.SUCCESS || savingProfile.getValue().busy()) return;
+        if (personalDraft == null) personalDraft = new PersonalDraft(profile.getValue().data);
+        savingProfile.setValue(ScreenState.idle());
+    }
+
+    public void cancelProfile() {
+        if (savingProfile.getValue().busy()) return;
+        personalDraft = null;
+        savingProfile.setValue(ScreenState.idle());
+    }
+
+    public boolean personalDirty() { return personalDraft != null && profile.getValue().data != null && personalDraft.changed(profile.getValue().data); }
+
+    public void saveProfile() {
+        if (personalDraft == null || savingProfile.getValue().busy() || System.currentTimeMillis() < savingProfile.getValue().retryAt) return;
+        String error = personalDraft.validation();
+        if (error != null) { savingProfile.setValue(ScreenState.error(error)); return; }
+        long expected = generation;
+        savingProfile.setValue(ScreenState.loading());
+        repository.saveProfile(profile.getValue().data, personalDraft.request(), value -> main.post(() -> {
+            if (!valid(expected)) return;
+            if (value.status == ScreenState.Status.SUCCESS) {
+                personalDraft = null;
+                profile.setValue(value);
+                savingProfile.setValue(ScreenState.success(true));
+            } else savingProfile.setValue(ScreenState.error(value.message, value.code, value.retryAt));
+        }));
+    }
+
     public void loadResidence(Integer id, boolean force) {
+        if (Objects.equals(propertyId, id) && residence.getValue().busy()) return;
         if (!force && Objects.equals(propertyId, id) && residence.getValue().status != ScreenState.Status.IDLE) return;
         propertyId = id;
         int request = ++selection;
@@ -127,18 +176,15 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
     }
 
     public void saveResidence() {
-        if (draft == null || saving.getValue().busy() || residence.getValue().status != ScreenState.Status.SUCCESS) return;
+        if (draft == null || saving.getValue().busy() || System.currentTimeMillis() < saving.getValue().retryAt || residence.getValue().status != ScreenState.Status.SUCCESS) return;
         if (cepLoading) { saving.setValue(ScreenState.error("Aguarde a consulta de CEP terminar antes de salvar.")); return; }
         String error = draft.validation();
         ProfileSettingsData original = residence.getValue().data;
-        Integer region = Objects.equals(draft.city.trim(), original.address.city) && Objects.equals(draft.state.trim(), original.address.state)
-            ? original.address.regionId : catalog.region(draft.state, draft.city);
-        if (region == null) error = "A localidade precisa de uma região tarifária configurada antes de salvar.";
         if (error != null) { saving.setValue(ScreenState.error(error)); return; }
         long expected = generation;
         int request = selection;
         saving.setValue(ScreenState.loading());
-        repository.save(original, draft.request(original.address, region), value -> main.post(() -> {
+        repository.save(original, draft.request(original.address), value -> main.post(() -> {
             if (!valid(expected) || request != selection) return;
             if (value.status == ScreenState.Status.SUCCESS) {
                 draft = null;
@@ -183,12 +229,14 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
     private void reset() {
         generation = auth.sessionGeneration();
         selection++;
+        sensorRequest++;
         photoRequest++;
         postal.cancel();
         cepLoading = false;
         main.removeCallbacksAndMessages(null);
         clearPhotoFile();
         draft = null;
+        personalDraft = null;
         propertyId = null;
         saved.remove("residential_draft");
         clearCapture();
@@ -196,6 +244,8 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
         residence.setValue(ScreenState.idle());
         photo.setValue(ScreenState.idle());
         saving.setValue(ScreenState.idle());
+        savingProfile.setValue(ScreenState.idle());
+        sensors.setValue(ScreenState.idle());
         cepMessage.setValue("");
     }
 

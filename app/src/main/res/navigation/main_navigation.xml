@@ -90,19 +90,6 @@
             android:defaultValue="goals" />
     </fragment>
     <fragment
-        android:id="@+id/rankingFragment"
-        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
-        android:label="Ranking">
-        <argument
-            android:name="title"
-            app:argType="string"
-            android:defaultValue="Compare suas unidades" />
-        <argument
-            android:name="screen"
-            app:argType="string"
-            android:defaultValue="ranking" />
-    </fragment>
-    <fragment
         android:id="@+id/leakDetectionFragment"
         android:name="com.aula.delta_mobile_app.view.fragments.LeakDetectionFragment"
         android:label="@string/leak_title">
@@ -140,4 +127,16 @@
                     android:defaultValue="" />
                 <argument android:name="analysis" app:argType="string" android:defaultValue="abnormal" />
 </fragment>
-            </navigation>
+    <fragment
+        android:id="@+id/profileSettingsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.ProfileSettingsFragment"
+        android:label="@string/profile_settings_title" />
+    <fragment
+        android:id="@+id/personalInformationFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.PersonalInformationFragment"
+        android:label="@string/profile_personal_title" />
+    <fragment
+        android:id="@+id/residentialInformationFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.ResidentialInformationFragment"
+        android:label="@string/profile_residential_title" />
+</navigation>

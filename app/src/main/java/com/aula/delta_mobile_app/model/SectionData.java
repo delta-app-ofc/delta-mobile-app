@@ -7,6 +7,20 @@ import java.util.*;
 public final class SectionData {
     private SectionData() {}
 
+    public static List<UserPropertyResponse> properties(List<UserPropertyResponse> source, Integer user) {
+        List<UserPropertyResponse> result = new ArrayList<>();
+        if (source != null && user != null)
+            for (UserPropertyResponse row : source)
+                if (row != null && user.equals(row.userId) && row.propertyId != null && row.propertyId > 0) result.add(row);
+        return result;
+    }
+
+    public static Integer selectedProperty(List<UserPropertyResponse> properties, Integer selected) {
+        if (properties == null || properties.isEmpty()) return null;
+        for (UserPropertyResponse property : properties) if (Objects.equals(property.propertyId, selected)) return selected;
+        return properties.get(0).propertyId;
+    }
+
     public static List<LastWaterBillResponse> bills(List<LastWaterBillResponse> source, Integer user) {
         List<LastWaterBillResponse> result = new ArrayList<>();
         if (source != null && user != null)
@@ -24,13 +38,4 @@ public final class SectionData {
         return result;
     }
 
-    public static List<PropertyRankingResponse> rankings(List<PropertyRankingResponse> source, Set<Integer> properties) {
-        List<PropertyRankingResponse> result = new ArrayList<>();
-        if (source != null && properties != null)
-            for (PropertyRankingResponse row : source)
-                if (row != null && row.propertyId != null && properties.contains(row.propertyId))
-                    result.add(row);
-        result.sort(Comparator.comparing((PropertyRankingResponse row) -> row.rankEfficiency, Comparator.nullsLast(Comparator.naturalOrder())));
-        return result;
-    }
 }

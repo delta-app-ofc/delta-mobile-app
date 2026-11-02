@@ -19,6 +19,7 @@ import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProvider;
 import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.ApiModels.UserPropertyResponse;
+import com.aula.delta_mobile_app.model.ApiModels.DeviceResponse;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.viewmodel.*;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -89,7 +90,7 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
         greeting.setText(R.string.profile_hello_default);
         identity.addView(greeting, new LinearLayout.LayoutParams(0, -2, 1));
         body.addView(identity);
-        notice = new TextView(requireContext());
+        notice = new com.aula.delta_mobile_app.view.StatusNoticeView(requireContext());
         notice.setTextAppearance(R.style.Profile_Body);
         notice.setTextColor(0xFFCED6E6);
         notice.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
@@ -108,12 +109,10 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
         divider(first);
         row(first, R.string.profile_residential_title, R.drawable.main_icon_home, () -> leaveProfile(() -> navigate(R.id.residentialInformationFragment)));
         divider(first);
-        row(first, R.string.profile_units, R.drawable.main_icon_goals, this::units);
+        row(first, R.string.profile_units, R.drawable.main_icon_home, this::units);
         LinearLayout second = group(body);
         row(second, R.string.profile_sensors, R.drawable.home_icon_bell, this::sensors);
-        divider(second);
-        row(second, R.string.profile_performance, R.drawable.main_icon_consumption, () -> message(R.string.profile_performance_unavailable));
-        button(body, R.string.profile_retry, () -> { model.loadProfile(); water.loadProperties(); });
+        button(body, R.string.profile_retry, () -> { model.loadProfile(true); water.loadProperties(); });
         button(body, R.string.auth_logout, () -> {
             registration().reset();
             water.reset();
@@ -132,15 +131,23 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
             previewActions.setVisibility(value.status == ScreenState.Status.SUCCESS ? View.VISIBLE : View.GONE);
             renderNotice();
         });
-        model.loadProfile();
+        model.loadProfile(true);
+        water.properties.observe(getViewLifecycleOwner(), value -> {
+            if (value.status == ScreenState.Status.SUCCESS && value.data != null && water.propertyId == null) {
+                for (UserPropertyResponse link : value.data) if (link != null && link.propertyId != null) { water.propertyId = link.propertyId; break; }
+            }
+            renderNotice();
+        });
         if (water.properties.getValue().status == ScreenState.Status.IDLE) water.loadProperties();
     }
 
     private void renderNotice() {
         ScreenState<?> photo = model.photo.getValue(), profile = model.profile.getValue();
+        ScreenState<?> properties = water.properties.getValue();
         String text = photo.busy() ? getString(R.string.profile_photo_loading) : photo.status == ScreenState.Status.ERROR ? photo.message
             : photo.status == ScreenState.Status.SUCCESS ? getString(R.string.profile_photo_preview)
-            : profile.busy() ? getString(R.string.profile_loading) : profile.status == ScreenState.Status.ERROR ? profile.message : "";
+            : profile.busy() ? getString(R.string.profile_loading) : profile.status == ScreenState.Status.ERROR ? profile.message
+            : properties.status == ScreenState.Status.ERROR ? properties.message : "";
         notice.setText(text);
         notice.setVisibility(text.isEmpty() ? View.GONE : View.VISIBLE);
     }
@@ -200,10 +207,31 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
     }
 
     private void sensors() {
-        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.profile_sensors)
-            .setMessage(R.string.profile_sensors_unavailable).setNegativeButton(R.string.profile_cancel, null);
-        if (water.propertyId != null) dialog.setPositiveButton(R.string.profile_link_sensor, (d, which) -> navigate(R.id.qrScanFragment));
+        Integer propertyId = water.propertyId;
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.profile_sensors)
+            .setMessage(R.string.profile_loading).setNegativeButton(R.string.profile_cancel, null)
+            .setNeutralButton(R.string.profile_retry, null);
+        if (propertyId != null) builder.setPositiveButton(R.string.profile_link_sensor, (d, which) -> navigate(R.id.qrScanFragment));
+        androidx.appcompat.app.AlertDialog dialog = builder.create();
+        androidx.lifecycle.Observer<ScreenState<List<DeviceResponse>>> observer = value -> {
+            if (value.busy()) dialog.setMessage(getString(R.string.profile_loading));
+            else if (value.status == ScreenState.Status.ERROR) dialog.setMessage(value.message);
+            else if (value.status == ScreenState.Status.SUCCESS) {
+                StringBuilder text = new StringBuilder();
+                for (DeviceResponse device : value.data) {
+                    if (text.length() > 0) text.append("\n\n");
+                    text.append(device.deviceId == null ? getString(R.string.profile_missing) : device.deviceId).append("\n")
+                        .append(getString(device.isActive == null ? R.string.profile_sensor_unknown : device.isActive ? R.string.profile_sensor_active : R.string.profile_sensor_inactive));
+                }
+                dialog.setMessage(text.length() == 0 ? getString(R.string.profile_sensors_empty) : text.toString());
+            }
+            if (dialog.isShowing()) dialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL).setEnabled(!value.busy());
+        };
+        dialog.setOnDismissListener(d -> model.sensors.removeObserver(observer));
         dialog.show();
+        dialog.getButton(android.content.DialogInterface.BUTTON_NEUTRAL).setOnClickListener(v -> model.loadSensors(propertyId));
+        model.loadSensors(propertyId);
+        model.sensors.observe(getViewLifecycleOwner(), observer);
     }
 
     private LinearLayout group(LinearLayout parent) {

@@ -279,11 +279,11 @@ public class ChatRenderingInstrumentedTest {
         onView(allOf(withId(R.id.chat_message_text), withText("Água"))).check(matches(isDisplayed()));
         scenario.onActivity(activity -> {
             TextView status = list().getLayoutManager().findViewByPosition(1).findViewById(R.id.chat_message_status);
-            assertEquals(status.length(), status.getLayout().getLineEnd(status.getLayout().getLineCount() - 1));
-            for (int line = 0; line < status.getLayout().getLineCount(); line++) assertTrue(status.getLayout().getLineWidth(line) <= status.getWidth());
+            assertEquals(View.GONE, status.getVisibility());
         });
         scrollToEnd();
         onView(withId(R.id.chat_waiting)).check(matches(isDisplayed()));
+        onView(withId(R.id.chat_waiting_text)).check(matches(not(isDisplayed())));
         onView(withId(R.id.chat_input)).check(matches(withText("")));
         onView(withId(R.id.chat_send)).check(matches(not(isEnabled())));
         scenario.onActivity(activity -> {
