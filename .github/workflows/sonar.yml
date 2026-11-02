@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   tests:
-    name: Testes e relatórios Android
+    name: Testes Sonar
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -53,6 +53,23 @@ jobs:
             app/build/reports/coverage/test/debug
             app/build/test-results/testDebugUnitTest
 
+  ci-tecnico:
+    name: ci-tecnico
+    if: always()
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Exigir sucesso dos testes técnicos
+        env:
+          TESTS_RESULT: ${{ needs.tests.result }}
+        run: |
+          if [[ "$TESTS_RESULT" != "success" ]]; then
+            echo "::error::Os testes técnicos terminaram com resultado: $TESTS_RESULT"
+            exit 1
+          fi
+          echo "Os testes técnicos foram aprovados."
+
   sonar:
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     needs: tests
@@ -69,7 +86,7 @@ jobs:
     name: Reportar testes Android na PR
     if: always() && github.event_name == 'pull_request'
     needs: tests
-    uses: delta-app-ofc/.github/.github/workflows/report_ci.yml@8f4329cdde8ad39527069966a5cb97bbb49675b5
+    uses: delta-app-ofc/.github/.github/workflows/report_ci.yml@d30cc21215e716966e2e05a22e0caa1d410f1b65
     with:
       needs_results: ${{ toJSON(needs) }}
     secrets:
