@@ -1,0 +1,35 @@
+<resources>
+    <string name="goal_title">Meta mensal</string>
+    <string name="goal_daily_liters">%1$s L/dia</string>
+    <string name="goal_reduction_percent">%1$s%%</string>
+    <string name="goal_monthly_savings">%1$s L/mês</string>
+    <string name="goal_exceeded">Meta mensal ultrapassada</string>
+    <string name="goal_description">Defina um limite de consumo de água para o mês.</string>
+    <string name="goal_local">Meta salva neste aparelho</string>
+    <string name="goal_current_residence">Residência atual</string>
+    <string name="goal_limit_label">Seu limite para o mês</string>
+    <string name="goal_limit_hint">Acompanhe sua meta em litros na tela inicial.</string>
+    <string name="goal_past_not_set">A meta de %1$s não foi definida</string>
+    <string name="goal_current_reference">Meta do mês atual: %1$s L</string>
+    <string name="goal_current_not_set">A meta do mês atual não foi definida</string>
+    <string name="goal_amount">Limite mensal em litros</string>
+    <string name="goal_amount_example">Ex.: 50000</string>
+    <string name="goal_new_amount_hint">Digite a nova meta</string>
+    <string name="goal_liters_unit">L</string>
+    <string name="goal_edit">Definir ou editar meta</string>
+    <string name="goal_save">Salvar meta</string>
+    <string name="goal_cancel">Cancelar edição</string>
+    <string name="goal_loading">Carregando a meta da residência atual…</string>
+    <string name="goal_saving">Salvando meta…</string>
+    <string name="goal_saved">Meta salva neste aparelho.</string>
+    <string name="goal_not_set">Meta ainda não definida</string>
+    <string name="goal_read_error">Meta indisponível. Abra para consultar novamente.</string>
+    <string name="goal_invalid">Informe um valor maior que zero, com até duas casas decimais. Use vírgula ou ponto, sem separador de milhar.</string>
+    <string name="goal_property">Imóvel %1$d</string>
+    <string name="goal_month">Mês de referência</string>
+    <string name="goal_property_action">Selecionar imóvel da meta</string>
+    <string name="goal_previous">Mês anterior</string>
+    <string name="goal_next">Próximo mês</string>
+    <string name="goal_local_month">%1$s</string>
+    <string name="goal_back">Voltar</string>
+</resources>

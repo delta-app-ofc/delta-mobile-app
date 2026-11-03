@@ -24,6 +24,7 @@ public final class AuthRepository implements AuthActions, SignupActions {
     private final TokenStore store;
     private final ApiService api;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private final ExecutorService screenWorker = Executors.newFixedThreadPool(2);
     private final MutableLiveData<Boolean> session = new MutableLiveData<>(false);
     private Profile profile;
     private boolean authenticating;
@@ -59,8 +60,16 @@ public final class AuthRepository implements AuthActions, SignupActions {
     }
 
     public <T> void resource(java.util.concurrent.Callable<ScreenState<T>> operation, Consumer<ScreenState<T>> callback) {
+        resource(worker, operation, callback);
+    }
+
+    public <T> void screenResource(java.util.concurrent.Callable<ScreenState<T>> operation, Consumer<ScreenState<T>> callback) {
+        resource(screenWorker, operation, callback);
+    }
+
+    private <T> void resource(ExecutorService executor, java.util.concurrent.Callable<ScreenState<T>> operation, Consumer<ScreenState<T>> callback) {
         long expected = store.generation();
-        worker.execute(() -> {
+        executor.execute(() -> {
             ScreenState<T> result;
             try {
                 if (!store.hasSession())
@@ -90,6 +99,10 @@ public final class AuthRepository implements AuthActions, SignupActions {
 
     public synchronized boolean hasSession() {
         return store.hasSession();
+    }
+
+    public long sessionGeneration() {
+        return store.generation();
     }
 
     public boolean rememberMe() {

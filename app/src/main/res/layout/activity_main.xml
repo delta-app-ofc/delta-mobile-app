@@ -15,86 +15,174 @@
     <FrameLayout
         android:id="@+id/main_menu"
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="96dp"
         android:layout_gravity="bottom"
-        android:layout_marginHorizontal="28dp"
-        android:layout_marginBottom="24dp">
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginBottom="12dp">
         <com.aula.delta_mobile_app.view.FloatingMenuBackground
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:baselineAligned="false"
             android:orientation="horizontal">
             <FrameLayout
                 android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="match_parent">
-                <ImageButton
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                <LinearLayout
                     android:id="@+id/menu_consumption"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:padding="10dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_gravity="bottom"
+                    android:gravity="center_horizontal|center_vertical"
+                    android:orientation="vertical"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/main_icon_consumption"
-                    android:contentDescription="@string/leak_title" />
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="@string/menu_leaks">
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/main_icon_consumption"
+                        android:importantForAccessibility="no" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center"
+                        android:text="@string/menu_leaks"
+                        android:textColor="@color/white"
+                        android:textSize="9sp"
+                        android:importantForAccessibility="no" />
+                </LinearLayout>
             </FrameLayout>
             <FrameLayout
                 android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="match_parent">
-                <ImageButton
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                <LinearLayout
                     android:id="@+id/menu_costs"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:padding="10dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_gravity="bottom"
+                    android:gravity="center_horizontal|center_vertical"
+                    android:orientation="vertical"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/main_icon_costs"
-                    android:contentDescription="@string/main_costs" />
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="@string/menu_consumption_label">
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/main_icon_costs"
+                        android:importantForAccessibility="no" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center"
+                        android:text="@string/menu_consumption_label"
+                        android:textColor="@color/white"
+                        android:textSize="9sp"
+                        android:importantForAccessibility="no" />
+                </LinearLayout>
             </FrameLayout>
             <FrameLayout
                 android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="match_parent">
-                <ImageButton
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                <LinearLayout
                     android:id="@+id/menu_home"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="top|center_horizontal"
-                    android:padding="11dp"
-                    android:background="@drawable/main_home_background"
-                    android:src="@drawable/main_icon_home"
-                    android:contentDescription="@string/main_home" />
+                    android:layout_width="match_parent"
+                    android:layout_height="68dp"
+                    android:layout_gravity="top"
+                    android:gravity="center_horizontal|center_vertical"
+                    android:orientation="vertical"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="@string/main_home">
+                    <ImageView
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:padding="13dp"
+                        android:background="@drawable/main_home_background"
+                        android:src="@drawable/main_icon_home"
+                        android:importantForAccessibility="no" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center"
+                        android:text="@string/main_home"
+                        android:textColor="@color/white"
+                        android:textSize="9sp"
+                        android:importantForAccessibility="no" />
+                </LinearLayout>
             </FrameLayout>
             <FrameLayout
                 android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="match_parent">
-                <ImageButton
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                <LinearLayout
                     android:id="@+id/menu_tips"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:padding="10dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_gravity="bottom"
+                    android:gravity="center_horizontal|center_vertical"
+                    android:orientation="vertical"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/main_icon_tips"
-                    android:contentDescription="@string/main_tips" />
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="@string/menu_chat">
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/main_icon_tips"
+                        android:importantForAccessibility="no" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center"
+                        android:text="@string/menu_chat"
+                        android:textColor="@color/white"
+                        android:textSize="9sp"
+                        android:importantForAccessibility="no" />
+                </LinearLayout>
             </FrameLayout>
             <FrameLayout
                 android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="match_parent">
-                <ImageButton
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+                <LinearLayout
                     android:id="@+id/menu_goals"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:padding="10dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_gravity="bottom"
+                    android:gravity="center_horizontal|center_vertical"
+                    android:orientation="vertical"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/main_icon_calendar"
-                    android:contentDescription="@string/main_goals" />
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="@string/main_goals">
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/main_icon_calendar"
+                        android:importantForAccessibility="no" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:gravity="center"
+                        android:text="@string/main_goals"
+                        android:textColor="@color/white"
+                        android:textSize="9sp"
+                        android:importantForAccessibility="no" />
+                </LinearLayout>
             </FrameLayout>
         </LinearLayout>
     </FrameLayout>

@@ -42,7 +42,6 @@ public class DashboardFragment extends AuthFlowFragment {
         setScreenColor(R.color.home_background);
         WaterViewModel water = new ViewModelProvider(requireActivity()).get(WaterViewModel.class);
         HomeViewModel home = new ViewModelProvider(this).get(HomeViewModel.class);
-        view.setVisibility(View.INVISIBLE);
         setDashboardLoading(true);
         selectedProperty = null;
         waterModel = water;
@@ -59,7 +58,7 @@ public class DashboardFragment extends AuthFlowFragment {
         TextView apiStatus = view.findViewById(R.id.home_api_status);
         apiStatus.setText("");
 
-        view.findViewById(R.id.dash_cost_card).setOnClickListener(v -> navigate(R.id.costsHistoryFragment));
+        view.findViewById(R.id.dash_cost_card).setOnClickListener(v -> navigate(R.id.accountConfigFragment));
         view.findViewById(R.id.dash_diagnosis).setOnClickListener(v -> navigate(R.id.leakDetectionFragment));
         view.findViewById(R.id.dash_leak_alert).setOnClickListener(v -> navigate(R.id.leakDetectionFragment));
         view.findViewById(R.id.dash_abnormal_alert).setOnClickListener(v -> navigate(R.id.leakAbnormalFragment));
@@ -79,7 +78,6 @@ public class DashboardFragment extends AuthFlowFragment {
                 }
                 selectedProperty = chosen == null ? null : chosen.propertyId;
                 ((TextView) view.findViewById(R.id.home_greeting)).setText(chosen == null || chosen.propertyName == null ? getString(R.string.dash_property) : chosen.propertyName);
-                monitoring.load(selectedProperty, false);
                 renderMonitoring(view, monitoring.state().getValue());
                 if (selectedProperty == null) {
                     home.selectProperty(null);
@@ -90,6 +88,7 @@ public class DashboardFragment extends AuthFlowFragment {
                     if (!Objects.equals(selectedProperty, water.propertyId) || water.consumption.getValue().status == ScreenState.Status.IDLE)
                         water.select(selectedProperty);
                 }
+                monitoring.load(selectedProperty, false);
             }
         });
         water.consumption.observe(getViewLifecycleOwner(), value -> {
@@ -111,31 +110,16 @@ public class DashboardFragment extends AuthFlowFragment {
         });
 
         apiStatus.setOnClickListener(v -> {
-            view.setVisibility(View.INVISIBLE);
-            setDashboardLoading(true);
+                setDashboardLoading(true);
             home.loadProfile();
             if (water.properties.getValue().status != ScreenState.Status.SUCCESS || selectedProperty == null) water.loadProperties();
             else water.select(selectedProperty);
         });
         view.findViewById(R.id.home_goal).setOnClickListener(v -> navigate(R.id.monthlyGoalsFragment));
-        view.findViewById(R.id.home_notifications).setOnClickListener(v -> ((android.widget.ScrollView) view).smoothScrollTo(0, view.findViewById(R.id.dash_leak_alert).getTop()));
-        view.findViewById(R.id.home_settings).setOnClickListener(v -> new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.home_account_title).setItems(new String[] {
-            getString(R.string.home_select_property), getString(R.string.auth_home_meter), getString(R.string.auth_logout)
-        }, (dialog, item) -> {
-            if (item == 0)
-                selectProperty(view, water, home);
-            else if (item == 1 && selectedProperty != null)
-                navigate(R.id.qrScanFragment);
-            else if (item == 1)
-                Toast.makeText(requireContext(), R.string.home_no_properties, Toast.LENGTH_SHORT).show();
-            else {
-                registration().reset();
-                water.reset();
-                new ViewModelProvider(requireActivity()).get(LoginViewModel.class).logout();
-            }
-        }).show());
+        view.findViewById(R.id.dash_back).setOnClickListener(v -> back());
         if (water.properties.getValue().status == ScreenState.Status.IDLE) water.loadProperties();
-        home.loadProfile();
+        home.loadProfile(false);
+        com.aula.delta_mobile_app.view.MonthlyGoalCard.bind(this, view, home, water);
 
         Observer<Object> readiness = ignored -> {
             if (loadingCheckPosted) return;
@@ -147,7 +131,6 @@ public class DashboardFragment extends AuthFlowFragment {
                 boolean needsCost = water.consumption.getValue().status == ScreenState.Status.SUCCESS && summary != null && summary.monthLiters != null;
                 boolean ready = HomeLoadState.ready(home.user.getValue(), water.properties.getValue(), selectedProperty != null, water.consumption.getValue(),
                     home.cost.getValue(), needsCost);
-                view.setVisibility(ready ? View.VISIBLE : View.INVISIBLE);
                 setDashboardLoading(!ready);
             });
         };
@@ -178,8 +161,7 @@ public class DashboardFragment extends AuthFlowFragment {
             dialog.dismiss();
             Integer id = links.get(item).propertyId;
             if (Objects.equals(id, selectedProperty)) return;
-            view.setVisibility(View.INVISIBLE);
-            setDashboardLoading(true);
+                setDashboardLoading(true);
             selectedProperty = id;
             ((TextView) view.findViewById(R.id.home_greeting)).setText(labels[item]);
             home.selectProperty(id);
@@ -216,7 +198,7 @@ public class DashboardFragment extends AuthFlowFragment {
             public void run() {
                 if (getView() == null || waterModel == null) return;
                 if (selectedProperty != null && !waterModel.consumption.getValue().busy())
-                    waterModel.select(selectedProperty);
+                    waterModel.refreshConsumption();
                 refreshHandler.postDelayed(this, 300000);
             }
         };

@@ -3,7 +3,6 @@ package com.aula.delta_mobile_app;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.Espresso.pressBack;
 import static androidx.test.espresso.assertion.ViewAssertions.*;
-import static androidx.test.espresso.matcher.RootMatchers.isDialog;
 import static androidx.test.espresso.matcher.ViewMatchers.*;
 
 import androidx.lifecycle.ViewModelProvider;
@@ -23,15 +22,28 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class LoadingInstrumentedTest {
     @Test
+    public void splashStartsVisibleWithoutLoadingOverlay() {
+        try (ActivityScenario<com.aula.delta_mobile_app.view.activities.splash.SplashActivity> scenario = ActivityScenario.launch(com.aula.delta_mobile_app.view.activities.splash.SplashActivity.class)) {
+            scenario.onActivity(activity -> {
+                org.junit.Assert.assertTrue(activity.findViewById(R.id.delta_splash).isShown());
+                org.junit.Assert.assertNull(activity.findViewById(R.id.screen_flow_loading));
+            });
+        }
+    }
+
+    @Test
     public void loadingAppearsAndClosesOnErrorInBothFlows() throws Exception {
         try (ActivityScenario<LoginActivity> scenario = ActivityScenario.launch(LoginActivity.class)) {
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+            awaitLoading(scenario, false);
             onView(withId(R.id.login_user)).check(matches(isDisplayed()));
-            onView(withContentDescription("Estamos configurando tudo para você.")).check(doesNotExist());
+            awaitLoading(scenario, false);
+            onView(withId(R.id.screen_flow_loading)).check(matches(withEffectiveVisibility(Visibility.GONE)));
             scenario.onActivity(activity -> org.junit.Assert.assertEquals(ScreenState.Status.IDLE, new ViewModelProvider(activity).get(LoginViewModel.class).state.getValue()
                 .status));
             scenario.onActivity(activity -> new ViewModelProvider(activity).get(LoginViewModel.class).state.setValue(ScreenState.loading()));
-            onView(withContentDescription("Estamos configurando tudo para você.")).inRoot(isDialog()).check(matches(isDisplayed()));
+            awaitLoading(scenario, true);
+            onView(withId(R.id.screen_flow_loading)).check(matches(isDisplayed()));
             scenario.onActivity(activity -> {
                 NavHostFragment host = (NavHostFragment)
                 activity.getSupportFragmentManager().findFragmentById(R.id.auth_nav_host);
@@ -46,25 +58,43 @@ public class LoadingInstrumentedTest {
                 preview.recycle();
             }
             scenario.onActivity(activity -> new ViewModelProvider(activity).get(LoginViewModel.class).state.setValue(ScreenState.error("Teste de falha")));
-            onView(withContentDescription("Estamos configurando tudo para você.")).check(doesNotExist());
+            awaitLoading(scenario, false);
+            onView(withId(R.id.screen_flow_loading)).check(matches(withEffectiveVisibility(Visibility.GONE)));
             onView(withId(R.id.login_user)).check(matches(isDisplayed()));
             scenario.onActivity(activity -> new ViewModelProvider(activity).get(LoginViewModel.class).state.setValue(ScreenState.loading()));
             pressBack();
-            onView(withContentDescription("Estamos configurando tudo para você.")).check(doesNotExist());
+            awaitLoading(scenario, false);
+            onView(withId(R.id.screen_flow_loading)).check(matches(withEffectiveVisibility(Visibility.GONE)));
             scenario.onActivity(activity -> ((NavHostFragment) activity.getSupportFragmentManager().findFragmentById(R.id.auth_nav_host)).getNavController()
                 .navigate(R.id.signupHabitsFragment));
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();
             scenario.onActivity(activity -> ((NavHostFragment) activity.getSupportFragmentManager().findFragmentById(R.id.auth_nav_host)).getNavController().popBackStack());
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();
             onView(withId(R.id.login_user)).check(matches(isDisplayed()));
-            onView(withContentDescription("Estamos configurando tudo para você.")).check(doesNotExist());
+            awaitLoading(scenario, false);
+            onView(withId(R.id.screen_flow_loading)).check(matches(withEffectiveVisibility(Visibility.GONE)));
             scenario.onActivity(activity -> ((NavHostFragment) activity.getSupportFragmentManager().findFragmentById(R.id.auth_nav_host)).getNavController()
                 .navigate(R.id.signupAddressFragment));
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();
             scenario.onActivity(activity -> new ViewModelProvider(activity).get(SignupViewModel.class).completion.setValue(ScreenState.loading()));
-            onView(withContentDescription("Estamos configurando tudo para você.")).inRoot(isDialog()).check(matches(isDisplayed()));
+            awaitLoading(scenario, true);
+            onView(withId(R.id.screen_flow_loading)).check(matches(isDisplayed()));
             scenario.onActivity(activity -> new ViewModelProvider(activity).get(SignupViewModel.class).completion.setValue(ScreenState.error("Teste de falha")));
-            onView(withContentDescription("Estamos configurando tudo para você.")).check(doesNotExist());
+            awaitLoading(scenario, false);
+            onView(withId(R.id.screen_flow_loading)).check(matches(withEffectiveVisibility(Visibility.GONE)));
         }
+    }
+    private void awaitLoading(ActivityScenario<LoginActivity> scenario, boolean expected) throws Exception {
+        long deadline = android.os.SystemClock.uptimeMillis() + 5000;
+        java.util.concurrent.atomic.AtomicBoolean matched = new java.util.concurrent.atomic.AtomicBoolean();
+        do {
+            scenario.onActivity(activity -> {
+                android.view.View loading = activity.findViewById(R.id.screen_flow_loading);
+                matched.set(loading != null && loading.isShown() == expected);
+            });
+            if (matched.get()) return;
+            Thread.sleep(25);
+        } while (android.os.SystemClock.uptimeMillis() < deadline);
+        throw new AssertionError("Loading visibility did not settle: " + expected);
     }
 }

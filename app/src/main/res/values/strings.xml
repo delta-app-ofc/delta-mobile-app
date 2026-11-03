@@ -65,6 +65,8 @@
     <string name="auth_camera_permission">Permita o acesso à câmera para ler o QR Code. Toque aqui para tentar novamente ou insira o código manualmente.</string>
     <string name="auth_camera_settings">Para usar a câmera, habilite a permissão nas configurações do aplicativo. Toque aqui para abrir.</string>
     <string name="auth_camera_error">Não foi possível abrir a câmera. Toque aqui para tentar novamente ou insira o código manualmente.</string>
+    <string name="auth_qr_invalid">QR Code inválido. O formato esperado é deviceID: seguido pelo número do aparelho.</string>
+    <string name="auth_qr_unreadable">Este QR Code não contém as informações necessárias para conexão.</string>
     <string name="auth_qr_success">Leitura verificada\ncom sucesso!</string>
     <string name="auth_manual_title">Insira o número do hidrômetro</string>
     <string name="auth_manual_description">Caso não saiba consulte seu síndico\nou responsável do prédio</string>
@@ -120,4 +122,6 @@
     <string name="auth_home_title">Bem-vindo ao Delta</string>
     <string name="auth_home_meter">Configurar hidrômetro</string>
     <string name="auth_logout">Sair da conta</string>
+    <string name="auth_show_password">Mostrar senha</string>
+    <string name="auth_hide_password">Ocultar senha</string>
 </resources>

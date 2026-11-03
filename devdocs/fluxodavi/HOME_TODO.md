@@ -1,5 +1,7 @@
 # Home — implementação da referência enviada
 
+> Atualização de escopo: por solicitação explícita da pessoa usuária, o indicador EH foi removido do mobile. As referências a EH abaixo registram o planejamento/implementação anteriores e não constituem uma pendência de integração vigente. Metas agora usam armazenamento local sem SQLite, conforme [EH_NAVBAR_METAS_TODO.md](EH_NAVBAR_METAS_TODO.md); não há percentual ou recomendação inventada.
+
 Referência: [home.png](../../docs/references/home.png). Os números e o nome da imagem são exemplos visuais; a tela usa a conta autenticada e os dados reais.
 
 ## Estrutura e aparência
@@ -10,7 +12,7 @@ Referência: [home.png](../../docs/references/home.png). Os números e o nome da
 - [x] Preservar o nome real do usuário, avatar, alertas e configurações.
 - [x] Manter ícones de alertas e configurações legíveis em botões de 48 dp.
 - [x] Retirar o seletor de imóvel do corpo da Home; preservar a troca de imóvel nas configurações.
-- [x] Retirar ranking, mês de referência do ranking, hábitos, variação mensal, histórico por data e botão de medidor do corpo da Home. O medidor continua nas configurações.
+- [x] Retirar ranking, mês de referência do ranking, hábitos, variação mensal, histórico por data e botão de medidor do corpo da Home. O cadastro do medidor permanece no cadastro inicial e na criação de unidade.
 
 ## Informações gerais
 

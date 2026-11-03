@@ -9,16 +9,6 @@ import java.util.Objects;
 public final class HomeUserMetrics {
     private HomeUserMetrics() {}
 
-    public static ResidentialEfficiencyRankingResponse ranking(List<ResidentialEfficiencyRankingResponse> rows, Integer userId, LocalDate today) {
-        ResidentialEfficiencyRankingResponse latest = null;
-        for (ResidentialEfficiencyRankingResponse row : rows) {
-            if (row == null || !Objects.equals(userId, row.userId) || !valid(row.referenceMonth, today)) continue;
-            if (latest == null || row.referenceMonth.compareTo(latest.referenceMonth) > 0)
-                latest = row;
-        }
-        return latest;
-    }
-
     public static MonthlyVariationResponse variation(List<MonthlyVariationResponse> rows, Integer propertyId, LocalDate today) {
         MonthlyVariationResponse latest = null;
         for (MonthlyVariationResponse row : rows) {

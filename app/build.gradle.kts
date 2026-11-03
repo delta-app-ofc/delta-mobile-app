@@ -28,11 +28,11 @@ android {
     buildTypes {
         debug {
             enableUnitTestCoverage = true
-            buildConfigField("String", "DELTA_API_URL", "\"${providers.gradleProperty("deltaApiUrl").getOrElse("https://delta-api-postgres.onrender.com/")}\"")
+            buildConfigField("String", "DELTA_API_URL", "\"${providers.gradleProperty("deltaApiUrl").getOrElse("https://delta-app-a3po.onrender.com/")}\"")
             manifestPlaceholders["deltaCleartext"] = "true"
         }
         release {
-            val apiUrl = providers.gradleProperty("deltaReleaseApiUrl").getOrElse("https://delta-api-postgres.onrender.com/")
+            val apiUrl = providers.gradleProperty("deltaReleaseApiUrl").getOrElse("https://delta-app-a3po.onrender.com/")
             require(apiUrl.startsWith("https://")) { "Release exige HTTPS" }
             buildConfigField("String", "DELTA_API_URL", "\"$apiUrl\"")
             manifestPlaceholders["deltaCleartext"] = "false"

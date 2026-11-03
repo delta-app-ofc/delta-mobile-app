@@ -212,14 +212,9 @@ public final class RoutineFragment extends AuthFlowFragment {
     }
 
     private void setLoading(View view, boolean loading) {
-        FrameLayout container = view.findViewById(R.id.routine_loading);
-        if (loading && container.getChildCount() == 0) {
-            LoadingView indicator = new LoadingView(requireContext());
-            indicator.setContentDescription(getString(R.string.routine_loading));
-            container.addView(indicator, new FrameLayout.LayoutParams(-1, -1));
-        } else if (!loading) container.removeAllViews();
-        container.setVisibility(loading ? View.VISIBLE : View.GONE);
-        view.findViewById(R.id.routine_scroll).setVisibility(loading ? View.INVISIBLE : View.VISIBLE);
+        showLoading(loading);
+        view.findViewById(R.id.routine_loading).setVisibility(View.GONE);
+        view.findViewById(R.id.routine_scroll).setVisibility(View.VISIBLE);
     }
 
     private void chooseDate() {

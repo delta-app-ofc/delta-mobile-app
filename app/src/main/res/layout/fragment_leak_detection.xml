@@ -10,8 +10,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingTop="44dp"
+        android:paddingTop="24dp"
         android:paddingBottom="136dp">
+        <ImageButton
+            android:id="@+id/leak_back"
+            style="@style/Profile.IconButton"
+            android:layout_marginStart="14dp"
+            android:layout_marginBottom="12dp"
+            android:src="@drawable/profile_back"
+            android:contentDescription="@string/profile_back" />
         <TextView
             style="@style/Leak.Title"
             android:layout_marginHorizontal="26dp"
@@ -124,32 +131,6 @@
                             style="@style/Leak.ActionLabel"
                             android:text="@string/leak_check_pipes" />
                         <TextView style="@style/Leak.Pill" android:layout_width="100dp" android:paddingHorizontal="4dp" android:text="@string/leak_recommended" android:textColor="#A88B00" />
-    </LinearLayout>
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:background="#A0FFFFFF" />
-                        <LinearLayout
-                            android:id="@+id/leak_action_alerts"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:minHeight="48dp"
-                            android:gravity="center_vertical"
-                            android:paddingVertical="6dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            android:contentDescription="@string/leak_disable_alerts">
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_marginEnd="8dp"
-                                android:src="@drawable/leak_icon_silent"
-                                android:importantForAccessibility="no" />
-                            <TextView
-                                style="@style/Leak.ActionLabel"
-                                android:text="@string/leak_disable_alerts" />
-                            <TextView style="@style/Leak.Pill" android:layout_width="100dp" android:paddingHorizontal="4dp" android:text="@string/leak_optional" android:textColor="#306BE5" />
     </LinearLayout>
                         </LinearLayout>
                         <LinearLayout

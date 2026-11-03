@@ -18,37 +18,14 @@ import java.util.*;
 
 public class SectionsViewModel extends AndroidViewModel {
     public final MutableLiveData<ScreenState<List<LastWaterBillResponse>>> bills = new MutableLiveData<>(ScreenState.idle());
-    public final MutableLiveData<ScreenState<List<PropertyRankingResponse>>> rankings = new MutableLiveData<>(ScreenState.idle());
     private final AuthRepository auth;
     private final Handler main = new Handler(Looper.getMainLooper());
     private int billsRequest;
+    private boolean cleared;
 
     public SectionsViewModel(Application app) {
         super(app);
         auth = AuthRepository.getInstance(app);
-    }
-
-    public void loadRankings() {
-        if (rankings.getValue().busy()) return;
-        rankings.setValue(ScreenState.loading());
-        auth.resource(() -> {
-            Integer user = auth.currentProfile().id;
-            Response<List<UserPropertyResponse>> links = auth.api().listUserProperties(user).execute();
-            if (!links.isSuccessful())
-                return ApiErrors.<List<PropertyRankingResponse>>from(links);
-            if (links.body() == null)
-                return ScreenState.<List<PropertyRankingResponse>>error("Não foi possível consultar suas unidades.");
-            Set<Integer> owned = new HashSet<>();
-            for (UserPropertyResponse link : links.body())
-                if (link != null && user.equals(link.userId) && link.propertyId != null)
-                    owned.add(link.propertyId);
-            Response<List<PropertyRankingResponse>> response = auth.api().propertyRanking().execute();
-            if (!response.isSuccessful())
-                return ApiErrors.<List<PropertyRankingResponse>>from(response);
-            if (response.body() == null)
-                return ScreenState.<List<PropertyRankingResponse>>error("O servidor não retornou o ranking.");
-            return ScreenState.success(com.aula.delta_mobile_app.model.SectionData.rankings(response.body(), owned));
-        }, value -> main.post(() -> rankings.setValue(value)));
     }
 
     public void loadBills() {
@@ -64,8 +41,14 @@ public class SectionsViewModel extends AndroidViewModel {
                 return ScreenState.<List<LastWaterBillResponse>>error("O servidor não retornou as contas.");
             return ScreenState.success(com.aula.delta_mobile_app.model.SectionData.bills(response.body(), user));
         }, value -> main.post(() -> {
-            if (request == billsRequest) bills.setValue(value);
+            if (!cleared && request == billsRequest) bills.setValue(value);
         }));
     }
 
+    @Override
+    protected void onCleared() {
+        cleared = true;
+        billsRequest++;
+        main.removeCallbacksAndMessages(null);
+    }
 }

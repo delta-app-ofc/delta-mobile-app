@@ -23,6 +23,9 @@ public interface ApiService {
     @GET("delta/auth/me")
     Call<Profile> me();
 
+    @PUT("delta/auth/me")
+    Call<Profile> updateProfile(@Body UpdateProfileRequest request);
+
     @GET("delta/user-properties/{userId}")
     Call<List<PropertyLink>> properties(@Path("userId") int id);
 
@@ -158,21 +161,11 @@ public interface ApiService {
     @GET("delta/analytics/consumption-daily/{propertyId}")
     Call<List<ConsumptionDailyResponse>> consumptionDaily(@Path("propertyId") int propertyId);
 
-    @GET("delta/analytics/property-ranking")
-    Call<List<PropertyRankingResponse>> propertyRanking();
-
     @GET("delta/analytics/monthly-variation/{propertyId}")
     Call<List<MonthlyVariationResponse>> monthlyVariation(@Path("propertyId") int propertyId);
 
     @GET("delta/analytics/consumption-distribution")
     Call<List<ConsumptionDistributionResponse>> consumptionDistribution();
-
-    @GET("delta/analytics/capex-comparison")
-    Call<List<CapexComparisonResponse>> capexComparison();
-
-    @GET("delta/analytics/residential-efficiency-ranking/{userId}")
-    Call<List<ResidentialEfficiencyRankingResponse>> residentialEfficiencyRanking(
-        @Path("userId") int userId);
 
     @GET("delta/analytics/audit-history")
     Call<List<AuditHistoryChainResponse>> auditHistory(@Query("regionRateId") Integer regionRateId);

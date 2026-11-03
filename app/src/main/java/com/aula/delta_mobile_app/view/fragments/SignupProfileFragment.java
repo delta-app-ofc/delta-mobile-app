@@ -1,6 +1,7 @@
 package com.aula.delta_mobile_app.view.fragments;
 
 import android.os.Bundle;
+import android.telephony.PhoneNumberFormattingTextWatcher;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -30,6 +31,7 @@ public class SignupProfileFragment extends AuthFlowFragment {
         EditText name = view.findViewById(R.id.full_name);
         EditText date = view.findViewById(R.id.birth_date);
         EditText phone = view.findViewById(R.id.phone);
+        phone.addTextChangedListener(new PhoneNumberFormattingTextWatcher("BR"));
         restore(name, "name");
         restore(date, "birthDate");
         restore(phone, "phone");

@@ -62,7 +62,13 @@ public class QrScanFragment extends AuthFlowFragment {
         super.onViewCreated(view, savedInstanceState);
         codeAccepted = false;
         water = new androidx.lifecycle.ViewModelProvider(requireActivity()).get(com.aula.delta_mobile_app.viewmodel.WaterViewModel.class);
+        if (getArguments() != null && getArguments().getBoolean("unitFlow", false)) {
+            int propertyId = getArguments().getInt("unitPropertyId", 0);
+            if (propertyId > 0) water.propertyId = propertyId;
+        }
         setupHeader(view, 4, R.string.auth_qr_title, R.string.auth_qr_subtitle, R.string.auth_qr_description);
+        view.findViewById(R.id.back_button).setVisibility(View.GONE);
+        view.findViewById(R.id.progress_row).setVisibility(View.GONE);
         view.findViewById(R.id.qr_back_bottom).setOnClickListener(v -> back());
         view.findViewById(R.id.qr_manual).setOnClickListener(v -> new ManualCodeDialogFragment().show(getChildFragmentManager(), "manual_code"));
         view.findViewById(R.id.camera_status).setOnClickListener(v -> {
@@ -76,6 +82,7 @@ public class QrScanFragment extends AuthFlowFragment {
             acceptCode(code);
         });
         water.meter.observe(getViewLifecycleOwner(), state -> {
+            showLoading(state.busy());
             view.findViewById(R.id.qr_manual).setEnabled(!state.busy());
             if (state.busy()) {
                 codeAccepted = true;
@@ -85,12 +92,21 @@ public class QrScanFragment extends AuthFlowFragment {
                 flow().putString("meterCode", state.data.deviceId);
                 water.consumeMeter();
                 stopCamera();
-                navigate(R.id.qrSuccessFragment);
+                Bundle args = new Bundle();
+                if (getArguments() != null && getArguments().getBoolean("unitFlow", false)) {
+                    args.putBoolean("unitFlow", true);
+                    args.putInt("unitPropertyId", getArguments().getInt("unitPropertyId", 0));
+                }
+                androidx.navigation.fragment.NavHostFragment.findNavController(this).navigate(R.id.qrSuccessFragment, args);
             } else if (state.status == com.aula.delta_mobile_app.model.ScreenState.Status.ERROR) {
                 stopCamera();
                 codeAccepted = false;
                 ((TextView) view.findViewById(R.id.camera_status)).setText("");
                 view.findViewById(R.id.camera_status).setVisibility(View.GONE);
+                water.consumeMeter();
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext()).setMessage(state.message).setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    if (getView() == view && hasCameraPermission()) startCamera(view);
+                }).show();
             }
         });
         if (hasCameraPermission()) startCamera(view);
@@ -153,11 +169,52 @@ public class QrScanFragment extends AuthFlowFragment {
         }
     }
 
+    public static String parseDeviceId(String raw) {
+        if (raw == null) return null;
+        String trimmed = raw.trim();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?i)^deviceID:\\s*(\\d+)$").matcher(trimmed);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        }
+        if (trimmed.matches("^\\d+$")) {
+            return trimmed;
+        }
+        return null;
+    }
+
     private void acceptCode(String code) {
-        if (codeAccepted || code.isEmpty() || getView() == null) return;
+        if (codeAccepted || code == null || code.trim().isEmpty() || getView() == null) return;
+        String deviceId = parseDeviceId(code);
+        if (deviceId == null) {
+            codeAccepted = true;
+            stopCamera();
+            View view = getView();
+            if (view != null) {
+                ScannerFrame frame = view.findViewById(R.id.scanner_frame);
+                TextView errorMsg = view.findViewById(R.id.qr_error_message);
+                if (frame != null) frame.setErrorState(true);
+                if (errorMsg != null) errorMsg.setVisibility(View.VISIBLE);
+
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    View currentView = getView();
+                    if (currentView != null) {
+                        if (frame != null) frame.setErrorState(false);
+                        if (errorMsg != null) errorMsg.setVisibility(View.GONE);
+                        codeAccepted = false;
+                        if (hasCameraPermission()) startCamera(currentView);
+                    }
+                }, 2500L);
+            }
+            return;
+        }
+        if (getArguments() != null && getArguments().getBoolean("unitFlow", false)) {
+            int propertyId = getArguments().getInt("unitPropertyId", 0);
+            if (propertyId <= 0) return;
+            water.propertyId = propertyId;
+        }
         codeAccepted = true;
         stopCamera();
-        water.registerMeter(code);
+        water.registerMeter(deviceId);
     }
 
     private void stopCamera() {
@@ -194,6 +251,11 @@ public class QrScanFragment extends AuthFlowFragment {
             paint.setColor(Color.WHITE);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeCap(Paint.Cap.ROUND);
+        }
+
+        public void setErrorState(boolean error) {
+            paint.setColor(error ? Color.parseColor("#FF3B30") : Color.WHITE);
+            invalidate();
         }
 
         @Override
