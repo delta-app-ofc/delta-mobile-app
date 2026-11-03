@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+    <TextView
+        android:id="@+id/back_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:text="←"
+        android:textColor="@color/auth_white"
+        android:textSize="32sp"
+        android:contentDescription="@string/auth_back" />
+    <LinearLayout
+        android:id="@+id/progress_row"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+        <View
+            android:id="@+id/progress_0"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@color/auth_muted" />
+        <View
+            android:id="@+id/progress_1"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@color/auth_muted" />
+        <View
+            android:id="@+id/progress_2"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@color/auth_muted" />
+        <View
+            android:id="@+id/progress_3"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@color/auth_muted" />
+        <View android:id="@+id/progress_4" android:layout_width="0dp" android:layout_height="3dp" android:layout_weight="1" android:background="@color/auth_muted" />
+    </LinearLayout>
+        <TextView
+            android:id="@+id/step_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="34dp"
+            android:textColor="@color/auth_white"
+            android:textSize="@dimen/auth_title_size"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/step_subtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/auth_white"
+            android:textSize="@dimen/auth_subtitle_size"
+            android:textStyle="bold" />
+        <TextView
+        android:id="@+id/step_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:textColor="@color/auth_white"
+        android:textSize="12sp" />
+</LinearLayout>

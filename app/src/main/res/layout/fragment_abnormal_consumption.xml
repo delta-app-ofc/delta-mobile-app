@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@drawable/leak_surface"
+    android:scrollbars="none">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="30dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="136dp">
+        <ImageButton
+            android:id="@+id/abnormal_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="8dp"
+            android:src="@drawable/hourly_icon_back"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/leak_back" />
+        <TextView
+            style="@style/Leak.Title"
+            android:text="@string/abnormal_title"
+            android:layout_marginTop="10dp" />
+        <TextView
+            style="@style/Leak.Subtitle"
+            android:text="@string/abnormal_subtitle"
+            android:layout_marginTop="6dp" />
+        <com.aula.delta_mobile_app.view.StatusNoticeView
+            android:id="@+id/abnormal_notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+        <Button
+            android:id="@+id/abnormal_retry"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="@string/leak_retry"
+            android:visibility="gone" />
+        <LinearLayout
+            android:id="@+id/abnormal_summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/abnormal_summary"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="6dp">
+                <ImageView
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="8dp"
+                    android:src="@drawable/status_notice_icon"
+                    android:background="@drawable/leak_pill_background"
+                    android:padding="8dp"
+                    android:importantForAccessibility="no" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        style="@style/Home.Body"
+                        android:text="@string/abnormal_unavailable"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+                    <TextView style="@style/Leak.Subtitle" android:text="@string/abnormal_pending" android:textColor="#D5E2FA" android:layout_marginTop="3dp"/>
+</LinearLayout>
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="38dp"
+                    android:gravity="center_vertical">
+                    <TextView
+                        style="@style/Home.Body"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:text="@string/abnormal_average"
+                        android:textSize="16sp" />
+                    <TextView android:id="@+id/abnormal_average" style="@style/Home.Body" android:layout_width="wrap_content" android:layout_marginStart="8dp" android:text="— L/dia" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold"/>
+</LinearLayout>
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#65FFFFFF" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="38dp"
+                        android:gravity="center_vertical">
+                        <TextView
+                            style="@style/Home.Body"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:text="@string/abnormal_detected"
+                            android:textSize="16sp" />
+                        <TextView android:id="@+id/abnormal_detected" style="@style/Home.Body" android:layout_width="wrap_content" android:layout_marginStart="8dp" android:text="— L/dia" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold"/>
+</LinearLayout>
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#65FFFFFF" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="38dp"
+                            android:gravity="center_vertical">
+                            <TextView
+                                style="@style/Home.Body"
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:text="@string/abnormal_variation"
+                                android:textSize="16sp" />
+                            <TextView android:id="@+id/abnormal_variation" style="@style/Leak.Pill" android:layout_width="wrap_content" android:layout_marginStart="8dp" android:text="—" android:textColor="#BC1111" android:textSize="16sp" android:textStyle="bold"/>
+</LinearLayout>
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:background="#65FFFFFF" />
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:minHeight="38dp"
+                                android:gravity="center_vertical">
+                                <TextView
+                                    style="@style/Home.Body"
+                                    android:layout_width="0dp"
+                                    android:layout_weight="1"
+                                    android:text="@string/abnormal_cause"
+                                    android:textSize="16sp" />
+                                <TextView android:id="@+id/abnormal_cause" style="@style/Leak.Pill" android:layout_width="wrap_content" android:layout_marginStart="8dp" android:text="—" android:textColor="#BC1111" android:textSize="16sp" android:textStyle="bold"/>
+</LinearLayout>
+                            </LinearLayout>
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="40dp"
+                                android:padding="14dp"
+                                android:background="@drawable/abnormal_chart_background"
+                                android:orientation="vertical">
+                                <TextView
+                                    style="@style/Leak.Section"
+                                    android:text="@string/abnormal_history" />
+                                <com.aula.delta_mobile_app.view.AbnormalConsumptionChart android:id="@+id/abnormal_history_chart" android:layout_width="match_parent" android:layout_height="120dp" android:layout_marginTop="8dp" android:clickable="true" android:focusable="true"/>
+</LinearLayout>
+                                <TextView
+                                    style="@style/Leak.Title"
+                                    android:text="@string/abnormal_comparison"
+                                    android:layout_marginTop="30dp" />
+                                <TextView
+                                    style="@style/Leak.Subtitle"
+                                    android:text="@string/abnormal_comparison_subtitle"
+                                    android:layout_marginTop="6dp" />
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="14dp">
+                                    <TextView
+                                        android:id="@+id/abnormal_tab_week"
+                                        android:layout_width="0dp"
+                                        android:layout_weight="1"
+                                        android:layout_height="48dp"
+                                        android:layout_marginEnd="18dp"
+                                        android:gravity="center"
+                                        android:text="@string/abnormal_week"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="14sp"
+                                        android:background="@drawable/abnormal_tab_idle"
+                                        android:clickable="true"
+                                        android:focusable="true"
+                                        android:foreground="?attr/selectableItemBackground" />
+                                    <TextView
+                                        android:id="@+id/abnormal_tab_month"
+                                        android:layout_width="0dp"
+                                        android:layout_weight="1"
+                                        android:layout_height="48dp"
+                                        android:layout_marginEnd="18dp"
+                                        android:gravity="center"
+                                        android:text="@string/abnormal_month"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="14sp"
+                                        android:background="@drawable/abnormal_tab_idle"
+                                        android:clickable="true"
+                                        android:focusable="true"
+                                        android:foreground="?attr/selectableItemBackground" />
+                                    <TextView
+                                        android:id="@+id/abnormal_tab_year"
+                                        android:layout_width="0dp"
+                                        android:layout_weight="1"
+                                        android:layout_height="48dp"
+                                        android:layout_marginEnd="0dp"
+                                        android:gravity="center"
+                                        android:text="@string/abnormal_year"
+                                        android:textColor="#FFFFFF"
+                                        android:textSize="14sp"
+                                        android:background="@drawable/abnormal_tab_idle"
+                                        android:clickable="true"
+                                        android:focusable="true"
+                                        android:foreground="?attr/selectableItemBackground" />
+                                </LinearLayout>
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="30dp"
+                                    android:padding="12dp"
+                                    android:background="@drawable/abnormal_chart_background"
+                                    android:orientation="vertical">
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center_vertical">
+                                        <ImageView
+                                            android:layout_width="22dp"
+                                            android:layout_height="22dp"
+                                            android:layout_marginEnd="8dp"
+                                            android:src="@drawable/hourly_icon_clock"
+                                            android:importantForAccessibility="no" />
+                                        <TextView
+                                            android:id="@+id/abnormal_period_title"
+                                            style="@style/Leak.Section"
+                                            android:layout_width="0dp"
+                                            android:layout_weight="1"
+                                            android:text="@string/abnormal_week_title" />
+                                        <TextView android:id="@+id/abnormal_period_badge" style="@style/Home.Caption" android:layout_width="wrap_content" android:layout_marginStart="6dp" android:paddingHorizontal="8dp" android:paddingVertical="3dp" android:background="@drawable/hourly_dark_pill" android:text="@string/abnormal_week_badge"/>
+</LinearLayout>
+                                        <com.aula.delta_mobile_app.view.AbnormalConsumptionChart
+                                            android:id="@+id/abnormal_bars"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="130dp"
+                                            android:layout_marginTop="10dp"
+                                            android:clickable="true"
+                                            android:focusable="true" />
+                                        <TextView
+                                            android:id="@+id/abnormal_current"
+                                            style="@style/Home.Caption"
+                                            android:gravity="end"
+                                            android:textColor="#B5C8EC" />
+                                        <TextView
+                                            android:id="@+id/abnormal_previous"
+                                            style="@style/Home.Body"
+                                            android:layout_marginTop="5dp" />
+                                        <TextView android:id="@+id/abnormal_aligned" style="@style/Home.Caption" android:textColor="#ADB3BF" android:layout_marginTop="8dp"/>
+</LinearLayout>
+                                        <LinearLayout
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="44dp"
+                                            android:padding="12dp"
+                                            android:orientation="vertical"
+                                            android:background="@drawable/leak_blue_card">
+                                            <LinearLayout
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content"
+                                                android:gravity="center_vertical">
+                                                <ImageView
+                                                    android:layout_width="20dp"
+                                                    android:layout_height="20dp"
+                                                    android:layout_marginEnd="6dp"
+                                                    android:src="@drawable/abnormal_icon_bars"
+                                                    android:importantForAccessibility="no" />
+                                                <TextView
+                                                    style="@style/Leak.Section"
+                                                    android:text="@string/abnormal_days" />
+                                            </LinearLayout>
+                                            <View
+                                                android:layout_width="match_parent"
+                                                android:layout_height="1dp"
+                                                android:layout_marginTop="12dp"
+                                                android:background="#60FFFFFF" />
+                                            <LinearLayout
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content"
+                                                android:minHeight="46dp"
+                                                android:gravity="center_vertical">
+                                                <TextView
+                                                    style="@style/Home.Body"
+                                                    android:layout_width="0dp"
+                                                    android:layout_weight="1"
+                                                    android:text="@string/abnormal_weekday"
+                                                    android:textSize="18sp" />
+                                                <TextView
+                                                    style="@style/Leak.Pill"
+                                                    android:text="—"
+                                                    android:textSize="20sp"
+                                                    android:textColor="#E1324B" />
+                                            </LinearLayout>
+                                            <View
+                                                android:layout_width="match_parent"
+                                                android:layout_height="1dp"
+                                                android:background="#60FFFFFF" />
+                                            <LinearLayout
+                                                android:layout_width="match_parent"
+                                                android:layout_height="wrap_content"
+                                                android:minHeight="46dp"
+                                                android:gravity="center_vertical">
+                                                <TextView
+                                                    style="@style/Home.Body"
+                                                    android:layout_width="0dp"
+                                                    android:layout_weight="1"
+                                                    android:text="@string/abnormal_temperature"
+                                                    android:textSize="18sp" />
+                                                <TextView
+                                                    style="@style/Leak.Pill"
+                                                    android:text="—"
+                                                    android:textSize="20sp"
+                                                    android:textColor="#8A8000" />
+                                            </LinearLayout>
+                                        </LinearLayout>
+                                    </LinearLayout>
+                                </ScrollView>

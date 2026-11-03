@@ -1,0 +1,4 @@
+<resources>
+    <item name="screen_flow_loading" type="id" />
+    <item name="goal_amount_input" type="id" />
+</resources>

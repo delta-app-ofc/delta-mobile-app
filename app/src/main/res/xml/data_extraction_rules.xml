@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude
+            domain="sharedpref"
+            path="delta_profile_photos.xml" />
+        <exclude
+            domain="database"
+            path="delta_monthly_goals.db" />
+        <exclude
+            domain="sharedpref"
+            path="delta_monthly_goals.xml" />
+        <exclude
+            domain="sharedpref"
+            path="delta_session.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude
+            domain="sharedpref"
+            path="delta_profile_photos.xml" />
+        <exclude
+            domain="database"
+            path="delta_monthly_goals.db" />
+        <exclude
+            domain="sharedpref"
+            path="delta_monthly_goals.xml" />
+        <exclude
+            domain="sharedpref"
+            path="delta_session.xml" />
+    </device-transfer>
+</data-extraction-rules>

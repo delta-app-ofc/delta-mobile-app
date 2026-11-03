@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.button.MaterialButton
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/routine_day_button"
+    style="@style/Routine.Day"
+    android:layout_width="@dimen/routine_touch_size"
+    android:layout_height="wrap_content" />

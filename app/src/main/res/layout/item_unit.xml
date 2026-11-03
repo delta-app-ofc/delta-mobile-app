@@ -1,0 +1,80 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp"
+    android:padding="12dp"
+    android:orientation="vertical"
+    android:background="@drawable/units_card_background"
+    android:foreground="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="10dp"
+            android:background="@drawable/profile_avatar"
+            android:src="@drawable/monthly_goal_house"
+            android:importantForAccessibility="no" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/unit_name"
+                style="@style/Home.Section"
+                android:textStyle="bold"
+                android:accessibilityHeading="true" />
+            <TextView
+                android:id="@+id/unit_location"
+                style="@style/Home.Body"
+                android:layout_marginTop="4dp"
+                android:textSize="12sp"
+                android:textColor="#BEBEBE" />
+            <TextView
+                android:id="@+id/unit_consumption"
+                style="@style/Home.Body"
+                android:layout_marginTop="4dp"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/unit_select"
+                style="@style/Home.Caption"
+                android:layout_marginTop="6dp"
+                android:textColor="#ADC3EF"
+                android:text="@string/units_select" />
+        </LinearLayout>
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="4dp"
+        android:background="#414343" />
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/unit_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:minHeight="48dp"
+        android:paddingHorizontal="12dp"
+        android:insetTop="4dp"
+        android:insetBottom="4dp"
+        android:text="@string/units_delete_action"
+        android:textAllCaps="false"
+        android:textSize="12sp"
+        android:textColor="@color/white"
+        app:backgroundTint="#C82F42"
+        app:icon="@drawable/units_icon_delete"
+        app:iconSize="16dp"
+        app:iconTint="@color/white"
+        app:iconGravity="textEnd"
+        app:cornerRadius="24dp" />
+</LinearLayout>

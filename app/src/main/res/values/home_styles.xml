@@ -1,0 +1,44 @@
+<resources>
+    <color name="home_background">#222222</color>
+    <style
+        name="Home.Body"
+        parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+    <style
+        name="Home.Caption"
+        parent="Home.Body">
+        <item name="android:textSize">11sp</item>
+    </style>
+    <style
+        name="Home.Section"
+        parent="Home.Body">
+        <item name="android:textSize">16sp</item>
+    </style>
+    <style
+        name="Home.Metric"
+        parent="Home.Body">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:autoSizeTextType">uniform</item>
+        <item name="android:autoSizeMinTextSize">12sp</item>
+        <item name="android:autoSizeMaxTextSize">20sp</item>
+    </style>
+    <style
+        name="Home.HeaderAction"
+        parent="">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:padding">10dp</item>
+        <item name="android:background">@drawable/home_header_action</item>
+        <item name="android:scaleType">fitCenter</item>
+    </style>
+</resources>
