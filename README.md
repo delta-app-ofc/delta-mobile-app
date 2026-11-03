@@ -6,7 +6,7 @@
 ![Gradle](https://img.shields.io/badge/Gradle-9.6.0-02303A?logo=gradle&logoColor=white)
 ![Android SDK](https://img.shields.io/badge/compile%20%2F%20target%20SDK-36-3DDC84?logo=android&logoColor=white)
 
-Do primeiro login à leitura do hidrômetro, o app Delta reúne no Android fluxos de cadastro, acompanhamento de consumo, análise de vazamentos e conversa com o chatbot. A interface usa Java e Views em XML; os dados chegam pelas APIs do projeto por serviços e repositórios dedicados.
+Aplicativo Android do Projeto Delta para conta, imóveis, consumo de água, vazamentos e chatbot. A interface é construída em Java com Views em XML; Retrofit, OkHttp, serviços e repositórios organizam o acesso às APIs do projeto.
 
 **Tags:** `android` · `java` · `android-views` · `retrofit` · `monitoramento-de-agua` · `consumo` · `vazamentos` · `chatbot`
 
@@ -42,8 +42,6 @@ Java 11 descreve a compatibilidade do código compilado. O daemon do Gradle est�
 - **Vazamentos:** telas de detecção e acompanhamento com seus modelos de estado e visualizações.
 - **Chatbot:** interface de conversa com modelos, repositório e cliente de API próprios.
 - **Sessão e navegação:** rotas de autenticação e da área principal em grafos Android Navigation.
-
-A presença de uma tela ou modelo documenta a implementação local; ela, por si só, não garante disponibilidade do serviço remoto ou do dado solicitado.
 
 ## Stack e requisitos
 
@@ -110,7 +108,7 @@ O comando combinado de validação local também pode ser executado assim:
 .\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
 ```
 
-Os testes de unidade ficam em `app/src/test`; os instrumentados ficam em `app/src/androidTest`. A existência das suítes não representa uma execução recente nem um resultado de CI.
+Os testes de unidade ficam em app/src/test; os testes instrumentados ficam em app/src/androidTest.
 
 ## Documentação relacionada
 
