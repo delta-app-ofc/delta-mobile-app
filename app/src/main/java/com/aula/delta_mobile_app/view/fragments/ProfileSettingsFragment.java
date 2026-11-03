@@ -1,10 +1,13 @@
 package com.aula.delta_mobile_app.view.fragments;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.ActivityNotFoundException;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
@@ -20,8 +23,12 @@ import androidx.lifecycle.ViewModelProvider;
 import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.ApiModels.UserPropertyResponse;
 import com.aula.delta_mobile_app.model.ScreenState;
+import com.aula.delta_mobile_app.services.notifications.LocalNotificationPreferences;
+import com.aula.delta_mobile_app.services.notifications.RoutineReminderScheduler;
+import com.aula.delta_mobile_app.services.notifications.RoutineReminderSync;
 import com.aula.delta_mobile_app.viewmodel.*;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import java.io.File;
 
 public final class ProfileSettingsFragment extends AuthFlowFragment implements ProfileNavigationGuard {
@@ -33,7 +40,11 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
     private ActivityResultLauncher<Uri> camera;
     private ActivityResultLauncher<PickVisualMediaRequest> gallery;
     private ActivityResultLauncher<String> permission;
+    private ActivityResultLauncher<String> notificationPermission;
     private Uri shownPhoto;
+    private SwitchMaterial reminderSwitch;
+    private TextView reminderSummary;
+    private boolean waitingForNotificationPermission;
 
     public ProfileSettingsFragment() { super(R.layout.fragment_profile_settings); }
 
@@ -50,6 +61,11 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
         permission = registerForActivityResult(new ActivityResultContracts.RequestPermission(), allowed -> {
             if (allowed) takePhoto();
             else Toast.makeText(requireContext(), R.string.profile_camera_denied, Toast.LENGTH_LONG).show();
+        });
+        notificationPermission = registerForActivityResult(new ActivityResultContracts.RequestPermission(), allowed -> {
+            waitingForNotificationPermission = false;
+            if (allowed) continueEnablingReminders();
+            else denyReminderPermission();
         });
     }
 
@@ -130,6 +146,8 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
         row(first, R.string.profile_residential_title, R.drawable.main_icon_home, () -> leaveProfile(() -> navigate(R.id.residentialInformationFragment)));
         divider(first);
         row(first, R.string.profile_units, R.drawable.profile_icon_units, this::units);
+        divider(first);
+        addReminderPreference(first);
         model.profile.observe(getViewLifecycleOwner(), value -> {
             if (value.status == ScreenState.Status.SUCCESS) {
                 String name = value.data.name == null ? "" : value.data.name.trim();
@@ -226,6 +244,164 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
         leaveProfile(() -> navigate(R.id.unitsFragment));
     }
 
+    private void addReminderPreference(LinearLayout parent) {
+        LinearLayout row = new LinearLayout(requireContext());
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setMinimumHeight(dp(68));
+        row.setPadding(dp(16), dp(10), dp(12), dp(10));
+        ImageView icon = new ImageView(requireContext());
+        icon.setImageResource(R.drawable.ic_notification_bell);
+        icon.setBackgroundResource(R.drawable.profile_blue_icon);
+        icon.setPadding(dp(7), dp(7), dp(7), dp(7));
+        icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        row.addView(icon, new LinearLayout.LayoutParams(dp(36), dp(36)));
+        LinearLayout labels = new LinearLayout(requireContext());
+        labels.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams labelsParams = new LinearLayout.LayoutParams(0, -2, 1);
+        labelsParams.setMarginStart(dp(12));
+        row.addView(labels, labelsParams);
+        TextView title = new TextView(requireContext());
+        title.setTextAppearance(R.style.Profile_Body);
+        title.setTextSize(16);
+        title.setText(R.string.notification_settings_title);
+        labels.addView(title);
+        reminderSummary = new TextView(requireContext());
+        reminderSummary.setTextAppearance(R.style.Profile_Body);
+        reminderSummary.setTextSize(12);
+        reminderSummary.setTextColor(ContextCompat.getColor(requireContext(), R.color.profile_muted));
+        labels.addView(reminderSummary);
+        reminderSwitch = new SwitchMaterial(requireContext());
+        reminderSwitch.setContentDescription(getString(R.string.notification_settings_title));
+        row.addView(reminderSwitch, new LinearLayout.LayoutParams(-2, dp(48)));
+        reminderSwitch.setChecked(LocalNotificationPreferences.enabled(requireContext()));
+        bindReminderSwitch();
+        row.setFocusable(true);
+        row.setOnClickListener(view -> reminderSwitch.toggle());
+        android.util.TypedValue ripple = new android.util.TypedValue();
+        if (requireContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackground, ripple, true))
+            row.setForeground(ContextCompat.getDrawable(requireContext(), ripple.resourceId));
+        parent.addView(row);
+        renderReminderState();
+    }
+
+    private void bindReminderSwitch() {
+        if (reminderSwitch == null) return;
+        reminderSwitch.setOnCheckedChangeListener((button, checked) -> {
+            if (checked) {
+                reminderSwitch.setOnCheckedChangeListener(null);
+                reminderSwitch.setChecked(false);
+                bindReminderSwitch();
+                requestReminderEnable();
+            } else if (LocalNotificationPreferences.enabled(requireContext()) || LocalNotificationPreferences.pendingEnable(requireContext())) {
+                RoutineReminderScheduler.disable(requireContext());
+                renderReminderState();
+            }
+        });
+    }
+
+    private void setReminderChecked(boolean checked) {
+        if (reminderSwitch == null) return;
+        reminderSwitch.setOnCheckedChangeListener(null);
+        reminderSwitch.setChecked(checked);
+        bindReminderSwitch();
+    }
+
+    private void requestReminderEnable() {
+        RoutineReminderScheduler.createChannel(requireContext());
+        LocalNotificationPreferences.setPendingEnable(requireContext(), true);
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED) {
+            waitingForNotificationPermission = true;
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS);
+            return;
+        }
+        continueEnablingReminders();
+    }
+
+    private void continueEnablingReminders() {
+        if (!isAdded() || !LocalNotificationPreferences.pendingEnable(requireContext())) return;
+        if (!RoutineReminderScheduler.hasNotificationPermission(requireContext())) {
+            denyReminderPermission();
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !RoutineReminderScheduler.hasExactAlarmPermission(requireContext())) {
+            new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.notification_settings_title)
+                .setMessage(R.string.notification_exact_alarm_explanation)
+                .setNegativeButton(R.string.notification_not_now, (dialog, which) -> denyExactAlarmAccess())
+                .setPositiveButton(R.string.notification_enable, (dialog, which) -> openExactAlarmSettings()).show();
+            return;
+        }
+        completeReminderEnable();
+    }
+
+    private void openExactAlarmSettings() {
+        try {
+            Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                Uri.parse("package:" + requireContext().getPackageName()));
+            startActivity(intent);
+        } catch (ActivityNotFoundException | SecurityException failure) {
+            denyExactAlarmAccess();
+        }
+    }
+
+    private void completeReminderEnable() {
+        if (!isAdded()) return;
+        LocalNotificationPreferences.setPendingEnable(requireContext(), false);
+        RoutineReminderScheduler.enable(requireContext());
+        renderReminderState();
+        RoutineReminderSync.refresh(requireContext());
+    }
+
+    private void denyReminderPermission() {
+        if (!isAdded()) return;
+        LocalNotificationPreferences.setPendingEnable(requireContext(), false);
+        LocalNotificationPreferences.setEnabled(requireContext(), false);
+        renderReminderState();
+        new MaterialAlertDialogBuilder(requireContext()).setMessage(R.string.notification_permission_denied)
+            .setNegativeButton(R.string.profile_cancel, null)
+            .setPositiveButton(R.string.notification_open_settings, (dialog, which) -> openNotificationSettings()).show();
+    }
+
+    private void denyExactAlarmAccess() {
+        if (!isAdded()) return;
+        LocalNotificationPreferences.setPendingEnable(requireContext(), false);
+        LocalNotificationPreferences.setEnabled(requireContext(), false);
+        renderReminderState();
+        Toast.makeText(requireContext(), R.string.notification_exact_alarm_denied, Toast.LENGTH_LONG).show();
+    }
+
+    private void openNotificationSettings() {
+        Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().getPackageName());
+        try { startActivity(intent); } catch (ActivityNotFoundException ignored) {}
+    }
+
+    private void renderReminderState() {
+        setReminderChecked(LocalNotificationPreferences.enabled(requireContext()));
+        if (reminderSummary == null) return;
+        if (!LocalNotificationPreferences.enabled(requireContext())) reminderSummary.setText(R.string.notification_settings_summary);
+        else if (!RoutineReminderScheduler.hasNotificationPermission(requireContext())) reminderSummary.setText(R.string.notification_permission_denied);
+        else if (!RoutineReminderScheduler.hasExactAlarmPermission(requireContext())) reminderSummary.setText(R.string.notification_exact_alarm_missing);
+        else reminderSummary.setText(R.string.notification_settings_summary);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (!isAdded() || !LocalNotificationPreferences.pendingEnable(requireContext()) || waitingForNotificationPermission) {
+            if (isAdded() && LocalNotificationPreferences.enabled(requireContext())
+                && RoutineReminderScheduler.hasNotificationPermission(requireContext())
+                && RoutineReminderScheduler.hasExactAlarmPermission(requireContext()))
+                RoutineReminderScheduler.scheduleStored(requireContext(), true);
+            renderReminderState();
+            return;
+        }
+        if (!RoutineReminderScheduler.hasNotificationPermission(requireContext())) {
+            denyReminderPermission();
+        } else if (RoutineReminderScheduler.hasExactAlarmPermission(requireContext())) {
+            completeReminderEnable();
+        } else denyExactAlarmAccess();
+    }
+
     private LinearLayout group(LinearLayout parent) {
         LinearLayout group = new LinearLayout(requireContext());
         group.setOrientation(LinearLayout.VERTICAL);
@@ -285,5 +461,5 @@ public final class ProfileSettingsFragment extends AuthFlowFragment implements P
         if (!model.photo.getValue().busy()) action.run();
     }
 
-    @Override public void onDestroyView() { avatar = null; greeting = notice = residenceName = null; identitySection = firstSection = null; shownPhoto = null; super.onDestroyView(); }
+    @Override public void onDestroyView() { avatar = null; greeting = notice = residenceName = reminderSummary = null; reminderSwitch = null; identitySection = firstSection = null; shownPhoto = null; super.onDestroyView(); }
 }
