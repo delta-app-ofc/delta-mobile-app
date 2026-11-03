@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/auth_blue"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="36dp"
+    android:paddingBottom="24dp"
+    android:fillViewport="true"
+    android:clipToPadding="true"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Top Header -->
+        <TextView
+            android:id="@+id/config_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:text="←"
+            android:textColor="@color/auth_white"
+            android:textSize="28sp"
+            android:contentDescription="@string/auth_back" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/auth_config_title"
+            android:textColor="@color/auth_white"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/auth_config_subtitle"
+            android:textColor="@color/auth_white"
+            android:textSize="14sp" />
+
+        <!-- Info Box -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/auth_info_background"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ⓘ"
+                android:textColor="@color/auth_white"
+                android:textSize="18sp"
+                android:layout_marginEnd="12dp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Com esses dados a previsão da sua conta já começa precisa desde o primeiro dia."
+                android:textColor="#D6E4FF"
+                android:textSize="14sp"
+                android:lineSpacingExtra="2dp" />
+        </LinearLayout>
+
+        <!-- Month Field -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/auth_reference_month"
+            android:textColor="@color/auth_white"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/auth_field_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/month_previous"
+                android:layout_width="60dp"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="‹"
+                android:textColor="@color/auth_white"
+                android:textSize="32sp"
+                android:contentDescription="Mês anterior" />
+
+            <TextView
+                android:id="@+id/reference_month"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="@color/auth_white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/month_next"
+                android:layout_width="60dp"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="›"
+                android:textColor="@color/auth_white"
+                android:textSize="32sp"
+                android:contentDescription="Próximo mês" />
+        </LinearLayout>
+
+        <!-- Total Paid Field -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/auth_total_paid"
+            android:textColor="@color/auth_white"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/total_paid"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/auth_field_background"
+            android:inputType="numberDecimal"
+            android:paddingHorizontal="16dp"
+            android:singleLine="true"
+            android:textColor="@color/auth_white"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/auth_total_hint"
+            android:textColor="#D6E4FF"
+            android:textSize="12sp" />
+
+        <!-- Consumption Field -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/auth_consumption"
+            android:textColor="@color/auth_white"
+            android:textSize="14sp" />
+
+        <EditText
+            android:id="@+id/consumption"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/auth_field_background"
+            android:inputType="numberDecimal"
+            android:paddingHorizontal="16dp"
+            android:singleLine="true"
+            android:textColor="@color/auth_white"
+            android:textSize="16sp" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Continue Button -->
+        <TextView
+            android:id="@+id/config_continue"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/auth_button_white"
+            android:gravity="center"
+            android:text="@string/auth_continue"
+            android:textColor="@color/auth_blue"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+</ScrollView>

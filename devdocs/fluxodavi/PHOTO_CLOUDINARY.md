@@ -1,0 +1,13 @@
+# Foto de perfil diretamente no Cloudinary
+
+O preset `delta_profile_photos` do cloud `ggra32fp` foi configurado pela pessoa usuária como Unsigned. Upload é multipart em `https://api.cloudinary.com/v1_1/ggra32fp/image/upload`, com `file` e `upload_preset`. São configurações públicas, sem API Secret ou credenciais OAuth no aplicativo.
+
+Ao escolher uma foto ou concluir uma captura, o app valida formato/tamanho, redimensiona para até 1024 px e envia JPEG. O avatar muda depois de o upload retornar `public_id` e `secure_url` e a referência ser salva; para a atualização imediata, usa o JPEG preparado localmente. A URL remota é baixada quando a foto é recarregada. A imagem anterior é preservada em caso de falha. Não há etapa de prévia, envio manual ou descarte.
+
+Upload e leitura usam clientes públicos independentes do cliente autenticado Delta. A URL aceita somente HTTPS, host `res.cloudinary.com` e caminho de imagens do cloud configurado. Redirecionamentos são desabilitados. Os arquivos temporários são removidos; a URL fica em `delta_profile_photos`, separada por ID do usuário e excluída de backup. A referência da foto não é sincronizada pelo backend Delta: outro aparelho não consegue descobrir a foto da conta automaticamente.
+
+Reaberturas consultam a URL salva e baixam a imagem do Cloudinary. O avatar da Home observa a foto confirmada e força um novo GET a cada entrada/retorno à tela, inclusive após atualizar a foto nas configurações. O GET desabilita cache local e solicita revalidação; chamadas equivalentes em andamento não são duplicadas. Operações de imagem/rede ocorrem fora da thread principal; a geração da sessão e da requisição evita aplicar respostas de uma conta anterior. Uploads unsigned criam novos assets; o app não sobrescreve nem exclui assets anteriores usando credenciais administrativas.
+
+Fontes: [CloudinaryApiService.java](../../app/src/main/java/com/aula/delta_mobile_app/services/api/CloudinaryApiService.java), [CloudinaryPhotoRepository.java](../../app/src/main/java/com/aula/delta_mobile_app/repository/CloudinaryPhotoRepository.java), [ProfilePhotoRepository.java](../../app/src/main/java/com/aula/delta_mobile_app/repository/ProfilePhotoRepository.java), [ProfileSettingsViewModel.java](../../app/src/main/java/com/aula/delta_mobile_app/viewmodel/ProfileSettingsViewModel.java), [documentação Cloudinary](https://cloudinary.com/documentation/client_side_uploading).
+
+Validação: três testes JVM específicos passaram; classes compiladas isoladamente. Um JPEG sintético de 2×2 px foi enviado ao preset real, e a entrega respondeu HTTP 200. Isso não comprova instalação ou execução do fluxo Android completo em aparelho.

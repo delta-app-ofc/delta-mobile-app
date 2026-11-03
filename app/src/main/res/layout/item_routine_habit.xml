@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="top"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/routine_habit_time"
+            style="@style/Routine.TimelineTime"
+            android:layout_width="@dimen/routine_timeline_time_width"
+            android:layout_height="wrap_content"
+            android:paddingTop="@dimen/routine_timeline_time_padding"
+            android:textColor="@color/routine_text" />
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/routine_habit_card"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="@dimen/routine_timeline_card_min_height"
+            app:cardBackgroundColor="@color/routine_timeline_blue_surface"
+            app:cardCornerRadius="@dimen/routine_card_radius"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/routine_timeline_blue_stroke"
+            app:strokeWidth="1dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/routine_timeline_card_padding">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/routine_habit_icon"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        app:srcCompat="@drawable/routine_icon_drop"
+                        app:tint="@color/routine_timeline_blue_accent" />
+                    <TextView
+                        android:id="@+id/routine_habit_name"
+                        style="@style/Routine.TimelineName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1" />
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/routine_habit_category"
+                    style="@style/Routine.Caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="28dp"
+                    android:layout_marginTop="4dp"
+                    android:visibility="gone" />
+                <TextView
+                    android:id="@+id/routine_habit_estimate"
+                    style="@style/Routine.TimelineEstimate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="@dimen/routine_timeline_time_width"
+        android:layout_marginTop="@dimen/routine_item_spacing"
+        android:layout_marginBottom="@dimen/routine_item_spacing"
+        android:background="@color/routine_timeline_divider"
+        android:importantForAccessibility="no" />
+</LinearLayout>

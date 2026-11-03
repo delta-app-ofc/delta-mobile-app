@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/chat_resume"
+        style="@style/Chat.SubtleAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginBottom="@dimen/chat_section_spacing"
+        android:text="@string/chat_resume"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/chat_heading"
+        style="@style/Chat.Heading"
+        android:text="@string/chat_landing_heading" />
+
+    <FrameLayout
+        android:id="@+id/chat_composer_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/chat_section_spacing">
+
+        <TextView
+            android:id="@+id/chat_composer_placeholder"
+            style="@style/Chat.ComposerPlaceholder"
+            android:text="@string/chat_composer_hint" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/chat_suggestions_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/chat_history_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/chat_landing_history_spacing"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            style="@style/Home.Section"
+            android:accessibilityHeading="true"
+            android:text="@string/chat_history_title" />
+
+        <TextView
+            android:id="@+id/chat_sessions_status"
+            style="@style/Home.Body"
+            android:layout_marginTop="@dimen/chat_composer_spacing"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone" />
+
+        <com.aula.delta_mobile_app.view.StatusNoticeView
+            android:id="@+id/chat_sessions_notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/chat_message_spacing"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/chat_sessions_retry"
+            style="@style/Chat.SubtleAction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="@dimen/chat_composer_spacing"
+            android:text="@string/chat_retry"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

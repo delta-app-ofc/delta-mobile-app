@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <exclude
+        domain="sharedpref"
+        path="delta_profile_photos.xml" />
+    <exclude
+        domain="database"
+        path="delta_monthly_goals.db" />
+    <exclude
+        domain="sharedpref"
+        path="delta_monthly_goals.xml" />
+    <exclude
+        domain="sharedpref"
+        path="delta_session.xml" />
+</full-backup-content>

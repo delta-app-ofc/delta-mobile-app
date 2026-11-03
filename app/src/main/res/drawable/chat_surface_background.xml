@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <solid android:color="@color/chat_background" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:centerX="1"
+                android:centerY="0.15"
+                android:gradientRadius="@dimen/chat_surface_glow_radius"
+                android:startColor="#804A7CD9"
+                android:endColor="#004A7CD9" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:centerX="0"
+                android:centerY="0.85"
+                android:gradientRadius="@dimen/chat_surface_glow_radius"
+                android:startColor="#665F8ED7"
+                android:endColor="#005F8ED7" />
+        </shape>
+    </item>
+</layer-list>

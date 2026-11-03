@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/auth_blue"
+    android:paddingStart="@dimen/auth_margin"
+    android:paddingEnd="@dimen/auth_margin"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp"
+    android:fillViewport="true"
+    android:clipToPadding="true"
+    android:scrollbars="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <include layout="@layout/auth_step_header" />
+        <EditText
+            android:id="@+id/zip"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/auth_field_height"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/auth_field_background"
+            android:hint="@string/auth_zip"
+            android:inputType="number"
+            android:paddingHorizontal="16dp"
+            android:singleLine="true"
+            android:textColor="@color/auth_white"
+            android:textColorHint="@color/auth_muted"
+            android:textSize="14sp"
+            android:maxLength="9" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/auth_zip_hint"
+            android:textColor="@color/auth_muted"
+            android:textSize="12sp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/state"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:clickable="false"
+                android:longClickable="false"
+                android:cursorVisible="false"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/auth_field_height"
+                android:layout_weight="1"
+                android:background="@drawable/auth_field_background"
+                android:hint="@string/auth_state"
+                android:inputType="textCapCharacters"
+                android:maxLength="2"
+                android:paddingHorizontal="12dp"
+                android:singleLine="true"
+                android:textColor="@color/auth_white"
+                android:textColorHint="@color/auth_muted" />
+            <EditText android:id="@+id/city" android:focusable="false" android:focusableInTouchMode="false" android:clickable="false" android:longClickable="false" android:cursorVisible="false" android:layout_width="0dp" android:layout_height="@dimen/auth_field_height" android:layout_marginStart="16dp" android:layout_weight="1.6" android:background="@drawable/auth_field_background" android:hint="@string/auth_city" android:inputType="textCapWords" android:paddingHorizontal="12dp" android:singleLine="true" android:textColor="@color/auth_white" android:textColorHint="@color/auth_muted" />
+    </LinearLayout>
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+            <TextView android:id="@+id/step_continue" android:layout_width="match_parent" android:layout_height="@dimen/auth_button_height" android:layout_marginHorizontal="12dp" android:background="@drawable/auth_button_muted" android:gravity="center" android:text="@string/auth_continue" android:textColor="@color/auth_white" android:textSize="20sp" android:textStyle="bold" android:layout_marginTop="24dp" />
+  </LinearLayout>
+        </ScrollView>

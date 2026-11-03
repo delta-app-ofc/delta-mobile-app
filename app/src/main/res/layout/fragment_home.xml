@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:clipToPadding="false"
+    android:scrollbars="none"
+    android:background="@drawable/home_surface_background">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="28dp"
+        android:paddingTop="32dp"
+        android:paddingBottom="128dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:gravity="center_vertical">
+            <FrameLayout
+                android:id="@+id/home_avatar_action"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/home_settings">
+                <ImageView
+                    android:id="@+id/home_avatar"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="center"
+                    android:padding="9dp"
+                    android:background="@drawable/home_circle"
+                    android:clipToOutline="true"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/home_icon_person"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:gravity="center_vertical"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/home_greeting"
+                    style="@style/Home.Body"
+                    android:text="@string/home_greeting_default"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/home_goal_property"
+                    style="@style/Home.Caption"
+                    android:layout_marginTop="3dp"
+                    android:drawableStart="@drawable/home_goal_property_icon"
+                    android:drawablePadding="4dp"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/white"
+                    android:visibility="gone" />
+        </LinearLayout>
+        <ImageButton
+            android:id="@+id/home_add_meter"
+            style="@style/Home.HeaderAction"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/home_icon_add_meter"
+            android:contentDescription="@string/home_add_meter_desc"
+            android:visibility="gone" />
+        <ImageButton
+            android:id="@+id/home_settings"
+            style="@style/Home.HeaderAction"
+            android:src="@drawable/home_icon_settings"
+            android:contentDescription="@string/home_settings" />
+    </LinearLayout>
+                <TextView
+                    style="@style/Home.Section"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/home_headline"
+                    android:textStyle="bold"
+                    android:textSize="21sp"
+                    android:fontFamily="sans-serif-medium" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="74dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/home_summary_background"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="10dp">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="4dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="26dp"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+                            <ImageView
+                                android:layout_width="19dp"
+                                android:layout_height="22dp"
+                                android:layout_marginEnd="4dp"
+                                android:src="@drawable/home_icon_drop"
+                                android:importantForAccessibility="no" />
+                            <TextView android:id="@+id/home_today" style="@style/Home.Metric" android:layout_width="wrap_content" android:gravity="center" android:text="@string/home_pending_metric" />
+        </LinearLayout>
+                            <TextView style="@style/Home.Caption" android:layout_marginTop="3dp" android:text="@string/home_today_label" android:gravity="center" android:maxLines="1" />
+    </LinearLayout>
+                            <View
+                                android:layout_width="1dp"
+                                android:layout_height="36dp"
+                                android:layout_gravity="center_vertical"
+                                android:background="#70FFFFFF" />
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_weight="1.1"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:paddingHorizontal="4dp">
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="26dp"
+                                    android:gravity="center"
+                                    android:orientation="horizontal">
+                                    <ImageView
+                                        android:layout_width="19dp"
+                                        android:layout_height="22dp"
+                                        android:layout_marginEnd="4dp"
+                                        android:src="@drawable/home_icon_calendar"
+                                        android:importantForAccessibility="no" />
+                                    <TextView android:id="@+id/home_month" style="@style/Home.Metric" android:layout_width="wrap_content" android:gravity="center" android:text="@string/home_pending_metric" />
+        </LinearLayout>
+                                    <TextView style="@style/Home.Caption" android:layout_marginTop="3dp" android:text="@string/home_month_label" android:gravity="center" android:maxLines="1" />
+    </LinearLayout>
+                                    <View
+                                        android:layout_width="1dp"
+                                        android:layout_height="36dp"
+                                        android:layout_gravity="center_vertical"
+                                        android:background="#70FFFFFF" />
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_weight="0.95"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center"
+                                        android:orientation="vertical"
+                                        android:paddingHorizontal="4dp">
+                                        <LinearLayout
+                                            android:layout_width="match_parent"
+                                            android:layout_height="26dp"
+                                            android:gravity="center"
+                                            android:orientation="horizontal">
+                                            <ImageView
+                                                android:layout_width="19dp"
+                                                android:layout_height="22dp"
+                                                android:layout_marginEnd="4dp"
+                                                android:src="@drawable/home_icon_money"
+                                                android:importantForAccessibility="no" />
+                                            <TextView android:id="@+id/home_cost" style="@style/Home.Metric" android:layout_width="wrap_content" android:gravity="center" android:text="@string/home_pending_metric" />
+        </LinearLayout>
+                                            <TextView style="@style/Home.Caption" android:layout_marginTop="3dp" android:text="@string/home_cost_label" android:gravity="center" android:maxLines="1" />
+    </LinearLayout>
+                                        </LinearLayout>
+                                        <com.aula.delta_mobile_app.view.StatusNoticeView
+                                            android:id="@+id/home_api_status"
+                                            style="@style/Home.Caption"
+                                            android:layout_marginTop="12dp"
+                                            android:accessibilityLiveRegion="polite"
+                                            android:visibility="gone" />
+        <LinearLayout
+            android:id="@+id/home_goal_overview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+            <com.aula.delta_mobile_app.view.HomeGoalProgressView
+                android:id="@+id/home_goal_progress_ring"
+                android:layout_width="0dp"
+                android:layout_height="190dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="12dp"
+                android:accessibilityLiveRegion="polite" />
+            <LinearLayout
+                android:id="@+id/home_goal"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:minHeight="190dp"
+                android:padding="12dp"
+                android:orientation="vertical"
+                android:background="@drawable/home_monthly_goal_background"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:contentDescription="@string/home_goal_action">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/home_icon_target"
+                        android:tint="@color/white"
+                        android:importantForAccessibility="no" />
+                    <TextView
+                        style="@style/Home.Section"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="6dp"
+                        android:text="@string/goal_title"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                <TextView
+                    style="@style/Home.Body"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/goal_limit_label" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:minHeight="72dp"
+                    android:gravity="center_vertical"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/home_goal_value"
+                        style="@style/Home.Body"
+                        android:textColor="#3073ED"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="18sp"
+                        android:autoSizeMaxTextSize="32sp"
+                        android:autoSizeStepGranularity="1sp"
+                        android:maxLines="2"
+                        android:accessibilityLiveRegion="polite"
+                        android:text="@string/goal_not_set" />
+                    <TextView
+                        android:id="@+id/home_goal_reference"
+                        style="@style/Home.Caption"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/white" />
+                </LinearLayout>
+                <TextView
+                    style="@style/Home.Body"
+                    android:gravity="end"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/home_view_more" />
+            </LinearLayout>
+        </LinearLayout>
+                                                    <LinearLayout
+                                                        android:layout_width="match_parent"
+                                                        android:layout_height="wrap_content"
+                                                        android:layout_marginHorizontal="8dp"
+                                                        android:layout_marginTop="30dp"
+                                                        android:orientation="vertical"
+                                                        android:paddingHorizontal="16dp"
+                                                        android:paddingTop="16dp"
+                                                        android:paddingBottom="6dp"
+                                                        android:background="@drawable/home_recommendation_background">
+                                                        <LinearLayout
+                                                            android:layout_width="match_parent"
+                                                            android:layout_height="wrap_content"
+                                                            android:gravity="center">
+                                                            <ImageView
+                                                                android:layout_width="24dp"
+                                                                android:layout_height="24dp"
+                                                                android:layout_marginEnd="6dp"
+                                                                android:src="@drawable/home_icon_bulb"
+                                                                android:importantForAccessibility="no" />
+                                                            <TextView
+                                                                android:id="@+id/home_goal_guidance_title"
+                                                                style="@style/Home.Section"
+                                                                android:layout_width="0dp"
+                                                                android:layout_weight="1"
+                                                                android:text="@string/home_stay_on_target"
+                                                                android:textStyle="bold" />
+        </LinearLayout>
+                                                            <Space
+                                                                android:layout_width="1dp"
+                                                                android:layout_height="8dp" />
+                                                            <LinearLayout
+                                                                android:layout_width="match_parent"
+                                                                android:layout_height="wrap_content"
+                                                                android:minHeight="34dp"
+                                                                android:gravity="center_vertical">
+                                                                <TextView
+                                                                    style="@style/Home.Body"
+                                                                    android:layout_width="0dp"
+                                                                    android:layout_weight="1"
+                                                                    android:text="@string/home_daily_limit" />
+                                                                <TextView android:id="@+id/home_daily_limit" style="@style/Home.Caption" android:layout_width="wrap_content" android:layout_marginStart="8dp" android:text="@string/home_pending_metric" android:textColor="#76E3D0" />
+    </LinearLayout>
+                                                                <View
+                                                                    android:layout_width="match_parent"
+                                                                    android:layout_height="1dp"
+                                                                    android:background="#75FFFFFF" />
+                                                                <LinearLayout
+                                                                    android:layout_width="match_parent"
+                                                                    android:layout_height="wrap_content"
+                                                                    android:minHeight="34dp"
+                                                                    android:gravity="center_vertical">
+                                                                    <TextView
+                                                                        style="@style/Home.Body"
+                                                                        android:layout_width="0dp"
+                                                                        android:layout_weight="1"
+                                                                        android:text="@string/home_reduction" />
+                                                                    <TextView android:id="@+id/home_reduction" style="@style/Home.Caption" android:layout_width="wrap_content" android:layout_marginStart="8dp" android:text="@string/home_pending_metric" android:textColor="#EF909A" />
+    </LinearLayout>
+                                                                    <View
+                                                                        android:layout_width="match_parent"
+                                                                        android:layout_height="1dp"
+                                                                        android:background="#75FFFFFF" />
+                                                                    <LinearLayout
+                                                                        android:layout_width="match_parent"
+                                                                        android:layout_height="wrap_content"
+                                                                        android:minHeight="34dp"
+                                                                        android:gravity="center_vertical">
+                                                                        <TextView
+                                                                            style="@style/Home.Body"
+                                                                            android:layout_width="0dp"
+                                                                            android:layout_weight="1"
+                                                                            android:text="@string/home_savings" />
+                                                                        <TextView android:id="@+id/home_savings" style="@style/Home.Caption" android:layout_width="wrap_content" android:layout_marginStart="8dp" android:text="@string/home_pending_metric" android:textColor="#FFFFFF" />
+    </LinearLayout>
+                                                                    </LinearLayout>
+                                                                    <TextView
+                                                                        style="@style/Home.Section"
+                                                                        android:layout_marginTop="22dp"
+                                                                        android:text="@string/home_temperature_title" />
+                                                                    <com.aula.delta_mobile_app.view.HomeTemperatureChart android:id="@+id/home_chart" android:layout_width="match_parent" android:layout_height="240dp" android:layout_marginHorizontal="-12dp" android:layout_marginTop="18dp" android:contentDescription="@string/home_temperature_empty" />
+</LinearLayout>
+                                                                </ScrollView>

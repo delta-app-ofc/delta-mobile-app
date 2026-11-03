@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/auth_blue"
+    android:paddingStart="@dimen/auth_margin"
+    android:paddingEnd="@dimen/auth_margin"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp"
+    android:fillViewport="true"
+    android:clipToPadding="true"
+    android:scrollbars="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <include layout="@layout/auth_step_header" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Tipo de imóvel"
+            android:textColor="@color/auth_white"
+            android:textSize="16sp" />
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/property_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:singleSelection="true"
+            app:selectionRequired="true"
+            app:chipSpacingHorizontal="12dp" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/classification"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:layout_marginTop="16dp"
+            android:paddingVertical="12dp"
+            android:text="Selecionar classificação"
+            android:textAllCaps="false"
+            android:textColor="@color/auth_white"
+            android:gravity="start|center_vertical"
+            app:strokeColor="@color/auth_muted"
+            app:cornerRadius="16dp"
+            app:icon="@android:drawable/arrow_down_float"
+            app:iconTint="@color/auth_white"
+            app:iconGravity="end" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/auth_property_note"
+            android:textColor="@color/auth_white"
+            android:textSize="12sp" />
+        <EditText
+            android:id="@+id/property_name"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/auth_field_height"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/auth_field_background"
+            android:hint="@string/auth_property_name"
+            android:inputType="textCapWords"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/auth_white"
+            android:textColorHint="@color/auth_muted"
+            android:maxLength="100" />
+        <EditText
+            android:id="@+id/built_area"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/auth_field_height"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/auth_field_background"
+            android:hint="@string/auth_built_area"
+            android:inputType="numberDecimal"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/auth_white"
+            android:textColorHint="@color/auth_muted" />
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+        <TextView android:id="@+id/step_continue" android:layout_width="match_parent" android:layout_height="@dimen/auth_button_height" android:layout_marginHorizontal="12dp" android:background="@drawable/auth_button_muted" android:gravity="center" android:text="@string/auth_continue" android:textColor="@color/auth_white" android:textSize="20sp" android:textStyle="bold" android:layout_marginTop="24dp" />
+  </LinearLayout>
+    </ScrollView>

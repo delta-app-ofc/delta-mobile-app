@@ -1,0 +1,51 @@
+<resources>
+    <style
+        name="Theme.Delta.Selection"
+        parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/auth_blue</item>
+        <item name="colorOnPrimary">@color/auth_white</item>
+        <item name="colorPrimaryContainer">#E8EFFF</item>
+        <item name="colorOnPrimaryContainer">@color/auth_navy</item>
+        <item name="colorSecondary">@color/auth_blue</item>
+        <item name="colorSurface">@color/auth_white</item>
+        <item name="colorSurfaceContainerLow">@color/auth_white</item>
+        <item name="colorSurfaceContainerHigh">#F3F6FF</item>
+        <item name="colorOnSurface">@color/auth_navy</item>
+        <item name="colorOnSurfaceVariant">#4E5D7A</item>
+        <item name="colorOutline">#9AAAC7</item>
+        <item name="colorOutlineVariant">#DCE4F3</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Delta.BottomSheet</item>
+    </style>
+    <style
+        name="ThemeOverlay.Delta.BottomSheet"
+        parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.Delta.BottomSheet</item>
+    </style>
+    <style
+        name="Widget.Delta.BottomSheet"
+        parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">@color/auth_white</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay.Delta.Sheet</item>
+    </style>
+    <style
+        name="ShapeAppearanceOverlay.Delta.Sheet"
+        parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">28dp</item>
+        <item name="cornerSizeTopRight">28dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+    <style
+        name="ThemeOverlay.Delta.Calendar"
+        parent="ThemeOverlay.Material3.MaterialCalendar">
+        <item name="colorPrimary">@color/auth_blue</item>
+        <item name="colorOnPrimary">@color/auth_white</item>
+        <item name="colorSurface">@color/auth_white</item>
+        <item name="colorSurfaceContainerHigh">#F3F6FF</item>
+        <item name="colorOnSurface">@color/auth_navy</item>
+        <item name="colorOnSurfaceVariant">#4E5D7A</item>
+        <item name="colorPrimaryContainer">#E8EFFF</item>
+        <item name="colorOnPrimaryContainer">@color/auth_navy</item>
+    </style>
+</resources>

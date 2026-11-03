@@ -1,0 +1,54 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="20dp"
+    android:orientation="vertical"
+    android:background="@drawable/units_dialog_background">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/units_delete_title"
+        android:textColor="#C82F42"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:accessibilityHeading="true" />
+    <TextView
+        android:id="@+id/units_delete_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textColor="#626262"
+        android:textSize="14sp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/units_delete_cancel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:minHeight="48dp"
+            android:text="@string/profile_cancel"
+            android:textAllCaps="false"
+            android:textColor="#484848"
+            app:backgroundTint="#D6D6D6"
+            app:cornerRadius="24dp" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/units_delete_confirm"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:minHeight="48dp"
+            android:text="@string/units_delete_action"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            app:backgroundTint="#C82F42"
+            app:cornerRadius="24dp" />
+    </LinearLayout>
+</LinearLayout>

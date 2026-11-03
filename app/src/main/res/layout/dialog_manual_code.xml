@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/auth_dialog_background"
+    android:orientation="vertical"
+    android:padding="16dp">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/auth_manual_title"
+        android:textColor="@color/auth_blue"
+        android:textSize="19sp"
+        android:textStyle="bold" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:text="@string/auth_manual_description"
+        android:textColor="#909090"
+        android:textSize="13sp" />
+    <EditText
+        android:id="@+id/manual_code"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/auth_manual_field"
+        android:inputType="textNoSuggestions"
+        android:paddingHorizontal="12dp"
+        android:singleLine="true"
+        android:textColor="@color/auth_dark" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/manual_cancel"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:background="@drawable/auth_button_muted"
+            android:gravity="center"
+            android:text="@string/auth_cancel"
+            android:textColor="@color/auth_dark"
+            android:textSize="14sp" />
+        <TextView android:id="@+id/manual_confirm" android:layout_width="0dp" android:layout_height="36dp" android:layout_marginStart="20dp" android:layout_weight="1" android:background="@drawable/auth_button_blue" android:gravity="center" android:text="@string/auth_confirm" android:textColor="@color/auth_white" android:textSize="14sp" />
+    </LinearLayout>
+    </LinearLayout>

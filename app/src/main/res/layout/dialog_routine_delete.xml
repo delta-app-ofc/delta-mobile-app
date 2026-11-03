@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:padding="@dimen/routine_page_padding">
+        <TextView
+            style="@style/Routine.Heading"
+            android:text="@string/routine_delete_title" />
+        <TextView
+            android:id="@+id/routine_delete_habit"
+            style="@style/Routine.Section"
+            android:layout_marginTop="@dimen/routine_section_spacing" />
+        <TextView
+            style="@style/Routine.Body"
+            android:layout_marginTop="@dimen/routine_item_spacing"
+            android:text="@string/routine_delete_warning" />
+        <com.aula.delta_mobile_app.view.StatusNoticeView
+            android:id="@+id/routine_delete_notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/routine_section_spacing" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/routine_delete_check"
+            style="@style/Routine.Action"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/routine_item_spacing"
+            android:text="@string/routine_delete_check"
+            android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/routine_delete_confirm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/routine_section_spacing"
+            android:minHeight="@dimen/routine_touch_size"
+            android:text="@string/routine_delete_confirm" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/routine_delete_cancel"
+            style="@style/Routine.Action"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/routine_delete_cancel" />
+    </LinearLayout>
+</ScrollView>
