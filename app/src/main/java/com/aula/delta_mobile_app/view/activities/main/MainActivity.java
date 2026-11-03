@@ -14,11 +14,15 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.repository.AuthRepository;
+import com.aula.delta_mobile_app.services.notifications.RoutineReminderScheduler;
 import com.aula.delta_mobile_app.view.activities.login.LoginActivity;
 
 public class MainActivity extends com.aula.delta_mobile_app.view.activities.ScreenFlowActivity {
     public static final String EXTRA_RESTORE_SESSION = "restore_session_in_main";
+    public static final String EXTRA_OPEN_ROUTINE = "open_routine_from_notification";
+    public static final String ACTION_OPEN_ROUTINE = "com.aula.delta_mobile_app.action.OPEN_ROUTINE";
     private boolean restoringSession;
+    private boolean openRoutinePending;
     private boolean returningToLogin;
     private boolean keyboardVisible;
     private boolean detailScreen;
@@ -27,6 +31,7 @@ public class MainActivity extends com.aula.delta_mobile_app.view.activities.Scre
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         restoringSession = getIntent().getBooleanExtra(EXTRA_RESTORE_SESSION, false);
+        openRoutinePending = getIntent().getBooleanExtra(EXTRA_OPEN_ROUTINE, false);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main_shell), (view, insets) -> {
@@ -83,20 +88,43 @@ public class MainActivity extends com.aula.delta_mobile_app.view.activities.Scre
                     restoringSession = false;
                     if (nav.getCurrentDestination() == null)
                         nav.setGraph(R.navigation.main_navigation);
+                    openRoutineIfRequested(nav);
                     updateLoading();
                     updateMenu();
                 } else if (value.status == com.aula.delta_mobile_app.model.ScreenState.Status.ERROR) {
                     openAuthentication(value.displayMessage(), false);
                 }
             });
-        } else if (nav.getCurrentDestination() == null) nav.setGraph(R.navigation.main_navigation);
+        } else {
+            if (nav.getCurrentDestination() == null) nav.setGraph(R.navigation.main_navigation);
+            openRoutineIfRequested(nav);
+        }
         AuthRepository.getInstance(this).session().observe(this, valid -> {
+            if (Boolean.TRUE.equals(valid)) RoutineReminderScheduler.scheduleStored(this, true);
             if (!restoringSession && !Boolean.TRUE.equals(valid) && !AuthRepository.getInstance(this).hasSession() && !returningToLogin) {
                 returningToLogin = true;
                 openScreen(new Intent(this, LoginActivity.class), true);
             }
         });
         ViewCompat.requestApplyInsets(findViewById(R.id.main_shell));
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (!intent.getBooleanExtra(EXTRA_OPEN_ROUTINE, false)) return;
+        openRoutinePending = true;
+        if (!restoringSession && AuthRepository.getInstance(this).hasSession()) {
+            NavHostFragment host = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main_nav_host);
+            if (host != null) openRoutineIfRequested(host.getNavController());
+        }
+    }
+
+    private void openRoutineIfRequested(NavController nav) {
+        if (!openRoutinePending || nav.getCurrentDestination() == null) return;
+        openRoutinePending = false;
+        MainNavigation.open(nav, R.id.goalsFragment);
     }
 
     public void setHomeLoading(boolean loading) {
@@ -110,6 +138,7 @@ public class MainActivity extends com.aula.delta_mobile_app.view.activities.Scre
         returningToLogin = true;
         Intent entry = new Intent(this, LoginActivity.class).putExtra(LoginActivity.EXTRA_SKIP_SESSION_RESTORE, true).putExtra(
             LoginActivity.EXTRA_CONTINUE_REGISTRATION, incompleteRegistration);
+        if (openRoutinePending) entry.putExtra(LoginActivity.EXTRA_OPEN_ROUTINE, true);
         if (message != null) entry.putExtra(LoginActivity.EXTRA_SESSION_ERROR, message);
         openScreen(entry, true);
     }
