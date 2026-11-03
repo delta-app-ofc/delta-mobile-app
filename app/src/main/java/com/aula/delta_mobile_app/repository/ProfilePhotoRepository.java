@@ -24,22 +24,26 @@ public final class ProfilePhotoRepository {
     public void upload(Uri uri, int userId, java.util.function.BooleanSupplier active, Consumer<ScreenState<File>> callback) {
         prepare(uri, value -> {
             if (value.status != ScreenState.Status.SUCCESS) { callback.accept(value); return; }
-            File downloaded = null;
+            boolean retained = false;
             try {
-                if (!active.getAsBoolean()) return;
+                if (!active.getAsBoolean()) {
+                    callback.accept(ScreenState.error("O envio da foto foi cancelado. Tente novamente."));
+                    return;
+                }
                 ScreenState<String> uploaded = cloudinary.upload(value.data);
                 if (uploaded.status != ScreenState.Status.SUCCESS) { callback.accept(ScreenState.error(uploaded.message, uploaded.code, uploaded.retryAt)); return; }
-                downloaded = download(uploaded.data);
-                if (!active.getAsBoolean()) { downloaded.delete(); return; }
+                if (!active.getAsBoolean()) {
+                    callback.accept(ScreenState.error("O envio da foto foi cancelado. Tente novamente."));
+                    return;
+                }
                 if (!context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit().putString("user:" + userId, uploaded.data).commit())
                     throw new java.io.IOException();
-                callback.accept(ScreenState.success(downloaded));
-                downloaded = null;
+                callback.accept(ScreenState.success(value.data));
+                retained = true;
             } catch (Exception failure) {
                 callback.accept(ScreenState.error("Não foi possível enviar e confirmar sua foto. Tente novamente."));
             } finally {
-                value.data.delete();
-                if (downloaded != null) downloaded.delete();
+                if (!retained) value.data.delete();
             }
         });
     }

@@ -18,7 +18,7 @@ import java.io.File;
 import java.util.Objects;
 
 public final class ProfileSettingsViewModel extends AndroidViewModel {
-    private static final long PHOTO_TIMEOUT_MS = 180_000;
+    private static final long PHOTO_TIMEOUT_MS = 90_000;
     public final MutableLiveData<ScreenState<Profile>> profile = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<ProfileSettingsData>> residence = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<Boolean>> saving = new MutableLiveData<>(ScreenState.idle());
@@ -216,17 +216,22 @@ public final class ProfileSettingsViewModel extends AndroidViewModel {
 
     public void preparePhoto(Uri uri) {
         ScreenState<Profile> current = profile.getValue();
-        if (current.status != ScreenState.Status.SUCCESS || current.data.id == null || photo.getValue().busy()) return;
+        if (photo.getValue().busy()) return;
+        if (uri == null || current.status != ScreenState.Status.SUCCESS || current.data.id == null) {
+            photo.setValue(ScreenState.error("Não foi possível identificar sua conta para salvar a foto. Atualize o perfil e tente novamente."));
+            return;
+        }
         long expected = generation;
         int request = ++photoRequest;
         photo.setValue(ScreenState.loading());
         startPhotoTimeout(expected, request);
         photos.upload(uri, current.data.id, () -> request == photoRequest && auth.hasSession() && auth.sessionGeneration() == expected, value -> main.post(() -> {
-            if (!valid(expected) || request != photoRequest) { if (value.data != null) value.data.delete(); return; }
+            if (!valid(expected) || request != photoRequest) { if (value != null && value.data != null) value.data.delete(); return; }
             cancelPhotoTimeout();
             if (uri.toString().equals(captureUri())) clearCapture();
-            if (value.status == ScreenState.Status.SUCCESS) { clearPhotoFile(); confirmedPhoto = value.data; photoUserId = current.data.id; }
-            photo.setValue(value);
+            ScreenState<File> result = value == null ? ScreenState.error("Não foi possível concluir o envio da foto. Tente novamente.") : value;
+            if (result.status == ScreenState.Status.SUCCESS) { clearPhotoFile(); confirmedPhoto = result.data; photoUserId = current.data.id; }
+            photo.setValue(result);
         }));
     }
 

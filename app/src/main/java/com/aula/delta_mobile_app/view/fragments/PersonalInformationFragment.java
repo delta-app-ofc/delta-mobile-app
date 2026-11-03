@@ -40,6 +40,7 @@ public final class PersonalInformationFragment extends AuthFlowFragment implemen
         name = new ProfileFormField(requireContext(), R.string.profile_name, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
         email = new ProfileFormField(requireContext(), R.string.profile_email, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
         phone = new ProfileFormField(requireContext(), R.string.profile_phone, InputType.TYPE_CLASS_PHONE);
+        phone.input.addTextChangedListener(new android.telephony.PhoneNumberFormattingTextWatcher("BR"));
         birthDate = new ProfileFormField(requireContext(), R.string.profile_birth_date, InputType.TYPE_CLASS_DATETIME | InputType.TYPE_DATETIME_VARIATION_DATE);
         for (ProfileFormField field : new ProfileFormField[] { name, email, phone, birthDate }) field.useOutlinedBox();
         for (ProfileFormField field : new ProfileFormField[] { name, email, phone }) field.setEditableHighlightEnabled(true);
@@ -100,7 +101,9 @@ public final class PersonalInformationFragment extends AuthFlowFragment implemen
         PersonalDraft values = editing ? model.personalDraft : ready ? new PersonalDraft(loaded.data) : null;
         name.value(values == null ? "" : values.name);
         email.value(values == null ? "" : values.email);
-        phone.value(values == null ? "" : values.phone);
+        String phoneValue = values == null ? "" : values.phone;
+        String formattedPhone = android.telephony.PhoneNumberUtils.formatNumber(phoneValue, "BR");
+        phone.value(formattedPhone == null ? phoneValue : formattedPhone);
         birthDate.value(formatBirthDate(values == null ? null : values.birthDate));
         for (ProfileFormField field : new ProfileFormField[] { name, email, phone, birthDate }) {
             field.setVisibility(ready ? View.VISIBLE : View.GONE);

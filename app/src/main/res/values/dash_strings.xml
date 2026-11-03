@@ -11,7 +11,7 @@
     <string name="dash_goal">Meta mensal</string>
     <string name="dash_goal_unknown">Meta não disponível</string>
     <string name="dash_history">Evolução histórica</string>
-    <string name="dash_history_subtitle">Últimos 6 meses · m³</string>
+    <string name="dash_history_subtitle">Total de litros consumidos em cada mês · mês atual parcial</string>
     <string name="dash_alerts">Alertas</string>
     <string name="dash_leak">Vazamento provável</string>
     <string name="dash_abnormal">Consumo elevado</string>

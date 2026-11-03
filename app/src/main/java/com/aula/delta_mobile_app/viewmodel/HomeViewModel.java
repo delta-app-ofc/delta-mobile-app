@@ -23,10 +23,14 @@ public class HomeViewModel extends AndroidViewModel {
     public final MutableLiveData<ScreenState<com.aula.delta_mobile_app.model.AuthModels.Profile>>
     user = new MutableLiveData<>(ScreenState.idle());
     public final MutableLiveData<ScreenState<WaterCostResponse>> cost = new MutableLiveData<>(ScreenState.idle());
+    public final MutableLiveData<ScreenState<java.util.List<Double>>> todayTemperature = new MutableLiveData<>(ScreenState.idle());
     private final Handler main = new Handler(Looper.getMainLooper());
     private final HomeRepository repository;
     private Integer propertyId;
     private int selection, costRequest;
+    private int temperatureRequest;
+    private Integer temperatureProperty;
+    private LocalDate temperatureDate;
     private java.math.BigDecimal costLiters;
     private LocalDate costDate;
 
@@ -48,6 +52,10 @@ public class HomeViewModel extends AndroidViewModel {
         propertyId = id;
         selection++;
         costRequest++;
+        temperatureRequest++;
+        temperatureProperty = null;
+        temperatureDate = null;
+        todayTemperature.setValue(ScreenState.idle());
         costLiters = null;
         costDate = null;
         cost.setValue(ScreenState.idle());
@@ -108,6 +116,26 @@ public class HomeViewModel extends AndroidViewModel {
             user.setValue(value);
             if (value.status == ScreenState.Status.SUCCESS)
                 name.setValue(value.data.name);
+        }));
+    }
+
+    public void loadTodayTemperature(Integer id) {
+        LocalDate today = LocalDate.now();
+        if (id == null) {
+            temperatureRequest++;
+            temperatureProperty = null;
+            temperatureDate = null;
+            todayTemperature.setValue(ScreenState.idle());
+            return;
+        }
+        if (id.equals(temperatureProperty) && today.equals(temperatureDate)
+            && (todayTemperature.getValue().busy() || todayTemperature.getValue().status == ScreenState.Status.SUCCESS)) return;
+        temperatureProperty = id;
+        temperatureDate = today;
+        int request = ++temperatureRequest;
+        todayTemperature.setValue(ScreenState.loading());
+        repository.todayTemperature(id, value -> main.post(() -> {
+            if (request == temperatureRequest && id.equals(propertyId) && today.equals(LocalDate.now())) todayTemperature.setValue(value);
         }));
     }
 }

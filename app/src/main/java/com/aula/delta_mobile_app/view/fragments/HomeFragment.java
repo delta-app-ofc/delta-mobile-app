@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.ApiModels.UserPropertyResponse;
 import com.aula.delta_mobile_app.model.HomeDashboard;
+import com.aula.delta_mobile_app.model.RoutineData;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.view.HomeTemperatureChart;
 import com.aula.delta_mobile_app.view.activities.main.MainActivity;
@@ -29,6 +30,10 @@ public class HomeFragment extends AuthFlowFragment {
     private HomeViewModel homeModel;
     private ProfileSettingsViewModel profileModel;
     private WaterViewModel waterModel;
+    private RoutineViewModel routineModel;
+    private RoutineData.Day todayRoutine;
+    private boolean routineLoaded;
+    private HomeTemperatureChart temperatureChart;
     private final android.os.Handler refreshHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable refreshConsumption = new Runnable() {
         @Override public void run() {
@@ -64,6 +69,13 @@ public class HomeFragment extends AuthFlowFragment {
         waterModel = water;
         HomeViewModel home = new ViewModelProvider(this).get(HomeViewModel.class);
         homeModel = home;
+        routineModel = new ViewModelProvider(this, new RoutineViewModel.Factory(requireContext())).get(RoutineViewModel.class);
+        routineModel.state().observe(getViewLifecycleOwner(), stateValue -> {
+            routineLoaded = stateValue.reading.status == ScreenState.Status.SUCCESS;
+            todayRoutine = routineLoaded && stateValue.selectedDate.equals(java.time.LocalDate.now()) ? stateValue.day : null;
+            renderTodayChart(temperatureChart, home.dashboard().getValue(), home.todayTemperature.getValue());
+        });
+        if (routineModel.state().getValue().reading.status == ScreenState.Status.IDLE) routineModel.load();
         profileModel = new ViewModelProvider(requireActivity()).get(ProfileSettingsViewModel.class);
         android.widget.ImageView avatar = view.findViewById(R.id.home_avatar);
         profileModel.photo.observe(getViewLifecycleOwner(), value -> {
@@ -84,7 +96,8 @@ public class HomeFragment extends AuthFlowFragment {
         TextView apiStatus = view.findViewById(R.id.home_api_status);
         apiStatus.setText("");
 
-        ((HomeTemperatureChart) view.findViewById(R.id.home_chart)).setPoints(Collections.emptyList());
+        temperatureChart = view.findViewById(R.id.home_chart);
+        temperatureChart.setPoints(Collections.emptyList());
         water.properties.observe(getViewLifecycleOwner(), value -> {
             apiStatus.setText("");
 
@@ -100,11 +113,32 @@ public class HomeFragment extends AuthFlowFragment {
                     home.selectProperty(null);
                     home.clearReadings();
                     apiStatus.setText(R.string.home_no_properties);
+                    water.loadMeterStatus(null);
                 } else {
                     home.selectProperty(selectedProperty);
+                    home.loadTodayTemperature(selectedProperty);
+                    water.loadMeterStatus(selectedProperty);
                     if (!Objects.equals(selectedProperty, water.propertyId) || water.consumption.getValue().status == ScreenState.Status.IDLE)
                         water.select(selectedProperty);
                 }
+            }
+        });
+        View addMeterBtn = view.findViewById(R.id.home_add_meter);
+        if (addMeterBtn != null) {
+            addMeterBtn.setOnClickListener(v -> navigate(R.id.qrScanFragment));
+        }
+        water.hasMeter.observe(getViewLifecycleOwner(), meterState -> {
+            if (addMeterBtn == null) return;
+            boolean confirmedMeter = water.isMeterStatusFor(selectedProperty) && meterState.status == ScreenState.Status.SUCCESS && Boolean.TRUE.equals(meterState.data);
+            addMeterBtn.setVisibility(selectedProperty == null || confirmedMeter ? View.GONE : View.VISIBLE);
+            if (water.isMeterStatusFor(selectedProperty) && meterState.status == ScreenState.Status.SUCCESS && !Boolean.TRUE.equals(meterState.data)
+                && water.claimMeterPrompt(selectedProperty)) {
+                new MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.home_add_meter_title)
+                    .setMessage(R.string.home_add_meter_message)
+                    .setPositiveButton(R.string.home_add_meter_confirm, (dialog, which) -> navigate(R.id.qrScanFragment))
+                    .setNegativeButton(R.string.home_add_meter_cancel, null)
+                    .show();
             }
         });
         water.consumption.observe(getViewLifecycleOwner(), value -> {
@@ -119,7 +153,9 @@ public class HomeFragment extends AuthFlowFragment {
         home.dashboard().observe(getViewLifecycleOwner(), summary -> {
             ((TextView) view.findViewById(R.id.home_today)).setText(liters(summary.todayLiters));
             ((TextView) view.findViewById(R.id.home_month)).setText(liters(summary.monthLiters));
+            renderTodayChart(temperatureChart, summary, home.todayTemperature.getValue());
         });
+        home.todayTemperature.observe(getViewLifecycleOwner(), value -> renderTodayChart(temperatureChart, home.dashboard().getValue(), value));
         home.cost.observe(getViewLifecycleOwner(), value -> {
             ((TextView) view.findViewById(R.id.home_cost)).setText(value.status == ScreenState.Status.SUCCESS && Objects.equals(value.data.propertyId, selectedProperty)
                 && value.data.estimatedCost != null ? money(value.data.estimatedCost) : getString(R.string.home_pending_metric));
@@ -183,17 +219,43 @@ public class HomeFragment extends AuthFlowFragment {
                 setHomeLoading(true);
             selectedProperty = id;
             home.selectProperty(id);
+            home.loadTodayTemperature(id);
             water.select(id);
+            water.loadMeterStatus(id);
         }).setNegativeButton(android.R.string.cancel, null).show();
     }
 
     private void setHomeLoading(boolean loading) { showLoading(loading); }
+
+    private void renderTodayChart(HomeTemperatureChart chart, HomeDashboard summary, ScreenState<List<Double>> temperature) {
+        if (chart == null || temperature == null || temperature.status != ScreenState.Status.SUCCESS || !routineLoaded) {
+            chart.setPoints(Collections.emptyList());
+            return;
+        }
+        double[] hourlyWeights = new double[24];
+        double totalRoutineEstimate = 0;
+        if (todayRoutine != null) for (RoutineData.Execution execution : todayRoutine.executions)
+            if (execution.liters != null && execution.liters.signum() > 0) {
+                double liters = execution.liters.doubleValue();
+                hourlyWeights[execution.startTime.getHour()] += liters;
+                totalRoutineEstimate += liters;
+            }
+        double dailyLiters = summary != null && summary.hasTodayReading && summary.todayLiters != null ? summary.todayLiters.doubleValue() : totalRoutineEstimate;
+        List<HomeTemperatureChart.Point> points = new ArrayList<>();
+        for (int hour = 0; hour < hourlyWeights.length; hour++)
+            if (temperature.data.size() > hour && temperature.data.get(hour) != null)
+                points.add(new HomeTemperatureChart.Point(hour, hourlyWeights[hour] > 0 && totalRoutineEstimate > 0
+                    ? dailyLiters * hourlyWeights[hour] / totalRoutineEstimate : Double.NaN, temperature.data.get(hour)));
+        chart.setPoints(points);
+    }
 
     @Override
     public void onResume() {
         super.onResume();
         refreshHandler.removeCallbacks(refreshConsumption);
         refreshConsumption.run();
+        if (waterModel != null && selectedProperty != null) waterModel.loadMeterStatus(selectedProperty);
+        if (homeModel != null && selectedProperty != null) homeModel.loadTodayTemperature(selectedProperty);
         if (homeModel != null && profileModel != null && homeModel.user.getValue().status == ScreenState.Status.SUCCESS)
             profileModel.loadPhoto(homeModel.user.getValue().data, true);
     }
@@ -210,6 +272,10 @@ public class HomeFragment extends AuthFlowFragment {
         loadingCheckPosted = false;
         homeModel = null;
         profileModel = null;
+        routineModel = null;
+        temperatureChart = null;
+        todayRoutine = null;
+        routineLoaded = false;
         waterModel = null;
         refreshHandler.removeCallbacks(refreshConsumption);
         super.onDestroyView();

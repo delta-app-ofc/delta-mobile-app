@@ -34,7 +34,7 @@
     <string name="home_notifications_empty">As notificações ainda não estão disponíveis.</string>
     <string name="home_account_title">Sua conta</string>
     <string name="home_liters">%1$s L</string>
-    <string name="home_temperature_title">Relação temperatura x litros</string>
+    <string name="home_temperature_title">Consumo estimado por hora e temperatura</string>
     <string name="home_temperature_empty">Sem dados de temperatura associados ao consumo.</string>
     <string name="home_goal_unavailable">Os dados da meta mensal ainda não foram disponibilizados.</string>
     <string name="home_suggestion_unavailable">A sugestão de meta ainda não foi disponibilizada.</string>
@@ -43,4 +43,9 @@
     <string name="home_goal_progress_missing_goal">Defina uma\nmeta mensal</string>
     <string name="home_goal_progress_missing_consumption">Consumo\nindisponível</string>
     <string name="home_goal_progress_description">%1$s da meta mensal consumida</string>
+    <string name="home_add_meter_title">Adicionar hidrômetro</string>
+    <string name="home_add_meter_message">Você ainda não possui um hidrômetro vinculado a este imóvel. Deseja adicionar um agora?</string>
+    <string name="home_add_meter_confirm">Adicionar</string>
+    <string name="home_add_meter_cancel">Mais tarde</string>
+    <string name="home_add_meter_desc">Vincular hidrômetro</string>
 </resources>

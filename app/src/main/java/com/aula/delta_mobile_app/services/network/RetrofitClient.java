@@ -46,6 +46,14 @@ public final class RetrofitClient {
         return BrasilApiHolder.SERVICE;
     }
 
+    private static final class OpenMeteoHolder {
+        private static final com.aula.delta_mobile_app.services.api.OpenMeteoApiService SERVICE = new Retrofit.Builder().baseUrl("https://api.open-meteo.com/")
+            .client(createHttpClient()).addConverterFactory(GsonConverterFactory.create(GsonProvider.getInstance())).build()
+            .create(com.aula.delta_mobile_app.services.api.OpenMeteoApiService.class);
+    }
+
+    public static com.aula.delta_mobile_app.services.api.OpenMeteoApiService getOpenMeteoService() { return OpenMeteoHolder.SERVICE; }
+
     private static final class CloudinaryHolder {
         private static final com.aula.delta_mobile_app.services.api.CloudinaryApiService SERVICE = new Retrofit.Builder().baseUrl("https://api.cloudinary.com/v1_1/")
             .client(createPublicImageClient()).addConverterFactory(GsonConverterFactory.create(GsonProvider.getInstance())).build()

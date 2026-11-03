@@ -9,6 +9,19 @@ import retrofit2.http.PUT;
 import static org.junit.Assert.*;
 
 public class PersonalDraftTest {
+    @Test
+    public void phoneMaskDoesNotChangePayloadOrMarkDraftAsChanged() {
+        Profile original = profile();
+        original.phone = "11987065088";
+        PersonalDraft draft = new PersonalDraft(original);
+        draft.phone = "(11) 98706-5088";
+        assertNull(draft.error("phone"));
+        assertEquals(original.phone, draft.request().phone);
+        assertFalse(draft.changed(original));
+        original.phone = "(11) 98706-5088";
+        assertFalse(draft.changed(original));
+    }
+
     private Profile profile() {
         return GsonProvider.getInstance().fromJson("{\"id\":7,\"name\":\"Maria Silva\",\"email\":\"maria@example.com\",\"phone\":\"11999999999\",\"birthDate\":\"1996-02-29\"}", Profile.class);
     }

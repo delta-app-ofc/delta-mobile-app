@@ -2,7 +2,7 @@
 
 O preset `delta_profile_photos` do cloud `ggra32fp` foi configurado pela pessoa usuária como Unsigned. Upload é multipart em `https://api.cloudinary.com/v1_1/ggra32fp/image/upload`, com `file` e `upload_preset`. São configurações públicas, sem API Secret ou credenciais OAuth no aplicativo.
 
-Ao escolher uma foto ou concluir uma captura, o app valida formato/tamanho, redimensiona para até 1024 px e envia JPEG. O avatar só muda depois de o upload retornar `public_id` e `secure_url`, a imagem ser baixada e a referência ser salva. A imagem anterior é preservada em caso de falha. Não há etapa de prévia, envio manual ou descarte.
+Ao escolher uma foto ou concluir uma captura, o app valida formato/tamanho, redimensiona para até 1024 px e envia JPEG. O avatar muda depois de o upload retornar `public_id` e `secure_url` e a referência ser salva; para a atualização imediata, usa o JPEG preparado localmente. A URL remota é baixada quando a foto é recarregada. A imagem anterior é preservada em caso de falha. Não há etapa de prévia, envio manual ou descarte.
 
 Upload e leitura usam clientes públicos independentes do cliente autenticado Delta. A URL aceita somente HTTPS, host `res.cloudinary.com` e caminho de imagens do cloud configurado. Redirecionamentos são desabilitados. Os arquivos temporários são removidos; a URL fica em `delta_profile_photos`, separada por ID do usuário e excluída de backup. A referência da foto não é sincronizada pelo backend Delta: outro aparelho não consegue descobrir a foto da conta automaticamente.
 

@@ -26,7 +26,8 @@ public final class DashboardHistoryChart extends View {
         StringBuilder text = new StringBuilder(getResources().getString(R.string.dash_history));
         if (value != null)
             for (int i = 0; i < 6; i++)
-                text.append(", ").append(value.firstMonth.plusMonths(i)).append(": ").append(value.months[i] == null ? "sem dados" : value.months[i] + " m³");
+                text.append(", ").append(value.firstMonth.plusMonths(i)).append(": ").append(value.months[i] == null ? "sem dados"
+                    : roundedLiters(value.months[i]) + " litros");
         setContentDescription(text);
         invalidate();
     }
@@ -82,7 +83,8 @@ public final class DashboardHistoryChart extends View {
         paint.setStrokeJoin(Paint.Join.ROUND);
         canvas.drawPath(path, paint);
         NumberFormat numbers = NumberFormat.getNumberInstance(new Locale("pt", "BR"));
-        numbers.setMaximumFractionDigits(3);
+        numbers.setMaximumFractionDigits(0);
+        numbers.setRoundingMode(java.math.RoundingMode.CEILING);
         for (int i = 0; i < 6; i++)
             if (metrics.months[i] != null) {
             float x = left + (right - left) * i / 5, y = bottom
@@ -96,9 +98,7 @@ public final class DashboardHistoryChart extends View {
                 paint.setColor(Color.WHITE);
                 canvas.drawCircle(x, y, 3.5f * d, paint);
             }
-            String value = numbers.format(metrics.months[i]);
-            if (metrics.months[i].signum() > 0 && metrics.months[i].compareTo(new java.math.BigDecimal("0.001")) < 0)
-                value = "< 0,001";
+            String value = numbers.format(roundedLiters(metrics.months[i])) + " L";
             paint.setStyle(Paint.Style.FILL);
             paint.setColor(Color.WHITE);
             paint.setTextSize(labelSize);
@@ -109,5 +109,9 @@ public final class DashboardHistoryChart extends View {
             paint.setTextAlign(Paint.Align.CENTER);
             canvas.drawText(value, x, y - 9 * d, paint);
         }
+    }
+
+    private java.math.BigDecimal roundedLiters(java.math.BigDecimal cubicMeters) {
+        return cubicMeters.movePointRight(3).setScale(0, java.math.RoundingMode.CEILING);
     }
 }
