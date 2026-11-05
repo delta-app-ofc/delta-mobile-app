@@ -75,15 +75,16 @@ public final class LeakDetectionFragment extends AuthFlowFragment {
                     : R.string.leak_unavailable));
                 card.setOnClickListener(v -> guide(R.string.leak_title, data == null ? R.string.leak_no_telemetry_description : LeakHelper.notice(data)));
                 addCard(cards, card);
-            } else
-            for (LeakMonitoringData.Event event : data.events) {
-                View card = LeakHelper.eventCard(getLayoutInflater(), cards, event, data.availability);
-                card.setTag(event.id);
-                card.setOnClickListener(v -> {
-                    monitoring.selectEvent(event.id);
-                    updateEvent(view);
-                });
-                addCard(cards, card);
+            } else {
+                for (LeakMonitoringData.Event event : data.events) {
+                    View card = LeakHelper.eventCard(getLayoutInflater(), cards, event, data.availability);
+                    card.setTag(event.id);
+                    card.setOnClickListener(v -> {
+                        monitoring.selectEvent(event.id);
+                        updateEvent(view);
+                    });
+                    addCard(cards, card);
+                }
             }
             updateEvent(view);
             HorizontalScrollView scroll = view.findViewById(R.id.leak_event_scroll);

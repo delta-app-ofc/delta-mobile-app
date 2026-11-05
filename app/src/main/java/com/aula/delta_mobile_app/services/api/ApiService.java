@@ -20,6 +20,12 @@ public interface ApiService {
     @POST("delta/auth/refresh")
     Call<Tokens> refresh(@Body Refresh request);
 
+    @POST("delta/auth/password/forgot")
+    Call<MessageResponse> requestPasswordReset(@Body PasswordResetRequest request);
+
+    @POST("delta/auth/password/reset")
+    Call<MessageResponse> resetPassword(@Body PasswordResetConfirmRequest request);
+
     @GET("delta/auth/me")
     Call<Profile> me();
 

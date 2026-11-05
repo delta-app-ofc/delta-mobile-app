@@ -168,8 +168,9 @@ public class SignupViewModel extends AndroidViewModel {
         if (state != null && (state.busy() || state.status == ScreenState.Status.SUCCESS || System.currentTimeMillis() < state.retryAt)) return;
         String error = propertyError();
         if (error == null && (currentCep.length() != 8 || draft.getString("city", "").isEmpty() || draft.getString("city", "").length() > 60 || draft.getString("state", "").isEmpty()
-            || draft.getString("state", "").length() > 30))
-        error = "Consulte um CEP válido antes de concluir.";
+            || draft.getString("state", "").length() > 30)) {
+            error = "Consulte um CEP válido antes de concluir.";
+        }
         if (error != null) {
             completion.setValue(ScreenState.error(error));
             return;

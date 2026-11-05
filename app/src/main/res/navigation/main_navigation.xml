@@ -140,4 +140,5 @@
                     android:defaultValue="" />
                 <argument android:name="analysis" app:argType="string" android:defaultValue="abnormal" />
 </fragment>
-            </navigation>
+                <fragment android:id="@+id/alertsFragment" android:name="com.aula.delta_mobile_app.view.fragments.AlertsFragment" android:label="@string/alert_title"/>
+</navigation>

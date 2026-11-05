@@ -27,10 +27,15 @@ android {
     }
     buildTypes {
         debug {
+            buildConfigField("String", "MONGO_API_URL", "\"${providers.gradleProperty("deltaMongoApiUrl").getOrElse("http://10.0.2.2:8081/")}\"")
+            enableUnitTestCoverage = true
             buildConfigField("String", "DELTA_API_URL", "\"${providers.gradleProperty("deltaApiUrl").getOrElse("https://delta-api-postgres.onrender.com/")}\"")
             manifestPlaceholders["deltaCleartext"] = "true"
         }
         release {
+            val mongoUrl = providers.gradleProperty("deltaMongoReleaseApiUrl").getOrElse("https://localhost/")
+            require(mongoUrl.startsWith("https://")) { "Mongo em release exige HTTPS" }
+            buildConfigField("String", "MONGO_API_URL", "\"$mongoUrl\"")
             val apiUrl = providers.gradleProperty("deltaReleaseApiUrl").getOrElse("https://delta-api-postgres.onrender.com/")
             require(apiUrl.startsWith("https://")) { "Release exige HTTPS" }
             buildConfigField("String", "DELTA_API_URL", "\"$apiUrl\"")
@@ -64,4 +69,8 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
+}
+
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst { require(providers.gradleProperty("deltaMongoReleaseApiUrl").isPresent) { "Configure deltaMongoReleaseApiUrl antes de gerar release" } }
 }

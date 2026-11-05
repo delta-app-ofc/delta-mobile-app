@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
@@ -233,7 +234,7 @@
                                                     android:padding="8dp"
                                                     android:background="@drawable/home_circle"
                                                     android:src="@drawable/dash_icon_warning"
-                                                    android:tint="#FF4C50"
+                                                    app:tint="#FF4C50"
                                                     android:importantForAccessibility="no" />
                                                 <LinearLayout
                                                     android:layout_width="0dp"
@@ -270,7 +271,7 @@
                                                     android:padding="8dp"
                                                     android:background="@drawable/home_circle"
                                                     android:src="@drawable/home_icon_drop"
-                                                    android:tint="#E7CD47"
+                                                    app:tint="#E7CD47"
                                                     android:importantForAccessibility="no" />
                                                 <LinearLayout
                                                     android:layout_width="0dp"
@@ -307,7 +308,7 @@
                                                     android:padding="8dp"
                                                     android:background="@drawable/home_circle"
                                                     android:src="@drawable/dash_icon_pressure"
-                                                    android:tint="#4CE8EE"
+                                                    app:tint="#4CE8EE"
                                                     android:importantForAccessibility="no" />
                                                 <LinearLayout
                                                     android:layout_width="0dp"
@@ -342,7 +343,7 @@
                                                         android:layout_height="34dp"
                                                         android:padding="8dp"
                                                         android:src="@drawable/home_icon_drop"
-                                                        android:tint="#FF4C50"
+                                                        app:tint="#FF4C50"
                                                         android:importantForAccessibility="no" />
                                                     <LinearLayout
                                                         android:layout_width="0dp"

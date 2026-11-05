@@ -42,6 +42,27 @@ public final class AuthModels {
         }
     }
 
+    public static class PasswordResetRequest {
+        public final String email;
+
+        public PasswordResetRequest(String email) {
+            this.email = email;
+        }
+    }
+
+    public static class PasswordResetConfirmRequest {
+        public final String token, password;
+
+        public PasswordResetConfirmRequest(String token, String password) {
+            this.token = token;
+            this.password = password;
+        }
+    }
+
+    public static class MessageResponse {
+        public String message;
+    }
+
     public static class Profile {
         public Integer id;
         public String name, email;
