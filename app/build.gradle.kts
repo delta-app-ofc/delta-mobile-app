@@ -33,7 +33,8 @@ android {
             manifestPlaceholders["deltaCleartext"] = "true"
         }
         release {
-            val mongoUrl = providers.gradleProperty("deltaMongoReleaseApiUrl").getOrElse("https://localhost/")
+            val mongoUrl = providers.gradleProperty("deltaMongoReleaseApiUrl").orNull
+                ?: error("Configure deltaMongoReleaseApiUrl antes de gerar release")
             require(mongoUrl.startsWith("https://")) { "Mongo em release exige HTTPS" }
             buildConfigField("String", "MONGO_API_URL", "\"$mongoUrl\"")
             val apiUrl = providers.gradleProperty("deltaReleaseApiUrl").getOrElse("https://delta-api-postgres.onrender.com/")
