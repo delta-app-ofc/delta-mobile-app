@@ -92,6 +92,7 @@ public final class UnitsViewModel extends AndroidViewModel {
         if (!Objects.equals(draft.cep, normalized) && !addressLocked()) {
             draft.cep = normalized;
             draft.city = draft.state = draft.confirmedCep = "";
+            draft.latitude = draft.longitude = null;
             postalRequest++;
             postal.cancel();
             postalState.setValue(ScreenState.idle());
@@ -110,6 +111,13 @@ public final class UnitsViewModel extends AndroidViewModel {
                 draft.city = value.data.city;
                 draft.state = value.data.state;
                 draft.confirmedCep = cep;
+                if (value.data.location != null && value.data.location.coordinates != null) {
+                    Double latitude = value.data.location.coordinates.latitude, longitude = value.data.location.coordinates.longitude;
+                    if (latitude != null && longitude != null && Double.isFinite(latitude) && Double.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180) {
+                        draft.latitude = java.math.BigDecimal.valueOf(latitude);
+                        draft.longitude = java.math.BigDecimal.valueOf(longitude);
+                    }
+                }
             }
             postalState.setValue(value);
             changed();

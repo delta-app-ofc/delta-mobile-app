@@ -82,7 +82,8 @@ public final class NewUnitFragment extends AuthFlowFragment implements ProfileNa
             if (error != null) {
                 UnitDraft draft = model.draft;
                 if (draft.name.trim().isEmpty() || draft.name.trim().length() > 100) name.setError(error);
-                else if (!draft.cep.matches("[0-9]{8}") || !draft.cep.equals(draft.confirmedCep) || draft.city.trim().isEmpty() || draft.state.trim().isEmpty()) cep.setError(error);
+                else if (!draft.cep.matches("[0-9]{8}") || !draft.cep.equals(draft.confirmedCep) || draft.city.trim().isEmpty() || draft.state.trim().isEmpty()
+                    || !draft.hasCoordinates()) cep.setError(error);
                 else if (!Arrays.asList(UnitDraft.TYPES).contains(draft.type)) type.setError(error);
                 else category.setError(error);
                 return;
@@ -109,7 +110,8 @@ public final class NewUnitFragment extends AuthFlowFragment implements ProfileNa
             args.putInt("unitPropertyId", propertyId);
             NavHostFragment.findNavController(this).navigate(R.id.qrScanFragment, args, new NavOptions.Builder().setPopUpTo(R.id.newUnitFragment, true).build());
         });
-        if (model.draft.cep.matches("[0-9]{8}") && !model.draft.cep.equals(model.draft.confirmedCep) && !model.postalState.getValue().busy()) model.lookup();
+        if (model.draft.cep.matches("[0-9]{8}") && (!model.draft.cep.equals(model.draft.confirmedCep) || !model.draft.hasCoordinates())
+            && !model.postalState.getValue().busy()) model.lookup();
     }
 
     private ProfileFormField field(int label, int inputType) {

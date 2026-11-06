@@ -29,6 +29,8 @@ public class UnitsRepositoryTest {
         draft.cep = draft.confirmedCep = "01001000";
         draft.city = "São Paulo";
         draft.state = "SP";
+        draft.latitude = new BigDecimal("-23.55052");
+        draft.longitude = new BigDecimal("-46.633308");
         draft.type = "PRÉDIO";
         draft.classification = "RESIDENCIAL_SOCIAL";
         return draft;

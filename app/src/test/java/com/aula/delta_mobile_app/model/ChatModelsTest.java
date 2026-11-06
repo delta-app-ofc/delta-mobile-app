@@ -31,7 +31,6 @@ public class ChatModelsTest {
         JsonObject json = gson.toJsonTree(request).getAsJsonObject();
 
         assertEquals(2, json.size());
-        assertFalse(json.has("user_id"));
         assertEquals("opaque-session-id", json.get("session_id").getAsString());
         assertEquals(message, json.get("message").getAsString());
         assertFalse(json.has("sessionId"));
@@ -63,10 +62,17 @@ public class ChatModelsTest {
 
         ChatModels.ChatResponse explicitNull = gson.fromJson("{" + base + ",\"chart_data\":null}", ChatModels.ChatResponse.class);
         ChatModels.ChatResponse absent = gson.fromJson("{" + base + "}", ChatModels.ChatResponse.class);
+        ChatModels.ChatResponse expanded = gson.fromJson("{\"response\":\"Confirma?\",\"session_id\":\"session-a\","
+            + "\"suggestions\":[\"Como economizar?\"],\"pending_confirmation\":{\"kind\":\"create_habit\","
+            + "\"summary\":\"Criar hábito?\",\"expires_at\":\"2026-11-06T12:00:00Z\"}}", ChatModels.ChatResponse.class);
 
         assertTrue(explicitNull.chartData.isJsonNull());
         assertNull(absent.chartData);
         assertEquals("future_agent", absent.agentUsed);
+        assertEquals("Como economizar?", expanded.suggestions.get(0));
+        assertEquals("create_habit", expanded.pendingConfirmation.kind);
+        assertEquals("Criar hábito?", expanded.pendingConfirmation.summary);
+        assertEquals("2026-11-06T12:00:00Z", expanded.pendingConfirmation.expiresAt);
     }
 
     @Test

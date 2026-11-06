@@ -16,14 +16,13 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public final class ChatRepository implements ChatActions {
+    private static final String INITIAL_SESSION_ID = "6aedbaf8af673b9557f7ccd3";
     private final ChatbotApiService api;
-    private final int userId;
     private final IntFunction<String> strings;
 
     public ChatRepository(ChatbotApiService api, int userId, IntFunction<String> strings) {
         if (userId <= 0) throw new IllegalArgumentException("userId must be positive");
         this.api = Objects.requireNonNull(api);
-        this.userId = userId;
         this.strings = Objects.requireNonNull(strings);
     }
 
@@ -49,9 +48,10 @@ public final class ChatRepository implements ChatActions {
 
     @Override
     public void send(String message, String sessionId, Consumer<ScreenState<ChatResponse>> callback) {
-        request(api.chat(new ChatRequest(Objects.requireNonNull(message), sessionId)), body -> {
+        String targetSessionId = present(sessionId) ? sessionId : INITIAL_SESSION_ID;
+        request(api.chat(new ChatRequest(Objects.requireNonNull(message), targetSessionId)), body -> {
             if (!text(body.response) || !present(body.sessionId)) return null;
-            if (present(sessionId) && !sessionId.equals(body.sessionId)) return null;
+            if (!targetSessionId.equals(body.sessionId)) return null;
             if (body.chartData != null && !body.chartData.isJsonNull() && !body.chartData.isJsonObject()) return null;
             if (body.agentsUsed != null) body.agentUsed = String.join(", ", body.agentsUsed);
             return body;
