@@ -147,4 +147,8 @@
         android:id="@+id/newUnitFragment"
         android:name="com.aula.delta_mobile_app.view.fragments.NewUnitFragment"
         android:label="@string/units_new" />
+    <fragment
+        android:id="@+id/alertsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.AlertsFragment"
+        android:label="@string/alert_title" />
 </navigation>

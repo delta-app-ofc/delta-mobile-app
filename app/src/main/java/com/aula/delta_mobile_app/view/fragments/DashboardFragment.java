@@ -116,7 +116,22 @@ public class DashboardFragment extends AuthFlowFragment {
             else water.select(selectedProperty);
         });
         view.findViewById(R.id.home_goal).setOnClickListener(v -> navigate(R.id.monthlyGoalsFragment));
-        view.findViewById(R.id.dash_back).setOnClickListener(v -> back());
+        view.findViewById(R.id.home_notifications).setOnClickListener(v -> navigate(R.id.alertsFragment));
+        view.findViewById(R.id.home_settings).setOnClickListener(v -> new MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.home_account_title).setItems(new String[] {
+            getString(R.string.home_select_property), getString(R.string.auth_home_meter), getString(R.string.auth_logout)
+        }, (dialog, item) -> {
+            if (item == 0)
+                selectProperty(view, water, home);
+            else if (item == 1 && selectedProperty != null)
+                navigate(R.id.qrScanFragment);
+            else if (item == 1)
+                Toast.makeText(requireContext(), R.string.home_no_properties, Toast.LENGTH_SHORT).show();
+            else {
+                registration().reset();
+                water.reset();
+                new ViewModelProvider(requireActivity()).get(LoginViewModel.class).logout();
+            }
+        }).show());
         if (water.properties.getValue().status == ScreenState.Status.IDLE) water.loadProperties();
         home.loadProfile(false);
         com.aula.delta_mobile_app.view.MonthlyGoalCard.bind(this, view, home, water);

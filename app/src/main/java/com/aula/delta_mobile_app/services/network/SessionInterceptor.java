@@ -13,6 +13,7 @@ public final class SessionInterceptor implements Interceptor {
     private final SessionStore store;
     private final ApiService publicApi;
     private final HttpUrl base;
+    private final String protectedRoot;
     private final Object refreshLock = new Object();
     private IOException lastFailure;
     private long failureUntil;
@@ -22,12 +23,18 @@ public final class SessionInterceptor implements Interceptor {
         this.store = store;
         this.publicApi = publicApi;
         base = HttpUrl.get(NetworkConfig.BASE_URL);
+        protectedRoot = "delta/";
     }
 
     public SessionInterceptor(SessionStore store, ApiService publicApi, String baseUrl) {
+        this(store, publicApi, baseUrl, "delta/");
+    }
+
+    public SessionInterceptor(SessionStore store, ApiService publicApi, String baseUrl, String root) {
         this.store = store;
         this.publicApi = publicApi;
         base = HttpUrl.get(baseUrl);
+        protectedRoot = root;
     }
 
     @Override
@@ -110,7 +117,7 @@ public final class SessionInterceptor implements Interceptor {
         HttpUrl url = request.url();
         if (!url.scheme().equals(base.scheme()) || !url.host().equals(base.host()) || url.port() != base.port()) return false;
         String path = url.encodedPath();
-        if (!path.startsWith(base.encodedPath() + "delta/")) return false;
+        if (!path.startsWith(base.encodedPath() + protectedRoot)) return false;
         return !(path.endsWith("/auth/login") || path.endsWith("/auth/create-account") || path.endsWith("/auth/register") || path.endsWith("/auth/refresh"));
     }
 }
