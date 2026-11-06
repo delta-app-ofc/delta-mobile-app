@@ -17,76 +17,29 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.aula.delta_mobile_app.R;
 
 public abstract class AuthFlowFragment extends Fragment {
-    private android.app.Dialog loadingDialog;
+    private androidx.activity.OnBackPressedCallback loadingBack;
     private boolean loadingRequested;
+
+    @Override
+    public void onViewCreated(@androidx.annotation.NonNull View view, @androidx.annotation.Nullable Bundle saved) {
+        super.onViewCreated(view, saved);
+        loadingBack = new androidx.activity.OnBackPressedCallback(loadingRequested) {
+            @Override public void handleOnBackPressed() { onLoadingBack(); }
+        };
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), loadingBack);
+    }
 
     protected void showLoading(boolean loading) {
         loadingRequested = loading;
-        if (!loading) {
-            dismissLoading();
-            return;
-        }
-        if (loadingDialog != null || !isAdded()) return;
-        loadingDialog = new android.app.Dialog(requireContext(), android.R.style.Theme_Material_NoActionBar);
-        loadingDialog.setCancelable(canCancelLoading());
-        loadingDialog.setCanceledOnTouchOutside(false);
-        loadingDialog.setOnCancelListener(dialog -> {
-            loadingDialog = null;
-            loadingRequested = false;
-            onLoadingBack();
-        });
-        loadingDialog.setContentView(new com.aula.delta_mobile_app.view.LoadingView(requireContext()));
-        loadingDialog.setOnKeyListener((dialog, keyCode, event) -> {
-            if (keyCode == android.view.KeyEvent.KEYCODE_BACK) {
-                if (event.getAction() == android.view.KeyEvent.ACTION_UP) onLoadingBack();
-                return true;
-            }
-            return false;
-        });
-        if (loadingDialog.getWindow() != null)
-            loadingDialog.getWindow().setWindowAnimations(R.style.Animation_Delta_Loading);
-        loadingDialog.show();
-        android.view.Window window = loadingDialog.getWindow();
-        if (window != null) {
-            window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT);
-            window.setStatusBarColor(0xFF222222);
-            window.setNavigationBarColor(0xFF222222);
-            androidx.core.view.WindowCompat.getInsetsController(window, window.getDecorView()).setAppearanceLightStatusBars(false);
-            androidx.core.view.WindowCompat.getInsetsController(window, window.getDecorView()).setAppearanceLightNavigationBars(false);
-        }
+        if (loadingBack != null) loadingBack.setEnabled(loading);
+        if (getActivity() instanceof com.aula.delta_mobile_app.view.activities.ScreenFlowActivity)
+            ((com.aula.delta_mobile_app.view.activities.ScreenFlowActivity) getActivity()).setScreenLoading(getView(), loading);
     }
 
     protected void onLoadingBack() {}
+    protected boolean canCancelLoading() { return false; }
 
-    protected boolean canCancelLoading() {
-        return false;
-    }
-
-    private void dismissLoading() {
-        if (loadingDialog != null) {
-            loadingDialog.dismiss();
-            loadingDialog = null;
-        }
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        if (loadingRequested) showLoading(true);
-    }
-
-    @Override
-    public void onStop() {
-        dismissLoading();
-        super.onStop();
-    }
-
-    @Override
-    public void onDestroyView() {
-        loadingRequested = false;
-        dismissLoading();
-        super.onDestroyView();
-    }
+    @Override public void onDestroyView() { loadingRequested = false; loadingBack = null; super.onDestroyView(); }
 
     protected AuthFlowFragment(@LayoutRes int layoutId) {
         super(layoutId);
@@ -118,7 +71,10 @@ public abstract class AuthFlowFragment extends Fragment {
     }
 
     protected void bindPasswordVisibility(EditText field, View toggle) {
-        toggle.setContentDescription("Mostrar senha");
+        boolean visible = !(field.getTransformationMethod() instanceof android.text.method.PasswordTransformationMethod);
+        if (toggle instanceof android.widget.ImageView) ((android.widget.ImageView) toggle).setImageResource(R.drawable.auth_password_visibility);
+        toggle.setSelected(visible);
+        toggle.setContentDescription(getString(visible ? R.string.auth_hide_password : R.string.auth_show_password));
         toggle.setOnClickListener(v -> {
             boolean hidden = field.getTransformationMethod()
             instanceof android.text.method.PasswordTransformationMethod;
@@ -126,24 +82,24 @@ public abstract class AuthFlowFragment extends Fragment {
             field.setTransformationMethod(hidden ? android.text.method.HideReturnsTransformationMethod.getInstance() : android.text.method.PasswordTransformationMethod
                 .getInstance());
             if (start >= 0 && end >= 0) field.setSelection(start, end);
-            toggle.setContentDescription(hidden ? "Ocultar senha" : "Mostrar senha");
+            toggle.setSelected(hidden);
+            toggle.setContentDescription(getString(hidden ? R.string.auth_hide_password : R.string.auth_show_password));
         });
     }
 
     protected void openAuthenticated() {
         if (!(requireActivity() instanceof com.aula.delta_mobile_app.view.activities.main.MainActivity)) {
-            startActivity(new android.content.Intent(requireContext(), com.aula.delta_mobile_app.view.activities.main.MainActivity.class));
-            requireActivity().finish();
+            android.content.Intent intent = new android.content.Intent(requireContext(), com.aula.delta_mobile_app.view.activities.main.MainActivity.class);
+            if (requireActivity().getIntent().getBooleanExtra(com.aula.delta_mobile_app.view.activities.login.LoginActivity.EXTRA_OPEN_ROUTINE, false))
+                intent.putExtra(com.aula.delta_mobile_app.view.activities.main.MainActivity.EXTRA_OPEN_ROUTINE, true);
+            ((com.aula.delta_mobile_app.view.activities.ScreenFlowActivity) requireActivity()).openScreen(intent, true);
             return;
         }
-        androidx.navigation.fragment.NavHostFragment.findNavController(this).navigate(R.id.homeFragment, null, new NavOptions.Builder().setEnterAnim(R.anim.fragment_enter_left)
-            .setExitAnim(R.anim.fragment_exit_left).setPopUpTo(R.id.auth_navigation, true).build());
+        androidx.navigation.fragment.NavHostFragment.findNavController(this).navigate(R.id.homeFragment, null, new NavOptions.Builder().setPopUpTo(R.id.auth_navigation, true).build());
     }
 
     protected void navigate(int destinationId) {
-        NavOptions transition = new NavOptions.Builder().setEnterAnim(R.anim.fragment_enter_left).setExitAnim(R.anim.fragment_exit_left)
-            .setPopEnterAnim(R.anim.fragment_enter_right).setPopExitAnim(R.anim.fragment_exit_right).build();
-        NavHostFragment.findNavController(this).navigate(destinationId, null, transition);
+        NavHostFragment.findNavController(this).navigate(destinationId);
     }
 
     protected void back() {

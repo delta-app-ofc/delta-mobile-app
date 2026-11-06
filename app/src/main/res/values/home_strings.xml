@@ -15,8 +15,6 @@
     <string name="home_today_label">Consumo hoje</string>
     <string name="home_month_label">Consumo este mês</string>
     <string name="home_cost_label">Custo previsto</string>
-    <string name="home_efficiency">Indicador EH e metas</string>
-    <string name="home_efficiency_pending">Indicador de eficiência ainda indisponível</string>
     <string name="home_no_data">Sem dados</string>
     <string name="home_monthly_goal">Meta mensal</string>
     <string name="home_view_more">Ver mais</string>
@@ -36,11 +34,18 @@
     <string name="home_notifications_empty">As notificações ainda não estão disponíveis.</string>
     <string name="home_account_title">Sua conta</string>
     <string name="home_liters">%1$s L</string>
-    <string name="home_temperature_title">Relação temperatura x litros</string>
-    <string name="home_eh_scale">/100</string>
-    <string name="home_eh_accessibility">Indicador EH indisponível: é necessário receber a pontuação de 0 a 100 e a classificação.</string>
+    <string name="home_temperature_title">Consumo estimado por hora e temperatura</string>
     <string name="home_temperature_empty">Sem dados de temperatura associados ao consumo.</string>
     <string name="home_goal_unavailable">Os dados da meta mensal ainda não foram disponibilizados.</string>
     <string name="home_suggestion_unavailable">A sugestão de meta ainda não foi disponibilizada.</string>
     <string name="home_select_property">Selecionar imóvel</string>
+    <string name="home_goal_consumed_caption">da meta\nconsumida</string>
+    <string name="home_goal_progress_missing_goal">Defina uma\nmeta mensal</string>
+    <string name="home_goal_progress_missing_consumption">Consumo\nindisponível</string>
+    <string name="home_goal_progress_description">%1$s da meta mensal consumida</string>
+    <string name="home_add_meter_title">Adicionar hidrômetro</string>
+    <string name="home_add_meter_message">Você ainda não possui um hidrômetro vinculado a este imóvel. Deseja adicionar um agora?</string>
+    <string name="home_add_meter_confirm">Adicionar</string>
+    <string name="home_add_meter_cancel">Mais tarde</string>
+    <string name="home_add_meter_desc">Vincular hidrômetro</string>
 </resources>

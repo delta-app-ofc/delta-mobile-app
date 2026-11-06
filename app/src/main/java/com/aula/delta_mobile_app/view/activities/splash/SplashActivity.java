@@ -54,6 +54,7 @@ public class SplashActivity extends AppCompatActivity {
             if (restore)
                 entry.putExtra(com.aula.delta_mobile_app.view.activities.main.MainActivity.EXTRA_RESTORE_SESSION, true);
             startActivity(entry);
+            overridePendingTransition(0, 0);
             finish();
         });
     }

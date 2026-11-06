@@ -20,6 +20,7 @@ import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.model.RoutineData;
 import com.aula.delta_mobile_app.model.RoutineUiState;
 import com.aula.delta_mobile_app.model.ScreenState;
+import com.aula.delta_mobile_app.services.notifications.RoutineReminderScheduler;
 import com.aula.delta_mobile_app.view.LoadingView;
 import com.aula.delta_mobile_app.view.RoutineAgendaAdapter;
 import com.aula.delta_mobile_app.view.RoutineDayAdapter;
@@ -95,6 +96,8 @@ public final class RoutineFragment extends AuthFlowFragment {
         });
         model.state().observe(getViewLifecycleOwner(), state -> {
             render(view, state);
+            if (state.reading.status == ScreenState.Status.SUCCESS && state.data != null && RoutineReminderScheduler.enabled(requireContext()))
+                RoutineReminderScheduler.reconcile(requireContext(), state.data);
             if (state.reading.status == ScreenState.Status.IDLE) model.load();
         });
     }
@@ -212,14 +215,9 @@ public final class RoutineFragment extends AuthFlowFragment {
     }
 
     private void setLoading(View view, boolean loading) {
-        FrameLayout container = view.findViewById(R.id.routine_loading);
-        if (loading && container.getChildCount() == 0) {
-            LoadingView indicator = new LoadingView(requireContext());
-            indicator.setContentDescription(getString(R.string.routine_loading));
-            container.addView(indicator, new FrameLayout.LayoutParams(-1, -1));
-        } else if (!loading) container.removeAllViews();
-        container.setVisibility(loading ? View.VISIBLE : View.GONE);
-        view.findViewById(R.id.routine_scroll).setVisibility(loading ? View.INVISIBLE : View.VISIBLE);
+        showLoading(loading);
+        view.findViewById(R.id.routine_loading).setVisibility(View.GONE);
+        view.findViewById(R.id.routine_scroll).setVisibility(View.VISIBLE);
     }
 
     private void chooseDate() {

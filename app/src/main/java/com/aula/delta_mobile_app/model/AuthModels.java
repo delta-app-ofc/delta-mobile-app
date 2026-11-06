@@ -44,7 +44,7 @@ public final class AuthModels {
 
     public static class Profile {
         public Integer id;
-        public String name, email;
+        public String name, email, phone, birthDate;
     }
 
     public static class PropertyLink {

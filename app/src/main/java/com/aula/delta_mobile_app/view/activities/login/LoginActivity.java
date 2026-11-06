@@ -10,10 +10,11 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.aula.delta_mobile_app.R;
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends com.aula.delta_mobile_app.view.activities.ScreenFlowActivity {
     public static final String EXTRA_SKIP_SESSION_RESTORE = "skip_session_restore";
     public static final String EXTRA_SESSION_ERROR = "session_restore_error";
     public static final String EXTRA_CONTINUE_REGISTRATION = "continue_registration";
+    public static final String EXTRA_OPEN_ROUTINE = "open_routine_after_login";
     private Bundle flowData;
     private boolean observedSession;
 

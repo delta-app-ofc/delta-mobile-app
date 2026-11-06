@@ -1,5 +1,7 @@
 package com.aula.delta_mobile_app.repository;
 
+import android.content.Context;
+
 import com.aula.delta_mobile_app.model.ApiModels.CreateUserHabitRequest;
 import com.aula.delta_mobile_app.model.ApiModels.UserHabitResponse;
 import com.aula.delta_mobile_app.model.ApiModels.UserHabitScheduleResponse;
@@ -10,6 +12,7 @@ import com.aula.delta_mobile_app.model.RoutineFormState;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.services.api.ApiService;
 import com.aula.delta_mobile_app.services.network.ApiErrors;
+import com.aula.delta_mobile_app.services.notifications.RoutineReminderScheduler;
 import com.google.gson.JsonParseException;
 import java.io.IOException;
 import java.time.Clock;
@@ -79,6 +82,7 @@ public final class RoutineRepository implements RoutineActions {
                 }
                 if (!habit.scheduleComplete || !Objects.equals(habit.frequency, request.frequency) || !matchesSchedule(form, habit)) return uncertainCreate();
                 if (scheduleStore != null) scheduleStore.save(profile.id, habit.id, request.frequency, request.daysOfWeek, request.schedule);
+                if (applicationContext != null) RoutineReminderScheduler.replaceHabit(applicationContext, habit);
                 return ScreenState.success(habit);
             } catch (IOException unavailable) {
                 return started ? uncertainCreate() : ApiErrors.network();
@@ -149,6 +153,7 @@ public final class RoutineRepository implements RoutineActions {
                 }
                 if (!matches(form, habit)) return uncertain();
                 if (scheduleStore != null) scheduleStore.save(profile.id, habit.id, request.frequency, request.daysOfWeek, request.schedule);
+                if (applicationContext != null) RoutineReminderScheduler.replaceHabit(applicationContext, habit);
                 return ScreenState.success(habit);
             } catch (IOException unavailable) {
                 return started ? uncertain() : ApiErrors.network();
@@ -181,6 +186,7 @@ public final class RoutineRepository implements RoutineActions {
                 if (!response.isSuccessful()) return ApiErrors.from(response);
                 if (response.code() != 204) return uncertain();
                 if (scheduleStore != null) scheduleStore.remove(profile.id, id);
+                if (applicationContext != null) RoutineReminderScheduler.removeHabit(applicationContext, profile.id, id);
                 return ScreenState.success(null);
             } catch (IOException unavailable) {
                 return started ? uncertain() : ApiErrors.network();
@@ -242,6 +248,7 @@ public final class RoutineRepository implements RoutineActions {
     private final Access access;
     private final Clock clock;
     private final RoutineScheduleStore scheduleStore;
+    private final Context applicationContext;
 
     public RoutineRepository(AuthRepository auth) {
         this(auth, Clock.systemDefaultZone());
@@ -251,17 +258,23 @@ public final class RoutineRepository implements RoutineActions {
         AuthRepository value = Objects.requireNonNull(auth);
         access = authenticated(value);
         this.clock = Objects.requireNonNull(clock);
-        scheduleStore = new RoutineScheduleStore(value.applicationContext());
+        applicationContext = value.applicationContext();
+        scheduleStore = new RoutineScheduleStore(applicationContext);
     }
 
     RoutineRepository(Access access, Clock clock) {
-        this(access, clock, null);
+        this(access, clock, null, null);
     }
 
     RoutineRepository(Access access, Clock clock, RoutineScheduleStore scheduleStore) {
+        this(access, clock, scheduleStore, null);
+    }
+
+    private RoutineRepository(Access access, Clock clock, RoutineScheduleStore scheduleStore, Context applicationContext) {
         this.access = Objects.requireNonNull(access);
         this.clock = Objects.requireNonNull(clock);
         this.scheduleStore = scheduleStore;
+        this.applicationContext = applicationContext;
     }
 
     @Override

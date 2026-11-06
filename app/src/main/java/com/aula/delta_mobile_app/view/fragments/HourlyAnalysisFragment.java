@@ -16,7 +16,6 @@ import com.aula.delta_mobile_app.model.HourlyAnalysisData.*;
 import com.aula.delta_mobile_app.model.LeakMonitoringData;
 import com.aula.delta_mobile_app.model.ScreenState;
 import com.aula.delta_mobile_app.viewmodel.*;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -127,9 +126,8 @@ public final class HourlyAnalysisFragment extends AuthFlowFragment {
             value.setContentDescription(getString(R.string.hourly_cell, day, i + 1, details));
             value.setFocusable(true);
             value.setClickable(true);
-            value.setOnClickListener(v -> new MaterialAlertDialogBuilder(requireContext()).setTitle(cell.interval == null ? getString(R.string.hourly_cell, day, index + 1, details)
-                : day + " · " + cell.interval).setMessage(measured ? details : getString(cell.state == CellState.FUTURE ? R.string.hourly_future : R.string
-                .hourly_missing_explanation)).setPositiveButton(android.R.string.ok, null).show());
+            value.setOnClickListener(v -> InformationDialogFragment.show(getChildFragmentManager(), cell.interval == null ? getString(R.string.hourly_cell, day, index + 1, details)
+                : day + " · " + cell.interval, measured ? details : getString(cell.state == CellState.FUTURE ? R.string.hourly_future : R.string.hourly_missing_explanation)));
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(40), 1);
             if (i < cells.size() - 1) params.setMarginEnd(dp(8));
             parent.addView(value, params);

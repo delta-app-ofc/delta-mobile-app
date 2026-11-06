@@ -11,6 +11,7 @@ import com.aula.delta_mobile_app.services.api.ApiService;
 import com.aula.delta_mobile_app.services.network.ApiErrors;
 import com.aula.delta_mobile_app.services.network.RetrofitClient;
 import com.aula.delta_mobile_app.services.session.TokenStore;
+import com.aula.delta_mobile_app.services.notifications.RoutineReminderScheduler;
 
 import retrofit2.Call;
 import retrofit2.Response;
@@ -24,6 +25,7 @@ public final class AuthRepository implements AuthActions, SignupActions {
     private final TokenStore store;
     private final ApiService api;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private final ExecutorService screenWorker = Executors.newFixedThreadPool(2);
     private final MutableLiveData<Boolean> session = new MutableLiveData<>(false);
     private Profile profile;
     private boolean authenticating;
@@ -59,8 +61,16 @@ public final class AuthRepository implements AuthActions, SignupActions {
     }
 
     public <T> void resource(java.util.concurrent.Callable<ScreenState<T>> operation, Consumer<ScreenState<T>> callback) {
+        resource(worker, operation, callback);
+    }
+
+    public <T> void screenResource(java.util.concurrent.Callable<ScreenState<T>> operation, Consumer<ScreenState<T>> callback) {
+        resource(screenWorker, operation, callback);
+    }
+
+    private <T> void resource(ExecutorService executor, java.util.concurrent.Callable<ScreenState<T>> operation, Consumer<ScreenState<T>> callback) {
         long expected = store.generation();
-        worker.execute(() -> {
+        executor.execute(() -> {
             ScreenState<T> result;
             try {
                 if (!store.hasSession())
@@ -92,6 +102,10 @@ public final class AuthRepository implements AuthActions, SignupActions {
         return store.hasSession();
     }
 
+    public long sessionGeneration() {
+        return store.generation();
+    }
+
     public boolean rememberMe() {
         return loginPreferences.getBoolean("remember_me", false);
     }
@@ -106,6 +120,7 @@ public final class AuthRepository implements AuthActions, SignupActions {
             try {
                 String token = store.refresh();
                 if (!store.hasSession() || token == null) {
+                    RoutineReminderScheduler.cancelAll(applicationContext);
                     store.clear();
                     setRememberMe(false);
                     session.postValue(false);
@@ -120,6 +135,7 @@ public final class AuthRepository implements AuthActions, SignupActions {
                 if (!response.isSuccessful()) {
                     ScreenState<Boolean> error = ApiErrors.from(response);
                     if (response.code() == 400 || response.code() == 401 || response.code() == 403) {
+                        RoutineReminderScheduler.cancelAll(applicationContext);
                         store.clear();
                         setRememberMe(false);
                         session.postValue(false);
@@ -157,6 +173,7 @@ public final class AuthRepository implements AuthActions, SignupActions {
             callback.accept(ScreenState.error("Aguarde a autenticação em andamento."));
             return;
         }
+        RoutineReminderScheduler.cancelAll(applicationContext);
         authenticating = true;
         long expected = store.generation();
         worker.execute(() -> {
@@ -189,6 +206,7 @@ public final class AuthRepository implements AuthActions, SignupActions {
         long expected = store.generation();
         worker.execute(() -> {
             if (!store.hasSession()) {
+                RoutineReminderScheduler.cancelAll(applicationContext);
                 store.clear();
                 session.postValue(false);
                 callback.accept(ScreenState.error("Entre para continuar.", 401, 0));
@@ -288,6 +306,7 @@ public final class AuthRepository implements AuthActions, SignupActions {
     }
 
     public void logout() {
+        RoutineReminderScheduler.cancelAll(applicationContext);
         store.clear();
         setRememberMe(false);
         profile = null;
@@ -296,6 +315,7 @@ public final class AuthRepository implements AuthActions, SignupActions {
 
     private void notifyInvalid() {
         if (!store.hasSession()) {
+            RoutineReminderScheduler.cancelAll(applicationContext);
             store.clear();
             profile = null;
             session.postValue(false);

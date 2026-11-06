@@ -10,6 +10,29 @@ import java.util.*;
 
 public class SectionDataTest {
     @Test
+    public void propertiesExcludeOtherUsersAndInvalidLinks() {
+        UserPropertyResponse own = property(1, 10), other = property(2, 20), invalid = property(1, null);
+        assertEquals(Collections.singletonList(own), SectionData.properties(Arrays.asList(null, other, own, invalid, property(1, 0)), 1));
+        assertTrue(SectionData.properties(Arrays.asList(own), null).isEmpty());
+    }
+
+    @Test
+    public void propertySelectionSurvivesReloadAndReplacesRevokedLinks() {
+        List<UserPropertyResponse> properties = Arrays.asList(property(1, 10), property(1, 20));
+        assertEquals(Integer.valueOf(20), SectionData.selectedProperty(properties, 20));
+        assertEquals(Integer.valueOf(10), SectionData.selectedProperty(properties, 99));
+        assertEquals(Integer.valueOf(10), SectionData.selectedProperty(properties, null));
+        assertNull(SectionData.selectedProperty(Collections.emptyList(), 10));
+    }
+
+    private UserPropertyResponse property(Integer user, Integer property) {
+        UserPropertyResponse result = new UserPropertyResponse();
+        result.userId = user;
+        result.propertyId = property;
+        return result;
+    }
+
+    @Test
     public void billsNeverExposeAnotherUsersRecordsAndSortNewestFirst() {
         LastWaterBillResponse old = bill(1, "2026-08-01"), recent = bill(1, "2026-10-01"), other = bill(2, "2026-11-01");
         List<LastWaterBillResponse> source = Arrays.asList(old, null, other, recent);
@@ -48,26 +71,4 @@ public class SectionDataTest {
         return result;
     }
 
-    @Test
-    public void rankingIncludesOnlyOwnedPropertiesWithKnownIds() {
-        PropertyRankingResponse own = new PropertyRankingResponse();
-        own.propertyId = 10;
-        own.rankEfficiency = 2L;
-        PropertyRankingResponse other = new PropertyRankingResponse();
-        other.propertyId = 20;
-        other.rankEfficiency = 1L;
-        PropertyRankingResponse unknown = new PropertyRankingResponse();
-        assertEquals(Collections.singletonList(own), SectionData.rankings(Arrays.asList(other, null, own, unknown), Collections.singleton(10)));
-    }
-
-    @Test
-    public void rankingSortsByServerPositionAndKeepsMissingRanksLast() {
-        PropertyRankingResponse first = new PropertyRankingResponse();
-        first.propertyId = 10;
-        first.rankEfficiency = 1L;
-        PropertyRankingResponse pending = new PropertyRankingResponse();
-        pending.propertyId = 11;
-        assertEquals(Arrays.asList(first, pending), SectionData.rankings(Arrays.asList(pending, first), new HashSet<>(Arrays.asList(10, 11))));
-        assertTrue(SectionData.rankings(Arrays.asList(first), null).isEmpty());
-    }
 }

@@ -10,33 +10,30 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.navigation.NavController;
-import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.aula.delta_mobile_app.R;
 import com.aula.delta_mobile_app.repository.AuthRepository;
+import com.aula.delta_mobile_app.services.notifications.RoutineReminderScheduler;
 import com.aula.delta_mobile_app.view.activities.login.LoginActivity;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends com.aula.delta_mobile_app.view.activities.ScreenFlowActivity {
     public static final String EXTRA_RESTORE_SESSION = "restore_session_in_main";
+    public static final String EXTRA_OPEN_ROUTINE = "open_routine_from_notification";
+    public static final String ACTION_OPEN_ROUTINE = "com.aula.delta_mobile_app.action.OPEN_ROUTINE";
     private boolean restoringSession;
+    private boolean openRoutinePending;
     private boolean returningToLogin;
     private boolean keyboardVisible;
     private boolean detailScreen;
-    private boolean homeLoading = true;
-    private com.aula.delta_mobile_app.view.LoadingView homeLoader;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         restoringSession = getIntent().getBooleanExtra(EXTRA_RESTORE_SESSION, false);
+        openRoutinePending = getIntent().getBooleanExtra(EXTRA_OPEN_ROUTINE, false);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        homeLoader = new com.aula.delta_mobile_app.view.LoadingView(this);
-        homeLoader.setVisibility(homeLoading ? View.VISIBLE : View.GONE);
-        homeLoader.setClickable(true);
-        homeLoader.setFocusable(true);
-        ((android.widget.FrameLayout) findViewById(R.id.main_shell)).addView(homeLoader, new android.widget.FrameLayout.LayoutParams(-1, -1));
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main_shell), (view, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
@@ -58,19 +55,20 @@ public class MainActivity extends AppCompatActivity {
             findViewById(buttons[i]).setOnClickListener(v -> {
                 if (nav.getCurrentDestination() != null && nav.getCurrentDestination().getId() == destination)
                     return;
-                nav.navigate(destination, null, new NavOptions.Builder().setPopUpTo(R.id.homeFragment, false, true).setRestoreState(
-                    destination != R.id.leakDetectionFragment).setLaunchSingleTop(true).build());
+                Runnable navigate = () -> MainNavigation.open(nav, destination);
+                androidx.fragment.app.Fragment current = host.getChildFragmentManager().getPrimaryNavigationFragment();
+                if (current instanceof com.aula.delta_mobile_app.view.fragments.ProfileNavigationGuard)
+                    ((com.aula.delta_mobile_app.view.fragments.ProfileNavigationGuard) current).leaveProfile(navigate);
+                else navigate.run();
             });
         }
         nav.addOnDestinationChangedListener((controller, destination, args) -> {
-            if (destination.getId() != R.id.homeFragment) setHomeLoading(false);
             detailScreen = destination.getId() == R.id.qrScanFragment || destination.getId() == R.id.qrSuccessFragment || destination.getId() == R.id.accountConfigFragment;
             updateMenu();
+            updateLoading();
             for (int i = 0; i < buttons.length; i++) {
                 View button = findViewById(buttons[i]);
-                boolean leakScreen = destination.getId() == R.id.consumptionFragment || destination.getId() == R.id.leakDetectionFragment
-                    || destination.getId() == R.id.leakHourlyFragment || destination.getId() == R.id.leakAbnormalFragment;
-                boolean selected = destination.getId() == screens[i] || (i == 0 && leakScreen) || (i == 1 && destination.getId() == R.id.costsHistoryFragment);
+                boolean selected = buttons[i] == R.id.menu_home ? destination.getId() == R.id.homeFragment : buttons[i] == MainNavigation.tab(destination.getId());
                 button.setSelected(selected);
                 button.setAlpha(selected ? 1f : .55f);
             }
@@ -90,30 +88,49 @@ public class MainActivity extends AppCompatActivity {
                     restoringSession = false;
                     if (nav.getCurrentDestination() == null)
                         nav.setGraph(R.navigation.main_navigation);
+                    openRoutineIfRequested(nav);
                     updateLoading();
                     updateMenu();
                 } else if (value.status == com.aula.delta_mobile_app.model.ScreenState.Status.ERROR) {
                     openAuthentication(value.displayMessage(), false);
                 }
             });
-        } else if (nav.getCurrentDestination() == null) nav.setGraph(R.navigation.main_navigation);
+        } else {
+            if (nav.getCurrentDestination() == null) nav.setGraph(R.navigation.main_navigation);
+            openRoutineIfRequested(nav);
+        }
         AuthRepository.getInstance(this).session().observe(this, valid -> {
+            if (Boolean.TRUE.equals(valid)) RoutineReminderScheduler.scheduleStored(this, true);
             if (!restoringSession && !Boolean.TRUE.equals(valid) && !AuthRepository.getInstance(this).hasSession() && !returningToLogin) {
                 returningToLogin = true;
-                startActivity(new Intent(this, LoginActivity.class));
-                finish();
+                openScreen(new Intent(this, LoginActivity.class), true);
             }
         });
         ViewCompat.requestApplyInsets(findViewById(R.id.main_shell));
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (!intent.getBooleanExtra(EXTRA_OPEN_ROUTINE, false)) return;
+        openRoutinePending = true;
+        if (!restoringSession && AuthRepository.getInstance(this).hasSession()) {
+            NavHostFragment host = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main_nav_host);
+            if (host != null) openRoutineIfRequested(host.getNavController());
+        }
+    }
+
+    private void openRoutineIfRequested(NavController nav) {
+        if (!openRoutinePending || nav.getCurrentDestination() == null) return;
+        openRoutinePending = false;
+        MainNavigation.open(nav, R.id.goalsFragment);
+    }
+
     public void setHomeLoading(boolean loading) {
         NavHostFragment host = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.main_nav_host);
-        if (host != null && host.getNavController().getCurrentDestination() != null && host.getNavController().getCurrentDestination().getId() != R.id.homeFragment)
-            loading = false;
-        homeLoading = loading;
-        updateLoading();
-        updateMenu();
+        androidx.fragment.app.Fragment current = host == null ? null : host.getChildFragmentManager().getPrimaryNavigationFragment();
+        if (current != null && current.getView() != null) setScreenLoading(current.getView(), loading);
     }
 
     private void openAuthentication(String message, boolean incompleteRegistration) {
@@ -121,17 +138,16 @@ public class MainActivity extends AppCompatActivity {
         returningToLogin = true;
         Intent entry = new Intent(this, LoginActivity.class).putExtra(LoginActivity.EXTRA_SKIP_SESSION_RESTORE, true).putExtra(
             LoginActivity.EXTRA_CONTINUE_REGISTRATION, incompleteRegistration);
+        if (openRoutinePending) entry.putExtra(LoginActivity.EXTRA_OPEN_ROUTINE, true);
         if (message != null) entry.putExtra(LoginActivity.EXTRA_SESSION_ERROR, message);
-        startActivity(entry);
-        finish();
+        openScreen(entry, true);
     }
 
-    private void updateLoading() {
-        if (homeLoader != null)
-            homeLoader.setVisibility(restoringSession || homeLoading ? View.VISIBLE : View.GONE);
-    }
+    private void updateLoading() { blockScreen(restoringSession); }
+
+    public void setSectionLoading(View owner, boolean loading) { setScreenLoading(owner, loading); }
 
     private void updateMenu() {
-        findViewById(R.id.main_menu).setVisibility(keyboardVisible || detailScreen || restoringSession || homeLoading ? View.GONE : View.VISIBLE);
+        findViewById(R.id.main_menu).setVisibility(keyboardVisible || detailScreen || restoringSession ? View.GONE : View.VISIBLE);
     }
 }

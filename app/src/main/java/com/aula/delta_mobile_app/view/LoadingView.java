@@ -42,7 +42,15 @@ public final class LoadingView extends View {
             wavePhase = waterLevel * (float) (Math.PI * 3);
             invalidate();
         });
-        animator.start();
+        if (isShown()) animator.start();
+    }
+
+    @Override
+    public void onVisibilityAggregated(boolean visible) {
+        super.onVisibilityAggregated(visible);
+        if (animator == null) return;
+        if (visible && !animator.isStarted()) animator.start();
+        else if (!visible) animator.cancel();
     }
 
     @Override

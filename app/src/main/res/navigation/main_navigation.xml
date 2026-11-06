@@ -78,7 +78,7 @@
     </fragment>
     <fragment
         android:id="@+id/monthlyGoalsFragment"
-        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.MonthlyGoalsFragment"
         android:label="Metas">
         <argument
             android:name="title"
@@ -88,19 +88,6 @@
             android:name="screen"
             app:argType="string"
             android:defaultValue="goals" />
-    </fragment>
-    <fragment
-        android:id="@+id/rankingFragment"
-        android:name="com.aula.delta_mobile_app.view.fragments.MainSectionFragment"
-        android:label="Ranking">
-        <argument
-            android:name="title"
-            app:argType="string"
-            android:defaultValue="Compare suas unidades" />
-        <argument
-            android:name="screen"
-            app:argType="string"
-            android:defaultValue="ranking" />
     </fragment>
     <fragment
         android:id="@+id/leakDetectionFragment"

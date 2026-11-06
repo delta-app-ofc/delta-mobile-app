@@ -29,7 +29,7 @@ android {
         debug {
             buildConfigField("String", "MONGO_API_URL", "\"${providers.gradleProperty("deltaMongoApiUrl").getOrElse("http://10.0.2.2:8081/")}\"")
             enableUnitTestCoverage = true
-            buildConfigField("String", "DELTA_API_URL", "\"${providers.gradleProperty("deltaApiUrl").getOrElse("https://delta-api-postgres.onrender.com/")}\"")
+            buildConfigField("String", "DELTA_API_URL", "\"${providers.gradleProperty("deltaApiUrl").getOrElse("https://delta-app-a3po.onrender.com/")}\"")
             manifestPlaceholders["deltaCleartext"] = "true"
         }
         release {

@@ -3,11 +3,35 @@
     <cloud-backup>
         <exclude
             domain="sharedpref"
+            path="delta_profile_photos.xml" />
+        <exclude
+            domain="database"
+            path="delta_monthly_goals.db" />
+        <exclude
+            domain="sharedpref"
+            path="delta_monthly_goals.xml" />
+        <exclude
+            domain="sharedpref"
             path="delta_session.xml" />
+        <exclude
+            domain="sharedpref"
+            path="delta_local_notifications.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude
             domain="sharedpref"
+            path="delta_profile_photos.xml" />
+        <exclude
+            domain="database"
+            path="delta_monthly_goals.db" />
+        <exclude
+            domain="sharedpref"
+            path="delta_monthly_goals.xml" />
+        <exclude
+            domain="sharedpref"
             path="delta_session.xml" />
+        <exclude
+            domain="sharedpref"
+            path="delta_local_notifications.xml" />
     </device-transfer>
 </data-extraction-rules>
