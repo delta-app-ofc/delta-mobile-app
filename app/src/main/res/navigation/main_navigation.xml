@@ -127,5 +127,28 @@
                     android:defaultValue="" />
                 <argument android:name="analysis" app:argType="string" android:defaultValue="abnormal" />
 </fragment>
-                <fragment android:id="@+id/alertsFragment" android:name="com.aula.delta_mobile_app.view.fragments.AlertsFragment" android:label="@string/alert_title"/>
+    <fragment
+        android:id="@+id/profileSettingsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.ProfileSettingsFragment"
+        android:label="@string/profile_settings_title" />
+    <fragment
+        android:id="@+id/personalInformationFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.PersonalInformationFragment"
+        android:label="@string/profile_personal_title" />
+    <fragment
+        android:id="@+id/residentialInformationFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.ResidentialInformationFragment"
+        android:label="@string/profile_residential_title" />
+    <fragment
+        android:id="@+id/unitsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.UnitsFragment"
+        android:label="@string/profile_units" />
+    <fragment
+        android:id="@+id/newUnitFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.NewUnitFragment"
+        android:label="@string/units_new" />
+    <fragment
+        android:id="@+id/alertsFragment"
+        android:name="com.aula.delta_mobile_app.view.fragments.AlertsFragment"
+        android:label="@string/alert_title" />
 </navigation>
