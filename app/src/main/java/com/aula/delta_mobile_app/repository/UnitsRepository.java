@@ -92,7 +92,9 @@ public final class UnitsRepository {
 
     private <T> ScreenState<T> creationError(Response<?> response, String stage) {
         ScreenState<T> error = ApiErrors.from(response);
-        return ScreenState.error(stage + error.message, error.code, error.retryAt);
+        String message = stage + error.message;
+        if ("Não foi possível concluir a solicitação.".equals(error.message)) message += " (HTTP " + error.code + ").";
+        return ScreenState.error(message, error.code, error.retryAt);
     }
 
     public ScreenState<Boolean> delete(int propertyId) throws IOException {

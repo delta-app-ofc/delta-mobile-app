@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -122,9 +123,15 @@ public final class ChatFragment extends Fragment {
         counter = view.findViewById(R.id.chat_character_count);
         sendButton = view.findViewById(R.id.chat_send);
         newButton = view.findViewById(R.id.chat_new);
-        newButton.setOnClickListener(button -> requestNewChat());
+        newButton.setOnClickListener(button -> {
+            hideKeyboard();
+            requestNewChat();
+        });
         view.findViewById(R.id.chat_back).setOnClickListener(button -> {
-            if (startNewConversationAction != null && !current.showIntroduction) startNewConversationAction.run();
+            if (startNewConversationAction != null && !current.showIntroduction) {
+                hideKeyboard();
+                startNewConversationAction.run();
+            }
         });
         adapter = new ChatMessageAdapter();
         feedback = new FeedbackAdapter();
@@ -155,7 +162,7 @@ public final class ChatFragment extends Fragment {
         sendButton.setOnClickListener(button -> attemptSend());
         ViewCompat.setOnApplyWindowInsetsListener(view, (root, insets) -> {
             boolean keyboard = insets.isVisible(WindowInsetsCompat.Type.ime());
-            root.findViewById(R.id.chat_actions).setVisibility(keyboard || current.showIntroduction || introductionAction == null ? View.GONE : View.VISIBLE);
+            root.findViewById(R.id.chat_actions).setVisibility(current.showIntroduction || introductionAction == null ? View.GONE : View.VISIBLE);
             View column = root.findViewById(R.id.chat_content);
             ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) column.getLayoutParams();
             int bottom = keyboard ? 0 : getResources().getDimensionPixelSize(R.dimen.chat_menu_clearance);
@@ -163,7 +170,8 @@ public final class ChatFragment extends Fragment {
                 params.bottomMargin = bottom;
                 column.setLayoutParams(params);
             }
-            if (messages != null) messages.setPaddingRelative(0, getResources().getDimensionPixelSize(keyboard ? R.dimen.chat_section_spacing : R.dimen.chat_top_spacing), 0, 0);
+            if (messages != null) messages.setPaddingRelative(0, getResources().getDimensionPixelSize(keyboard ? R.dimen.chat_section_spacing : R.dimen.chat_top_spacing),
+                0, getResources().getDimensionPixelSize(R.dimen.chat_section_spacing));
             updateComposer(keyboard);
             return insets;
         });
@@ -209,9 +217,7 @@ public final class ChatFragment extends Fragment {
         });
         View root = getView();
         if (root != null) {
-            WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(root);
-            root.findViewById(R.id.chat_actions).setVisibility(current.showIntroduction || introductionAction == null
-                || insets != null && insets.isVisible(WindowInsetsCompat.Type.ime()) ? View.GONE : View.VISIBLE);
+            root.findViewById(R.id.chat_actions).setVisibility(current.showIntroduction || introductionAction == null ? View.GONE : View.VISIBLE);
             root.removeCallbacks(retryReady);
             long delay = current.sending.retryAt - System.currentTimeMillis();
             if (history != null) {
@@ -292,6 +298,13 @@ public final class ChatFragment extends Fragment {
 
     private void attemptSend() {
         if (sendAction != null && canSend()) sendAction.run();
+    }
+
+    private void hideKeyboard() {
+        if (input == null) return;
+        InputMethodManager keyboard = requireContext().getSystemService(InputMethodManager.class);
+        if (keyboard != null) keyboard.hideSoftInputFromWindow(input.getWindowToken(), 0);
+        input.clearFocus();
     }
 
     private void updateComposer(boolean keyboard) {

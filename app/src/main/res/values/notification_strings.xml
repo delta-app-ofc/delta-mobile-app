@@ -1,0 +1,16 @@
+<resources>
+    <string name="notification_settings_title">Lembretes da rotina</string>
+    <string name="notification_settings_summary">Avisos nos horários cadastrados na Rotina</string>
+    <string name="notification_channel_name">Lembretes da rotina</string>
+    <string name="notification_channel_description">Avisos nos horários de hábitos cadastrados na Rotina.</string>
+    <string name="notification_routine_title">Hora da sua rotina</string>
+    <string name="notification_routine_body">Está na hora de %1$s.</string>
+    <string name="notification_routine_private_body">Você tem um lembrete da sua Rotina.</string>
+    <string name="notification_permission_denied">As notificações estão desativadas para o Delta. Você pode ativá-las nas configurações do Android.</string>
+    <string name="notification_exact_alarm_explanation">Para avisar no horário exato da sua Rotina, o Android precisa permitir que o Delta defina alarmes e lembretes.</string>
+    <string name="notification_exact_alarm_denied">O acesso a alarmes exatos não foi ativado. Os lembretes da Rotina continuam desligados.</string>
+    <string name="notification_exact_alarm_missing">Ative Alarmes e lembretes nas configurações do Android para receber os avisos no horário exato.</string>
+    <string name="notification_open_settings">Abrir configurações</string>
+    <string name="notification_enable">Continuar</string>
+    <string name="notification_not_now">Agora não</string>
+</resources>

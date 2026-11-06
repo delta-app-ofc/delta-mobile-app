@@ -1,8 +1,9 @@
 package com.aula.delta_mobile_app.services.network;
 
 import com.aula.delta_mobile_app.BuildConfig;
-import com.aula.delta_mobile_app.model.AuthModels.Tokens;
 import com.aula.delta_mobile_app.model.ChatModels;
+import com.aula.delta_mobile_app.model.AuthModels.Tokens;
+import com.aula.delta_mobile_app.services.api.ApiService;
 import com.aula.delta_mobile_app.services.api.ChatbotApiService;
 import com.aula.delta_mobile_app.services.session.SessionStore;
 import com.google.gson.JsonObject;
@@ -12,6 +13,7 @@ import com.google.gson.JsonParser;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +44,8 @@ public class ChatbotNetworkTest {
 
     @Test
     public void configuredServiceTargetsChatbotHttpsOrigin() {
-        Request request = RetrofitClient.getChatbotService().chat(new ChatModels.ChatRequest("Água", null)).request();
+        Request request = RetrofitClient.createChatbotApiService(BuildConfig.CHATBOT_API_URL, RetrofitClient.createChatbotHttpClient())
+            .chat(new ChatModels.ChatRequest("Água", null)).request();
 
         assertEquals("https://delta-artificial-intelligence-mvo1.onrender.com/", BuildConfig.CHATBOT_API_URL);
         assertEquals(BuildConfig.CHATBOT_API_URL + "chat", request.url().toString());
@@ -66,18 +69,19 @@ public class ChatbotNetworkTest {
     }
 
     @Test
-    public void authenticatedChatbotClientAddsBearerFromSessionStore() throws Exception {
+    public void chatbotRequestUsesTheStoredDeltaAccessTokenAsBearer() throws Exception {
         SessionStore store = new SessionStore() {
             @Override public long generation() { return 1; }
             @Override public boolean hasSession() { return true; }
             @Override public String access() { return "access-token"; }
-            @Override public String refresh() { return null; }
+            @Override public String refresh() { return "refresh-token"; }
             @Override public long accessExpiresAt() { return Long.MAX_VALUE; }
             @Override public boolean updateAccess(Tokens tokens, long expected) { return false; }
             @Override public void clear() {}
         };
+        ApiService deltaApi = (ApiService) Proxy.newProxyInstance(ApiService.class.getClassLoader(), new Class<?>[] {ApiService.class}, (proxy, method, args) -> null);
         OkHttpClient client = RetrofitClient.createChatbotHttpClient().newBuilder()
-            .addInterceptor(new ChatbotAuthInterceptor(store))
+            .addInterceptor(new ChatbotAuthInterceptor(store, deltaApi))
             .addInterceptor(chain -> {
                 requests.add(chain.request());
                 return new okhttp3.Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
@@ -103,7 +107,6 @@ public class ChatbotNetworkTest {
         request.body().writeTo(buffer);
         JsonObject json = JsonParser.parseString(buffer.readUtf8()).getAsJsonObject();
         assertEquals(1, json.size());
-        assertFalse(json.has("user_id"));
         assertEquals("Como economizar?\nÁgua", json.get("message").getAsString());
         assertFalse(json.has("session_id"));
         assertEquals("Confira suas torneiras.", response.response);
@@ -115,7 +118,7 @@ public class ChatbotNetworkTest {
     }
 
     @Test
-    public void sessionsUsesQueryPaginationAndHasNoBody() throws Exception {
+    public void sessionsUsesPaginationQueryAndHasNoBody() throws Exception {
         ChatModels.SessionsResponse response = service("{\"sessions\":[]}").sessions(20, 40).execute().body();
 
         Request request = requests.get(0);

@@ -17,10 +17,6 @@ public final class ChatModels {
             this.message = message;
             this.sessionId = sessionId;
         }
-
-        public ChatRequest(int ignoredUserId, String message, String sessionId) {
-            this(message, sessionId);
-        }
     }
 
     public static class ChatResponse {
@@ -33,6 +29,16 @@ public final class ChatModels {
         public String sessionId;
         @SerializedName("chart_data")
         public JsonElement chartData;
+        public List<String> suggestions;
+        @SerializedName("pending_confirmation")
+        public PendingConfirmation pendingConfirmation;
+    }
+
+    public static class PendingConfirmation {
+        public String kind;
+        public String summary;
+        @SerializedName("expires_at")
+        public String expiresAt;
     }
 
     public static class Session {

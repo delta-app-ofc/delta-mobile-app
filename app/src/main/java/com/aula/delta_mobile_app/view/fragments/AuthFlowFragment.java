@@ -89,7 +89,10 @@ public abstract class AuthFlowFragment extends Fragment {
 
     protected void openAuthenticated() {
         if (!(requireActivity() instanceof com.aula.delta_mobile_app.view.activities.main.MainActivity)) {
-            ((com.aula.delta_mobile_app.view.activities.ScreenFlowActivity) requireActivity()).openScreen(new android.content.Intent(requireContext(), com.aula.delta_mobile_app.view.activities.main.MainActivity.class), true);
+            android.content.Intent intent = new android.content.Intent(requireContext(), com.aula.delta_mobile_app.view.activities.main.MainActivity.class);
+            if (requireActivity().getIntent().getBooleanExtra(com.aula.delta_mobile_app.view.activities.login.LoginActivity.EXTRA_OPEN_ROUTINE, false))
+                intent.putExtra(com.aula.delta_mobile_app.view.activities.main.MainActivity.EXTRA_OPEN_ROUTINE, true);
+            ((com.aula.delta_mobile_app.view.activities.ScreenFlowActivity) requireActivity()).openScreen(intent, true);
             return;
         }
         androidx.navigation.fragment.NavHostFragment.findNavController(this).navigate(R.id.homeFragment, null, new NavOptions.Builder().setPopUpTo(R.id.auth_navigation, true).build());
